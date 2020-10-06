@@ -1,0 +1,9 @@
+version: "3.8"
+services:
+  dfx:
+    build: .
+    ports:
+      - "8080"
+    volumes:
+      - .:/workspace
+

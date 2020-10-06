@@ -1,0 +1,43 @@
+name: build
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+jobs:
+  demo:
+    runs-on: ubuntu-20.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Install Rust toolchain
+        run: |
+          RUSTUP_VERSION=1.22.1
+          RUSTUP_DIR=rustup-$RUSTUP_VERSION
+          RUSTUP_TARBALL=$RUSTUP_VERSION.tar.gz
+          pushd /tmp
+          wget -q https://github.com/rust-lang/rustup/archive/$RUSTUP_TARBALL
+          tar -f $RUSTUP_TARBALL -x
+          sh $RUSTUP_DIR/rustup-init.sh -y
+          echo "::add-path::$HOME/.cargo/bin"
+          rustup target add wasm32-unknown-unknown
+          rm -r $RUSTUP_DIR $RUSTUP_TARBALL
+          popd
+      - name: Install DFINITY SDK
+        run: |
+          DFX_VERSION=0.6.10
+          pushd /tmp
+          wget -q https://sdk.dfinity.org/install.sh
+          yes Y | DFX_VERSION=$DFX_VERSION bash install.sh
+          echo "::add-path::$HOME/bin"
+          rm install.sh
+          popd
+      - name: Install Node
+        run: |
+          pushd /tmp
+          wget -O install-node.sh -q https://deb.nodesource.com/setup_12.x
+          sudo bash install-node.sh
+          sudo apt-get install -y nodejs
+          popd
+      - name: Demo
+        run: sh demo.sh

@@ -1,0 +1,24 @@
+.buttonGroup {
+  text-align: center;
+  margin: 50px 0;
+}
+
+.buttonGroup button {
+  width: 100%;
+  max-width: 480px;
+  border: 2px solid var(--full-white);
+  border-radius: 25px;
+  line-height: 50px;
+  font-size: 24px;
+  font-weight: bold;
+  color: var(--full-white);
+  background: none;
+}
+.buttonGroup button:hover {
+  background: var(--faded-white);
+}
+
+.buttonGroup button:hover,
+.buttonGroup p:hover {
+  cursor: pointer;
+}

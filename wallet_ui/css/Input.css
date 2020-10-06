@@ -1,0 +1,30 @@
+.input {
+  width: 50%;
+  margin: 50px auto;
+}
+
+input {
+  width: 100%;
+  border: 2px solid var(--full-white);
+  border-radius: 10px;
+  font-family: var(--monospace);
+  background: var(--faded-white);
+  text-align: center;
+  line-height: 50px;
+  color: var(--full-white);
+  font-size: 24px;
+}
+
+label {
+  display: block;
+  margin-bottom: 5px;
+}
+
+output {
+  border: 2px solid white;
+  border-radius: 10px;
+  background: rgba(0,0,0,0.25);
+  padding: 10px;
+  display: block;
+  font-family: var(--monospace);
+}

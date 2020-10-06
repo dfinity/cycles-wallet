@@ -1,0 +1,35 @@
+{
+  "author": {
+    "email": "enzo@dfinity.org",
+    "name": "Enzo Haussecker"
+  },
+  "dependencies": {
+    "@babel/core": "7.9.0",
+    "@babel/preset-react": "7.9.0",
+    "@dfinity/agent": "0.6.7",
+    "babel-loader": "8.1.0",
+    "cbor": "^5.1.0",
+    "css-loader": "4.3.0",
+    "nan": "^2.14.1",
+    "react": "16.13.1",
+    "react-countup": "4.3.3",
+    "react-dom": "16.13.1",
+    "style-loader": "1.2.1",
+    "webpack": "4.43.0",
+    "webpack-cli": "3.3.12"
+  },
+  "license": "SEE LICENSE IN LICENSE",
+  "name": "wallet-ui",
+  "scripts": {
+    "build": "webpack"
+  },
+  "version": "0.1.0",
+  "devDependencies": {
+    "@types/cbor": "^5.0.1",
+    "@types/react": "^16.9.49",
+    "@types/react-dom": "^16.9.8",
+    "ts-loader": "^8.0.4",
+    "typescript": "^4.0.3",
+    "url-loader": "^4.1.0"
+  }
+}

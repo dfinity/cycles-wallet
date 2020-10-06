@@ -1,0 +1,10 @@
+footer {
+  position: fixed;
+  bottom: var(--gutters);
+  color: var(--faded-white);
+  font-size: 14px;
+}
+
+footer a:link, footer a:visited {
+  color: var(--faded-white);
+}

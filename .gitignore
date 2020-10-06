@@ -1,0 +1,5 @@
+.DS_Store
+.dfx/
+Cargo.lock
+node_modules/
+target/
