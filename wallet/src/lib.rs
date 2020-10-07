@@ -196,6 +196,41 @@ fn receive_cycles() {
     ic_cdk::api::call::funds::accept(api::call::funds::Unit::Cycle, amount);
 }
 
+/// Return the cycle balance of this canister.
+#[query]
+fn icpt_balance() -> u64 {
+    api::canister_balance(api::call::funds::Unit::IcpToken) as u64
+}
+
+/// Send icpts to another canister.
+#[update(guard = "is_custodian")]
+async fn send_icpts(to: Principal, amount: u64) {
+    let _: () = api::call::call_with_payment(to.clone(), "receive_icpts", (), amount as i64)
+        .await
+        .unwrap();
+
+    events::record(events::EventKind::UnitSent {
+        to,
+        unit: events::Unit::from(ic_cdk::api::call::funds::Unit::IcpToken),
+        amount,
+    });
+}
+
+/// Receive icpts from another canister.
+#[update]
+fn receive_icpts() {
+    let from = caller();
+    let amount = ic_cdk::api::call::funds::available(api::call::funds::Unit::IcpToken);
+    if amount > 0 {
+        events::record(events::EventKind::UnitReceived {
+            from,
+            unit: events::Unit::from(ic_cdk::api::call::funds::Unit::IcpToken),
+            amount: amount as u64,
+        });
+    }
+    ic_cdk::api::call::funds::accept(api::call::funds::Unit::IcpToken, amount);
+}
+
 /***************************************************************************************************
  * Call Forwarding
  **************************************************************************************************/
