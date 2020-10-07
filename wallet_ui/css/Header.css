@@ -1,3 +1,11 @@
+.wallet-id {
+    position: absolute;
+    top: 100px;
+    left: 0;
+    font-family: "Operator Mono", monospace, sans-serif;
+    font-size: 20px;
+}
+
 .logo {
   position: absolute;
   top: 100px;
