@@ -1,16 +1,29 @@
-import React from "react";
+import React, { ChangeEvent } from "react";
 import Input from "./Input";
 import Output from "./Output";
 import Button from "./Button";
 import { getCurrentPrincipal, getWalletPrincipal } from "../api";
+import { IAuthenticationController, IRegistration } from "../authentication/types";
 
-class RegisterForm extends React.Component {
-  constructor() {
-    super();
+interface Properties {
+  onClick: () => void;
+  webAuthn: IAuthenticationController<IRegistration>;
+}
+
+interface State {
+  deviceAlias: string;
+  devicePrincipal: string;
+  walletId: string;
+  webAuthnId: string;
+}
+
+class RegisterForm extends React.Component<Properties, State> {
+  constructor(props: Properties) {
+    super(props);
     this.state = {
       deviceAlias: "",
       devicePrincipal: "",
-      walletId: getWalletPrincipal().toString(),
+      walletId: getWalletPrincipal(),
       webAuthnId: "",
     };
     this.updateDeviceAlias = this.updateDeviceAlias.bind(this);
@@ -21,7 +34,7 @@ class RegisterForm extends React.Component {
       .then((devicePrincipal) => this.setState({ devicePrincipal }));
   }
 
-  updateDeviceAlias(event) {
+  updateDeviceAlias(event: React.ChangeEvent<HTMLInputElement>) {
     this.setState({ deviceAlias: event.target.value });
   }
 

@@ -2,9 +2,13 @@ import React from 'react';
 import { getDevices } from '../api';
 import Button from './Button';
 
-class DeviceList extends React.Component {
-  constructor() {
-    super();
+interface Properties {
+  onClick(): void
+}
+
+class DeviceList extends React.Component<Properties, { devices: any[] }> {
+  constructor(props: Properties) {
+    super(props);
     this.state = { devices: [] };
   }
 

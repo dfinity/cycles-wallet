@@ -1,5 +1,6 @@
 .DS_Store
 .dfx/
 Cargo.lock
+dist/
 node_modules/
 target/

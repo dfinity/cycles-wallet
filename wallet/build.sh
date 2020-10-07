@@ -1,6 +1,9 @@
 #!/bin/sh
+set -e
 
-cargo build --manifest-path $(dirname $0)/Cargo.toml --target wasm32-unknown-unknown --release || exit 1
+npm run build
+
+cargo build --manifest-path $(dirname $0)/Cargo.toml --target wasm32-unknown-unknown --release
 
 CURRENT_DIR=`pwd`
 cd $(dirname $0)/

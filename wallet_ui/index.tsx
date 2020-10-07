@@ -56,8 +56,7 @@ class App extends React.Component<{}, { active: string }> {
         </Page>
 
         <Page active={active === 'transfer'}>
-          <TransferForm />
-          <Button label="Send Transaction" onClick={this.setActive("main")} />
+          <TransferForm onDone={this.setActive("main")} />
           <TextButton label="Cancel" onClick={this.setActive("main")} />
         </Page>
 

@@ -5,10 +5,12 @@ import '../css/CycleBalance.css';
 
 const FREQUENCY = 5;
 
-class CycleBalanceWidget extends React.Component {
+interface Properties {
+}
 
-  constructor() {
-    super();
+class CycleBalanceWidget extends React.Component<Properties, { cycles: number }> {
+  constructor(props: Properties) {
+    super(props);
     this.state = { cycles: 0 };
   }
 

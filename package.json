@@ -6,7 +6,7 @@
   "dependencies": {
     "@babel/core": "7.9.0",
     "@babel/preset-react": "7.9.0",
-    "@dfinity/agent": "0.6.7",
+    "@dfinity/agent": "0.6.11",
     "babel-loader": "8.1.0",
     "cbor": "^5.1.0",
     "css-loader": "4.3.0",

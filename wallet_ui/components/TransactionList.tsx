@@ -4,9 +4,9 @@ import '../css/TransactionList.css';
 
 const FREQUENCY = 5;
 
-class TransactionList extends React.Component {
-  constructor() {
-    super();
+class TransactionList extends React.Component<{}, { transactions: any[] }> {
+  constructor(props: {}) {
+    super(props);
     this.state = { transactions: [] };
   }
 

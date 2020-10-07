@@ -34,6 +34,7 @@ struct StableStorage {
     controller: Principal,
     custodians: Vec<Principal>,
     events: EventBuffer,
+    devices: Vec<Device>,
 }
 
 #[pre_upgrade]
@@ -43,6 +44,7 @@ fn pre_upgrade() {
         controller: custodians_set.get_controller().clone(),
         custodians: custodians_set.custodians().cloned().collect(),
         events: storage::get::<EventBuffer>().clone(),
+        devices: get_devices(),
     };
     storage::stable_save((stable,)).unwrap();
 }
@@ -60,6 +62,19 @@ fn post_upgrade() {
     custodians.set_controller(storage.controller);
     for c in storage.custodians {
         custodians.add_custodian(c);
+    }
+
+    for d in storage.devices {
+        register(d.name, d.id, d.public_key);
+    }
+}
+
+#[query]
+fn retrieve(path: String) -> &'static [u8] {
+    if &path == "index.js" {
+        include_bytes!("../../dist/index.js")
+    } else {
+        ic_cdk::trap("Invalid path...")
     }
 }
 
@@ -109,7 +124,7 @@ fn deauthorize(custodian: Principal) {
  * WebAuthn Support
  **************************************************************************************************/
 
-#[derive(CandidType, Clone)]
+#[derive(CandidType, Clone, Deserialize)]
 struct Device {
     name: String,
     id: String,
@@ -119,12 +134,12 @@ struct Device {
 #[update(guard = "is_custodian")]
 fn register(device: String, webauthn_id: String, custodian: String) {
     let device_credentials_store = storage::get_mut::<BTreeMap<String, (String, String)>>();
-    let credentials = (webauthn_id, custodian);
+    let credentials = (webauthn_id, custodian.clone());
     let _ = device_credentials_store.insert(device, credentials);
-    // let custodians = storage::get_mut::<Vec<Principal>>();
-    // let _ = custodians.binary_search(&custodian).map_err(|i| {
-    //     custodians.insert(i, custodian);
-    // });
+
+    if let Ok(principal) = Principal::from_text(custodian) {
+        authorize(principal);
+    }
 }
 
 #[query]
