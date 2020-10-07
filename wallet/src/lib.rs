@@ -224,3 +224,60 @@ fn is_custodian() -> Result<(), String> {
         Err("Only a custodian can call this method.".to_string())
     }
 }
+
+/***************************************************************************************************
+ * DoS Mitigation
+ **************************************************************************************************/
+
+#[derive(CandidType)]
+pub enum CheckAssignmentResponse {
+    Accept([u8; 32], u64),
+    AcceptUniversal,
+    Reject,
+}
+
+fn accept() -> CheckAssignmentResponse {
+    CheckAssignmentResponse::AcceptUniversal
+}
+
+fn accept_controller() -> CheckAssignmentResponse {
+    if storage::get::<CustodianSet>().is_controller(&caller()) {
+        accept()
+    } else {
+        reject()
+    }
+}
+
+fn accept_custodian() -> CheckAssignmentResponse {
+    if storage::get::<CustodianSet>().is_custodian(&caller()) {
+        accept()
+    } else {
+        reject()
+    }
+}
+
+fn reject() -> CheckAssignmentResponse {
+    CheckAssignmentResponse::Reject
+}
+
+#[query]
+fn canister_limit_message(method: String, _: Vec<u8>) -> CheckAssignmentResponse {
+    match method.as_ref() {
+        "get_controller" => accept_custodian(),
+        "set_controller" => accept_controller(),
+        "get_custodians" => accept_custodian(),
+        "authorize" => accept_controller(),
+        "deauthorize" => accept_controller(),
+        "register" => accept_controller(),
+        "get_devices" => accept_custodian(),
+        "cycle_balance" => accept_custodian(),
+        "send_cycles" => accept_custodian(),
+        "receive_cycles" => accept(),
+        "icpt_balance" => accept_custodian(),
+        "send_icpt" => accept_custodian(),
+        "receive_icpt" => accept(),
+        "call" => accept_custodian(),
+        "get_events" => accept_custodian(),
+        _ => reject(),
+    }
+}
