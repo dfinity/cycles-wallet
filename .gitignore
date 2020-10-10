@@ -1,5 +1,7 @@
 .DS_Store
 .dfx/
+.idea/
+.vscode/
 Cargo.lock
 dist/
 node_modules/
