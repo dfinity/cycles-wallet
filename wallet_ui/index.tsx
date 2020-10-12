@@ -8,15 +8,13 @@
 
 import React, { useState } from 'react';
 import ReactDOM from 'react-dom';
-import Header from './components/Header';
 import Page from './components/Page';
-import Button from './components/Button';
+import { Button, Header, Footer } from './components/ui';
 import TextButton from './components/TextButton';
-import Footer from './components/Footer';
 
 // Main
-import CycleBalance from './components/CycleBalance';
-import TransactionList from './components/TransactionList';
+import { BalanceWidget } from './components/Balance';
+import { TransactionList } from './components/TransactionList';
 
 // Transfer
 import TransferForm from './components/TransferForm';
@@ -29,6 +27,7 @@ import RegisterForm from './components/RegisterForm';
 import WebAuthnController from './authentication/controllers/WebAuthnAuthenticationController';
 
 import './css/main.css';
+import { getBalance } from "./api";
 
 class App extends React.Component<{}, { active: string }> {
   protected webAuthn = WebAuthnController();
@@ -50,7 +49,7 @@ class App extends React.Component<{}, { active: string }> {
         <Header />
 
         <Page active={active === 'main'}>
-          <CycleBalance />
+          <BalanceWidget fn={getBalance} unit="cycles" />
           <TransactionList />
           <Button label="Add Transaction" onClick={this.setActive("transfer")} />
         </Page>

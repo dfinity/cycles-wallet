@@ -1,47 +1,52 @@
-import React from 'react';
-import { getTransactions } from '../api';
+import React, { useState } from 'react';
+import ago from 's-ago';
+import { Transaction, getTransactions } from '../api';
 import '../css/TransactionList.css';
 
 const FREQUENCY = 5;
 
-class TransactionList extends React.Component<{}, { transactions: any[] }> {
-  constructor(props: {}) {
-    super(props);
-    this.state = { transactions: [] };
+export function TransactionList(_: {}) {
+  const [transactions, setTransactions] = React.useState<null | Transaction[]>(null);
+  const [first, setFirst] = useState(true);
+
+  if (first) {
+    setFirst(false);
+    getTransactions().then(transactions => {
+      setTransactions(transactions);
+      update();
+
+      // We declare a function here to ensure we only call the get function in
+      // series (don't call it twice if it takes more than FREQUENCY seconds).
+      function update() {
+        setTimeout(async () => {
+          const transactions = await getTransactions();
+          setTransactions(transactions);
+          update();
+        }, FREQUENCY * 1000);
+      }
+    });
   }
 
-  componentDidMount() {
-    this.refreshTransactions();
-    setInterval(this.refreshTransactions.bind(this), FREQUENCY * 1000);
-  }
-
-  refreshTransactions() {
-    getTransactions().then(transactions => this.setState({ transactions }));
-  }
-
-  render() {
-    return (
-      <section>
-        <h1>Transactions</h1>
-        <table>
-          <thead>
-            <th>Date</th>
-            <th>To/From</th>
-            <th>Amount</th>
-          </thead>
-          <tbody>
-            {this.state.transactions.map(transaction => (
-              <tr>
-                <td>{new Date(transaction.timestamp).toLocaleString()}</td>
-                <td className="code">{transaction.account}</td>
-                <td align="right">{Number(transaction.amount).toLocaleString()}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </section>
-    );
-  }
+  return (
+    <section>
+      <h1>Transactions</h1>
+      <table>
+        <thead>
+        <th>Date</th>
+        <th>To/From</th>
+        <th align="right">Amount</th>
+        </thead>
+        <tbody>
+        {(transactions || []).map(transaction => (
+          <tr>
+            <td>{ago(new Date(transaction.timestamp))}</td>
+            <td className="code">{transaction.account}</td>
+            <td align="right">{Number(transaction.amount).toLocaleString()} {unit}</td>
+          </tr>
+        ))}
+        </tbody>
+      </table>
+    </section>
+  );
 }
 
-export default TransactionList;

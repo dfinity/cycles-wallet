@@ -1,6 +1,6 @@
 import React from 'react';
 import { getDevices } from '../api';
-import Button from './Button';
+import { Button } from "./ui";
 
 interface Properties {
   onClick(): void

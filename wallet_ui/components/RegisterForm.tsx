@@ -1,7 +1,5 @@
-import React, { ChangeEvent } from "react";
-import Input from "./Input";
-import Output from "./Output";
-import Button from "./Button";
+import React from "react";
+import { Button, Input, Output } from "./ui";
 import { getCurrentPrincipal, getWalletPrincipal } from "../api";
 import { IAuthenticationController, IRegistration } from "../authentication/types";
 

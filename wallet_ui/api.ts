@@ -12,7 +12,15 @@ export async function getBalance(): Promise<number> {
   return cycles.toNumber();
 }
 
-export const getTransactions = async () => {
+export interface Transaction {
+  id: number;
+  unit: string;
+  account: string;
+  amount: number;
+  timestamp: number;
+}
+
+export async function getTransactions(): Promise<Transaction[]> {
   const events = await wallet.get_events() as any;
   return events.filter((ev: any) => ev.kind.UnitSent || ev.kind.UnitReceived).map(formatEvent);
 };
@@ -21,10 +29,20 @@ export const sendCycles = (to: Principal, amount: number) => {
   return wallet.send_cycles(to, amount) as any;
 };
 
+function getUnitName(unit: Uint8Array): string {
+  // It's almost cheating...
+  switch (unit.toString()) {
+    case "[0]": return "cycles";
+    case "[1]": return "tokens";
+    default: return "unknown";
+  }
+}
+
 const formatEvent = ({ id, kind, timestamp }: any) => {
-  let { to, from, amount } = kind.UnitSent || kind.UnitReceived || {};
+  let { to, from, amount, unit } = kind.UnitSent || kind.UnitReceived || {};
   return ({
     id: id,
+    unit: unit ? getUnitName(unit) : "",
     account: to ? to.toString() : from.toString(),
     amount: to ? -amount.toNumber() : amount.toNumber(),
     timestamp: timestamp.toNumber() / Math.pow(10, 6),

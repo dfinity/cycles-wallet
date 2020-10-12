@@ -1,8 +1,7 @@
-import React from "react";
-import Input from "./Input";
-import Button from "./Button";
-import { sendCycles } from "../api";
 import { Principal } from "@dfinity/agent";
+import React from "react";
+import { Button, Input } from "./ui";
+import { sendCycles } from "../api";
 
 export default function ({ onDone }: any) {
   const [ disabled, setDisabled ] = React.useState(false);
