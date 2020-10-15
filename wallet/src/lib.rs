@@ -57,7 +57,9 @@ fn post_upgrade() {
 
     // Before cloning the buffer, we need to set the capacity properly.
     event_buffer.resize(storage.events.capacity());
-    event_buffer.clone_from(&storage.events);
+    for e in storage.events.iter() {
+        event_buffer.push(e.clone());
+    }
 
     custodians.set_controller(storage.controller);
     for c in storage.custodians {
@@ -155,6 +157,51 @@ fn get_devices() -> Vec<Device> {
     }
 
     devices
+}
+
+mod wallet {
+    use ic_cdk::api::call::funds::Unit;
+    use ic_cdk::{api, caller};
+    use ic_types::Principal;
+    use crate::events;
+
+    #[query(name = "wallet_balance")]
+    fn balance(unit: Unit) -> u64 {
+        api::canister_balance(unit) as u64
+    }
+
+    #[update(name = "wallet_send")]
+    fn send(to: Principal, amounts: Vec<(Unit, u64)>) {
+        for (u, a) in amounts {
+            let _: () = api::call::call_with_payment(to.clone(), "wallet_receive", (), amount as i64)
+                .await
+                .unwrap();
+
+            events::record(events::EventKind::UnitSent {
+                to,
+                unit: events::Unit::from(unit),
+                amount,
+            });
+        }
+    }
+
+    #[update(name = "wallet_receive")]
+    fn receive() {
+        let from = caller();
+
+        // For now only support cycles and ICPTs.
+        for
+
+        let amount = ic_cdk::api::call::funds::available(api::call::funds::Unit::Cycle);
+        if amount > 0 {
+            events::record(events::EventKind::UnitReceived {
+                from,
+                unit: events::Unit::from(ic_cdk::api::call::funds::Unit::Cycle),
+                amount: amount as u64,
+            });
+        }
+        ic_cdk::api::call::funds::accept(api::call::funds::Unit::Cycle, amount);
+    }
 }
 
 /***************************************************************************************************

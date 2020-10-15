@@ -2,6 +2,7 @@ use candid::CandidType;
 use ic_cdk::{api, storage};
 use ic_types::Principal;
 use serde::Deserialize;
+use std::slice::Iter;
 
 #[derive(CandidType, Clone, Default, Deserialize)]
 pub struct EventBuffer {
@@ -10,6 +11,11 @@ pub struct EventBuffer {
 }
 
 impl EventBuffer {
+    #[inline]
+    pub fn iter(&self) -> Iter<Event> {
+        self.events.iter()
+    }
+
     #[inline]
     pub fn resize(&mut self, new_capacity: usize) {
         // If previous vector is empty, just replace it with a new one.
@@ -39,7 +45,7 @@ impl EventBuffer {
     }
 
     #[inline]
-    pub fn add(&mut self, event: Event) {
+    pub fn push(&mut self, event: Event) {
         if self.events.capacity() == 0 {
             return;
         }
@@ -122,7 +128,7 @@ impl Event {
 pub fn record(kind: EventKind) {
     let buffer = storage::get_mut::<EventBuffer>();
     let event = Event::new(kind);
-    buffer.add(event);
+    buffer.push(event);
 }
 
 pub fn get_events() -> &'static [Event] {

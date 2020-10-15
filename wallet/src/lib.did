@@ -45,15 +45,15 @@ service : {
   register: (text, text, text) -> ();
   get_devices: () -> (vec device) query;
 
+  // Unit Management
+  wallet_balance: (unit: Unit) -> (amount: nat64) query;
+  wallet_send: (to: principal, amounts: vec record { Unit; nat64 }) -> ();
+  wallet_receive: (units: vec Unit) -> ();
+
   // Cycle Management
   cycle_balance: () -> (nat64) query;
   send_cycles: (principal, nat64) -> ();
   receive_cycles: () -> ();
-
-  // ICPT Management
-  icpt_balance: () -> (nat64) query;
-  send_icpt: (principal, nat64) -> ();
-  receive_icpt: () -> ();
 
   // Call Forwarding
   call: (principal, text, blob, nat64) -> (blob);

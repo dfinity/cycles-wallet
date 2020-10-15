@@ -41,7 +41,7 @@ export function TransactionList(_: {}) {
           <tr>
             <td>{ago(new Date(transaction.timestamp))}</td>
             <td className="code">{transaction.account}</td>
-            <td align="right">{Number(transaction.amount).toLocaleString()} {unit}</td>
+            <td align="right">{Number(transaction.amount).toLocaleString()} {transaction.unit}</td>
           </tr>
         ))}
         </tbody>

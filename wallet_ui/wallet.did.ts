@@ -42,11 +42,13 @@ const walletIdl: IDL.InterfaceFactory = ({ IDL }) => {
     'cycle_balance' : IDL.Func([], [IDL.Nat64], ['query']),
     'set_controller' : IDL.Func([IDL.Principal], [], []),
     'send_cycles' : IDL.Func([IDL.Principal, IDL.Nat64], [], []),
-    'receive_icpt' : IDL.Func([], [], []),
+
+    'wallet_balance' : IDL.Func([Unit], [IDL.Nat64], ['query']),
+    'wallet_send' : IDL.Func([IDL.Principal, Unit, IDL.Nat64], [], []),
+
     'authorize' : IDL.Func([IDL.Principal], [], []),
-    'register' : IDL.Func([IDL.Text, IDL.Text, IDL.Text], [], []),
-    'icpt_balance' : IDL.Func([], [IDL.Nat64], ['query']),
     'deauthorize' : IDL.Func([IDL.Principal], [], []),
+    'register' : IDL.Func([IDL.Text, IDL.Text, IDL.Text], [], []),
     'get_custodians' : IDL.Func([], [IDL.Vec(IDL.Principal)], ['query']),
   });
 };
