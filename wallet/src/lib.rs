@@ -188,9 +188,14 @@ fn receive_cycles() {
 /// Forward a call to another canister.
 #[update(guard = "is_custodian")]
 async fn call(id: Principal, method: String, args: Vec<u8>, amount: u64) -> Vec<u8> {
-    api::call::call_raw(id, &method, args, amount as i64)
+    match api::call::call_raw(id, &method, args, amount as i64)
         .await
-        .unwrap()
+    {
+        Ok(x) => x,
+        Err((code, msg)) => {
+            ic_cdk::trap(&format!("An error happened during the call: {}: {}", code as u8, msg));
+        }
+    }
 }
 
 /***************************************************************************************************
