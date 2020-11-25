@@ -26,7 +26,6 @@
       "wasm": "wallet/target/wasm32-unknown-unknown/release/wallet-main.wasm"
     }
   },
-  "dfx": "0.6.10",
   "networks": {
     "tungsten": {
       "providers": [
@@ -34,7 +33,7 @@
       ]
     },
     "local": {
-      "bind": "127.0.0.1:8080",
+      "bind": "127.0.0.1:8001",
       "type": "ephemeral"
     }
   },
