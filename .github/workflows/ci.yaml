@@ -22,7 +22,7 @@ jobs:
           pushd /tmp
           wget -q https://sdk.dfinity.org/install.sh
           yes Y | DFX_VERSION=$DFX_VERSION bash install.sh
-          echo "::add-path::$HOME/bin"
+          echo $HOME/bin >> $GITHUB_PATH
           rm install.sh
           popd
 
