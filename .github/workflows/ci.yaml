@@ -15,6 +15,7 @@ jobs:
         run: |
           rustup update 1.47.0 --no-self-update
           rustup default 1.47.0
+          rustup target add wasm32-unknown-unknown
 
       - name: Install DFINITY SDK
         run: |
