@@ -72,12 +72,12 @@ fn post_upgrade() {
 }
 
 #[query]
-fn retrieve(path: String) -> &'static [u8] {
-    if &path == "index.js" {
-        include_bytes!("../../dist/index.js")
-    } else {
-        ic_cdk::trap("Invalid path...")
-    }
+fn retrieve(_path: String) -> &'static [u8] {
+    // if &path == "index.js" {
+    //     include_bytes!("../../dist/index.js")
+    // } else {
+    ic_cdk::trap("Invalid path...")
+    // }
 }
 
 /***************************************************************************************************
@@ -160,47 +160,36 @@ fn get_devices() -> Vec<Device> {
 }
 
 mod wallet {
-    use ic_cdk::api::call::funds::Unit;
-    use ic_cdk::{api, caller};
-    use ic_types::Principal;
     use crate::events;
+    use ic_cdk::{api, caller};
+    use ic_cdk_macros::*;
+    use ic_types::Principal;
 
     #[query(name = "wallet_balance")]
-    fn balance(unit: Unit) -> u64 {
-        api::canister_balance(unit) as u64
+    fn balance() -> u64 {
+        api::canister_balance() as u64
     }
 
     #[update(name = "wallet_send")]
-    fn send(to: Principal, amounts: Vec<(Unit, u64)>) {
-        for (u, a) in amounts {
-            let _: () = api::call::call_with_payment(to.clone(), "wallet_receive", (), amount as i64)
-                .await
-                .unwrap();
+    async fn send(to: Principal, amount: u64) {
+        let _: () = api::call::call_with_payment(to.clone(), "wallet_receive", (), amount as i64)
+            .await
+            .unwrap();
 
-            events::record(events::EventKind::UnitSent {
-                to,
-                unit: events::Unit::from(unit),
-                amount,
-            });
-        }
+        events::record(events::EventKind::CyclesSent { to, amount });
     }
 
     #[update(name = "wallet_receive")]
     fn receive() {
         let from = caller();
-
-        // For now only support cycles and ICPTs.
-        for
-
-        let amount = ic_cdk::api::call::funds::available(api::call::funds::Unit::Cycle);
+        let amount = ic_cdk::api::call::msg_cycles_available();
         if amount > 0 {
-            events::record(events::EventKind::UnitReceived {
+            events::record(events::EventKind::CyclesReceived {
                 from,
-                unit: events::Unit::from(ic_cdk::api::call::funds::Unit::Cycle),
                 amount: amount as u64,
             });
         }
-        ic_cdk::api::call::funds::accept(api::call::funds::Unit::Cycle, amount);
+        ic_cdk::api::call::msg_cycles_accept(amount);
     }
 }
 
@@ -238,54 +227,43 @@ fn receive_cycles() {
     ic_cdk::api::call::msg_cycles_accept(amount);
 }
 
-/// Return the cycle balance of this canister.
-#[query]
-fn icpt_balance() -> u64 {
-    api::canister_balance(api::call::funds::Unit::IcpToken) as u64
-}
-
-/// Send icpts to another canister.
-#[update(guard = "is_custodian")]
-async fn send_icpts(to: Principal, amount: u64) {
-    let _: () = api::call::call_with_payment(to.clone(), "receive_icpts", (), amount as i64)
-        .await
-        .unwrap();
-
-    events::record(events::EventKind::UnitSent {
-        to,
-        unit: events::Unit::from(ic_cdk::api::call::funds::Unit::IcpToken),
-        amount,
-    });
-}
-
-/// Receive icpts from another canister.
-#[update]
-fn receive_icpts() {
-    let from = caller();
-    let amount = ic_cdk::api::call::funds::available(api::call::funds::Unit::IcpToken);
-    if amount > 0 {
-        events::record(events::EventKind::UnitReceived {
-            from,
-            unit: events::Unit::from(ic_cdk::api::call::funds::Unit::IcpToken),
-            amount: amount as u64,
-        });
-    }
-    ic_cdk::api::call::funds::accept(api::call::funds::Unit::IcpToken, amount);
-}
+/***************************************************************************************************
+ * Managing Canister
+ **************************************************************************************************/
 
 /***************************************************************************************************
  * Call Forwarding
  **************************************************************************************************/
+#[derive(CandidType, Deserialize)]
+pub struct CallIn {
+    canister: Principal,
+    method_name: String,
+    args: Vec<u8>,
+    cycles: u64,
+}
+
+#[derive(CandidType)]
+pub struct CallOut {
+    r#return: Vec<u8>,
+}
 
 /// Forward a call to another canister.
 #[update(guard = "is_custodian")]
-async fn call(id: Principal, method: String, args: Vec<u8>, amount: u64) -> Vec<u8> {
-    match api::call::call_raw(id, &method, args, amount as i64)
-        .await
+async fn call(call_in: CallIn) -> CallOut {
+    match api::call::call_raw(
+        call_in.canister,
+        &call_in.method_name,
+        call_in.args,
+        call_in.cycles as i64,
+    )
+    .await
     {
-        Ok(x) => x,
+        Ok(x) => CallOut { r#return: x },
         Err((code, msg)) => {
-            ic_cdk::trap(&format!("An error happened during the call: {}: {}", code as u8, msg));
+            ic_cdk::trap(&format!(
+                "An error happened during the call: {}: {}",
+                code as u8, msg
+            ));
         }
     }
 }
