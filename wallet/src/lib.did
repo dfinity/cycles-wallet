@@ -43,13 +43,13 @@ service : {
   wallet_receive: () -> (record { accepted: nat64 });  // Endpoint for receiving cycles.
 
   // Managing canister
-  wallet_create_canister: (record {
+  create_canister: (record {
     cycles: nat64;
     controller: opt principal;  // If omitted, set the controller to this wallet.
   }) -> (record { canister_id: principal });
 
   // Call Forwarding
-  wallet_call: (record {
+  call: (record {
     canister: principal,
     method_name: text,
     args: blob,
