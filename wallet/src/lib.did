@@ -4,17 +4,13 @@ type device = record {
   public_key: text;
 };
 
-type Unit = vec nat8;
-
 type EventKind = variant {
-  UnitSent: record {
+  CyclesSent: record {
     to: principal;
-    unit: Unit;
     amount: nat64;
   };
-  UnitReceived: record {
+  CyclesReceived: record {
     from: principal;
-    unit: Unit;
     amount: nat64;
   };
   CustodianAdded: record {
