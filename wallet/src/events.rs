@@ -71,28 +71,15 @@ impl EventBuffer {
 #[derive(Default)]
 struct NextUniqueId(u32);
 
-/// We have to declare a unit type and implement Candid serialization ourselves,
-/// because the ic_cdk Unit Type is not candid serializable (yet).
-#[derive(CandidType, Clone, Deserialize)]
-pub struct Unit(pub(super) Vec<u8>);
-
-impl From<ic_cdk::api::call::funds::Unit> for Unit {
-    fn from(u: ic_cdk::api::call::funds::Unit) -> Self {
-        Self(u.to_bytes())
-    }
-}
-
 /// The type of an event in the event logs.
 #[derive(CandidType, Clone, Deserialize)]
 pub enum EventKind {
-    UnitSent {
+    CyclesSent {
         to: Principal,
-        unit: Unit,
         amount: u64,
     },
-    UnitReceived {
+    CyclesReceived {
         from: Principal,
-        unit: Unit,
         amount: u64,
     },
 

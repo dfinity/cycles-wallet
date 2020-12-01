@@ -211,7 +211,7 @@ mod wallet {
 /// Return the cycle balance of this canister.
 #[query]
 fn cycle_balance() -> u64 {
-    api::canister_balance(api::call::funds::Unit::Cycle) as u64
+    api::canister_balance() as u64
 }
 
 /// Send cycles to another canister.
@@ -221,26 +221,21 @@ async fn send_cycles(to: Principal, amount: u64) {
         .await
         .unwrap();
 
-    events::record(events::EventKind::UnitSent {
-        to,
-        unit: events::Unit::from(ic_cdk::api::call::funds::Unit::Cycle),
-        amount,
-    });
+    events::record(events::EventKind::CyclesSent { to, amount });
 }
 
 /// Receive cycles from another canister.
 #[update]
 fn receive_cycles() {
     let from = caller();
-    let amount = ic_cdk::api::call::funds::available(api::call::funds::Unit::Cycle);
+    let amount = ic_cdk::api::call::msg_cycles_available();
     if amount > 0 {
-        events::record(events::EventKind::UnitReceived {
+        events::record(events::EventKind::CyclesReceived {
             from,
-            unit: events::Unit::from(ic_cdk::api::call::funds::Unit::Cycle),
             amount: amount as u64,
         });
     }
-    ic_cdk::api::call::funds::accept(api::call::funds::Unit::Cycle, amount);
+    ic_cdk::api::call::msg_cycles_accept(amount);
 }
 
 /// Return the cycle balance of this canister.
@@ -285,9 +280,14 @@ fn receive_icpts() {
 /// Forward a call to another canister.
 #[update(guard = "is_custodian")]
 async fn call(id: Principal, method: String, args: Vec<u8>, amount: u64) -> Vec<u8> {
-    api::call::call_raw(id, &method, args, amount as i64)
+    match api::call::call_raw(id, &method, args, amount as i64)
         .await
-        .unwrap()
+    {
+        Ok(x) => x,
+        Err((code, msg)) => {
+            ic_cdk::trap(&format!("An error happened during the call: {}: {}", code as u8, msg));
+        }
+    }
 }
 
 /***************************************************************************************************
