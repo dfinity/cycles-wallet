@@ -1,7 +1,7 @@
 #!/bin/sh
 set -e
 
-npm run build
+#npm run build
 
 # Delete the WASM to make sure we're taking the new bytes in.
 cargo build --manifest-path $(dirname $0)/Cargo.toml --target wasm32-unknown-unknown --release
