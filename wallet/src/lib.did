@@ -55,7 +55,7 @@ service : {
     method_name: text;
     args: blob;
     cycles: nat64;
-  ) -> (record { return: blob });
+  }) -> (record { return: blob });
 
   // Events
   get_events: () -> (vec event) query;
