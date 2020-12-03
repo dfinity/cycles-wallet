@@ -116,21 +116,28 @@ mod wallet {
     /***************************************************************************************************
      * Cycle Management
      **************************************************************************************************/
+    #[derive(CandidType)]
+    struct BalanceResult {
+        amount: u64,
+    }
+
     #[derive(CandidType, Deserialize)]
     struct SendCyclesArgs {
         canister: Principal,
         amount: u64,
     }
 
-    #[derive(CandidType, Deserialize)]
+    #[derive(CandidType)]
     struct ReceiveResult {
         accepted: u64,
     }
 
     /// Return the cycle balance of this canister.
     #[query(name = "wallet::balance")]
-    fn balance() -> u64 {
-        api::canister_balance() as u64
+    fn balance() -> BalanceResult {
+        BalanceResult {
+            amount: api::canister_balance() as u64,
+        }
     }
 
     /// Send cycles to another canister.
@@ -176,8 +183,13 @@ mod wallet {
         controller: Option<Principal>,
     }
 
+    #[derive(CandidType)]
+    struct CreateResult {
+        canister_id: Principal,
+    }
+
     #[update(guard = "is_custodian", name = "wallet::create_canister")]
-    async fn create_canister(args: CreateCanisterArgs) -> Principal {
+    async fn create_canister(args: CreateCanisterArgs) -> CreateResult {
         // cost of create_canister is 1 trillion cycles
         // so cycles provided here should be more than 1 trillion
         // i.e. the wallet should have 1 trillion at least
@@ -248,17 +260,37 @@ mod wallet {
                 }
             };
         }
-        canister_id
+        CreateResult { canister_id }
     }
 
     /***************************************************************************************************
      * Call Forwarding
      **************************************************************************************************/
+    #[derive(CandidType, Deserialize)]
+    struct CallCanisterArgs {
+        canister: Principal,
+        method_name: String,
+        args: Vec<u8>,
+        cycles: u64,
+    }
+
+    #[derive(CandidType)]
+    struct CallResult {
+        r#return: Vec<u8>,
+    }
+
     /// Forward a call to another canister.
     #[update(guard = "is_custodian", name = "wallet::call")]
-    async fn call(canister: Principal, method_name: String, args: Vec<u8>, cycles: u64) -> Vec<u8> {
-        match api::call::call_raw(canister, &method_name, args, cycles as i64).await {
-            Ok(x) => x,
+    async fn call(args: CallCanisterArgs) -> CallResult {
+        match api::call::call_raw(
+            args.canister,
+            &args.method_name,
+            args.args,
+            args.cycles as i64,
+        )
+        .await
+        {
+            Ok(x) => CallResult { r#return: x },
             Err((code, msg)) => {
                 ic_cdk::trap(&format!(
                     "An error happened during the call: {}: {}",
