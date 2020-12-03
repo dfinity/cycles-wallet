@@ -51,10 +51,10 @@ service : {
 
   // Call Forwarding
   "wallet::call": (record {
-    canister: principal,
-    method_name: text,
-    args: blob,
-    cycles: nat64
+    canister: principal;
+    method_name: text;
+    args: blob;
+    cycles: nat64;
   ) -> (record { return: blob });
 
   // Events

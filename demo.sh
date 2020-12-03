@@ -8,7 +8,7 @@ set -e
 
 npm install
 
-dfx start --background
+dfx start --background --clean
 
 dfx identity new id_alice || true
 dfx identity new id_bob || true
