@@ -68,10 +68,29 @@ struct NextUniqueId(u32);
 /// The type of an event in the event logs.
 #[derive(CandidType, Clone, Deserialize)]
 pub enum EventKind {
-    CyclesSent { to: Principal, amount: u64 },
-    CyclesReceived { from: Principal, amount: u64 },
-    CustodianAdded { custodian: Principal },
-    CustodianRemoved { custodian: Principal },
+    CyclesSent {
+        to: Principal,
+        amount: u64,
+    },
+    CyclesReceived {
+        from: Principal,
+        amount: u64,
+    },
+    CustodianAdded {
+        custodian: Principal,
+    },
+    CustodianRemoved {
+        custodian: Principal,
+    },
+    CanisterCreated {
+        canister: Principal,
+        controller: Principal,
+        canister_balance: u64,
+    },
+    CanisterCalled {
+        canister: Principal,
+        method_name: String,
+    },
 }
 
 #[derive(CandidType, Clone, Deserialize)]

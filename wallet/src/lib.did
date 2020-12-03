@@ -13,6 +13,15 @@ type EventKind = variant {
   CustodianRemoved: record {
     custodian: principal;
   };
+  CanisterCreated: record {
+    canister: principal;
+    controller: principal;
+    canister_balance: nat64;
+  };
+  CanisterCalled: record {
+    canister: principal;
+    method_name: text;
+  }
 };
 
 type event = record {
