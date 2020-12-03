@@ -1,9 +1,3 @@
-type device = record {
-  name: text;
-  id: text;
-  public_key: text;
-};
-
 type EventKind = variant {
   CyclesSent: record {
     to: principal;
@@ -37,22 +31,24 @@ service : {
   authorize: (principal) -> ();
   deauthorize: (principal) -> ();
 
-  // WebAuthn Support
-  register: (text, text, text) -> ();
-  get_devices: () -> (vec device) query;
-
   // Cycle Management
-  cycle_balance: () -> (nat64) query;
-  send_cycles: (principal, nat64) -> ();
-  receive_cycles: () -> ();
+  "wallet::balance": () -> (record { amount: nat64 }) query;
+  "wallet::send": (record { canister: principal; amount: nat64 }) -> ();
+  "wallet::receive": () -> (record { accepted: nat64 });  // Endpoint for receiving cycles.
 
-  // ICPT Management
-  icpt_balance: () -> (nat64) query;
-  send_icpt: (principal, nat64) -> ();
-  receive_icpt: () -> ();
+  // Managing canister
+  "wallet::create_canister": (record {
+    cycles: nat64;
+    controller: opt principal;  // If omitted, set the controller to this wallet.
+  }) -> (record { canister_id: principal });
 
   // Call Forwarding
-  call: (principal, text, blob, nat64) -> (blob);
+  "wallet::call": (record {
+    canister: principal,
+    method_name: text,
+    args: blob,
+    cycles: nat64
+  ) -> (record { return: blob });
 
   // Events
   get_events: () -> (vec event) query;

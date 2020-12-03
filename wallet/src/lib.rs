@@ -3,7 +3,6 @@ use ic_cdk::*;
 use ic_cdk_macros::*;
 use ic_types::principal::Principal;
 use serde::Deserialize;
-use std::collections::BTreeMap;
 
 mod custodians;
 mod events;
@@ -105,90 +104,167 @@ fn deauthorize(custodian: Principal) {
     record(EventKind::CustodianRemoved { custodian })
 }
 
-/***************************************************************************************************
- * WebAuthn Support
- **************************************************************************************************/
+mod wallet {
+    use crate::{events, is_custodian};
+    use candid::{CandidType, Encode};
+    use ic_cdk::{api, caller};
+    use ic_cdk_macros::*;
+    use ic_types::Principal;
+    use serde::Deserialize;
+    use std::convert::TryFrom;
 
-#[derive(CandidType, Clone)]
-struct Device {
-    name: String,
-    id: String,
-    public_key: String,
-}
-
-#[update(guard = "is_custodian")]
-fn register(device: String, webauthn_id: String, custodian: String) {
-    let device_credentials_store = storage::get_mut::<BTreeMap<String, (String, String)>>();
-    let credentials = (webauthn_id, custodian);
-    let _ = device_credentials_store.insert(device, credentials);
-    // let custodians = storage::get_mut::<Vec<Principal>>();
-    // let _ = custodians.binary_search(&custodian).map_err(|i| {
-    //     custodians.insert(i, custodian);
-    // });
-}
-
-#[query]
-fn get_devices() -> Vec<Device> {
-    let device_credentials_store = storage::get_mut::<BTreeMap<String, (String, String)>>();
-    let mut devices = vec![];
-    for (name, (id, public_key)) in device_credentials_store {
-        devices.push(Device {
-            name: name.clone(),
-            id: id.clone(),
-            public_key: public_key.clone(),
-        })
+    /***************************************************************************************************
+     * Cycle Management
+     **************************************************************************************************/
+    #[derive(CandidType, Deserialize)]
+    struct SendCyclesArgs {
+        canister: Principal,
+        amount: u64,
     }
 
-    devices
-}
+    #[derive(CandidType, Deserialize)]
+    struct ReceiveResult {
+        accepted: u64,
+    }
 
-/***************************************************************************************************
- * Cycle Management
- **************************************************************************************************/
+    /// Return the cycle balance of this canister.
+    #[query(name = "wallet::balance")]
+    fn balance() -> u64 {
+        api::canister_balance() as u64
+    }
 
-/// Return the cycle balance of this canister.
-#[query]
-fn cycle_balance() -> u64 {
-    api::canister_balance() as u64
-}
-
-/// Send cycles to another canister.
-#[update(guard = "is_custodian")]
-async fn send_cycles(to: Principal, amount: u64) {
-    let _: () = api::call::call_with_payment(to.clone(), "receive_cycles", (), amount as i64)
+    /// Send cycles to another canister.
+    #[update(name = "wallet::send")]
+    async fn send(args: SendCyclesArgs) {
+        let _: () = api::call::call_with_payment(
+            args.canister.clone(),
+            "wallet::receive",
+            (),
+            args.amount as i64,
+        )
         .await
         .unwrap();
 
-    events::record(events::EventKind::CyclesSent { to, amount });
-}
-
-/// Receive cycles from another canister.
-#[update]
-fn receive_cycles() {
-    let from = caller();
-    let amount = ic_cdk::api::call::msg_cycles_available();
-    if amount > 0 {
-        events::record(events::EventKind::CyclesReceived {
-            from,
-            amount: amount as u64,
+        events::record(events::EventKind::CyclesSent {
+            to: args.canister,
+            amount: args.amount,
         });
     }
-    ic_cdk::api::call::msg_cycles_accept(amount);
-}
 
-/***************************************************************************************************
- * Call Forwarding
- **************************************************************************************************/
+    /// Receive cycles from another canister.
+    #[update(name = "wallet::receive")]
+    fn receive() -> ReceiveResult {
+        let from = caller();
+        let amount = ic_cdk::api::call::msg_cycles_available();
+        if amount > 0 {
+            events::record(events::EventKind::CyclesReceived {
+                from,
+                amount: amount as u64,
+            });
+        }
+        ReceiveResult {
+            accepted: ic_cdk::api::call::msg_cycles_accept(amount) as u64,
+        }
+    }
 
-/// Forward a call to another canister.
-#[update(guard = "is_custodian")]
-async fn call(id: Principal, method: String, args: Vec<u8>, amount: u64) -> Vec<u8> {
-    match api::call::call_raw(id, &method, args, amount as i64)
+    /***************************************************************************************************
+     * Managing Canister
+     **************************************************************************************************/
+    #[derive(CandidType, Deserialize)]
+    struct CreateCanisterArgs {
+        cycles: u64,
+        controller: Option<Principal>,
+    }
+
+    #[update(guard = "is_custodian", name = "wallet::create_canister")]
+    async fn create_canister(args: CreateCanisterArgs) -> Principal {
+        // cost of create_canister is 1 trillion cycles
+        // so cycles provided here should be more than 1 trillion
+        // i.e. the wallet should have 1 trillion at least
+        // can be rejected if not enough
+
+        /***************************************************************************************************
+         * Create Canister
+         **************************************************************************************************/
+        // call_raw
+
+        let canister_id = match api::call::call_raw(
+            Principal::management_canister(),
+            "create_canister",
+            Encode!(&()).unwrap(),
+            args.cycles as i64,
+        )
         .await
-    {
-        Ok(x) => x,
-        Err((code, msg)) => {
-            ic_cdk::trap(&format!("An error happened during the call: {}: {}", code as u8, msg));
+        {
+            Ok(x) => x,
+            Err((code, msg)) => {
+                ic_cdk::trap(&format!(
+                    "An error happened during the call: {}: {}",
+                    code as u8, msg
+                ));
+            }
+        };
+        let canister_id = Principal::try_from(canister_id).unwrap();
+
+        // call_with_payment
+
+        // let canister_id: Principal = match api::call::call_with_payment(
+        //     Principal::management_canister(),
+        //     "create_canister",
+        //     ((), ()),
+        //     args.cycles as i64,
+        // )
+        // .await
+        // {
+        //     Ok(x) => x,
+        //     Err((code, msg)) => {
+        //         ic_cdk::trap(&format!(
+        //             "An error happened during the call: {}: {}",
+        //             code as u8, msg
+        //         ));
+        //     }
+        // };
+
+        /***************************************************************************************************
+         * Set Controller
+         **************************************************************************************************/
+        // what is the set_controller cycle cost? for now dont check for set controller cycle cost
+        // TODO: ask public spec for ability to call create_canister with an optional controller specified
+        if let Some(new_controller) = args.controller {
+            // dont call set_controller if controller is None
+            match api::call::call(
+                Principal::management_canister(),
+                "set_controller",
+                (canister_id.clone(), new_controller),
+            )
+            .await
+            {
+                Ok(x) => x,
+                Err((code, msg)) => {
+                    ic_cdk::trap(&format!(
+                        "An error happened during the call: {}: {}",
+                        code as u8, msg
+                    ));
+                }
+            };
+        }
+        canister_id
+    }
+
+    /***************************************************************************************************
+     * Call Forwarding
+     **************************************************************************************************/
+    /// Forward a call to another canister.
+    #[update(guard = "is_custodian", name = "wallet::call")]
+    async fn call(canister: Principal, method_name: String, args: Vec<u8>, cycles: u64) -> Vec<u8> {
+        match api::call::call_raw(canister, &method_name, args, cycles as i64).await {
+            Ok(x) => x,
+            Err((code, msg)) => {
+                ic_cdk::trap(&format!(
+                    "An error happened during the call: {}: {}",
+                    code as u8, msg
+                ));
+            }
         }
     }
 }
