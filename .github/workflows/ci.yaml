@@ -19,7 +19,7 @@ jobs:
 
       - name: Install DFINITY SDK
         run: |
-          DFX_VERSION=0.6.15
+          DFX_VERSION=0.6.16
           pushd /tmp
           wget -q https://sdk.dfinity.org/install.sh
           yes Y | DFX_VERSION=$DFX_VERSION bash install.sh
