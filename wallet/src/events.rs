@@ -84,8 +84,6 @@ pub enum EventKind {
     },
     CanisterCreated {
         canister: Principal,
-        controller: Principal,
-        canister_balance: u64,
     },
     CanisterCalled {
         canister: Principal,

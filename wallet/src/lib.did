@@ -15,8 +15,6 @@ type EventKind = variant {
   };
   CanisterCreated: record {
     canister: principal;
-    controller: principal;
-    canister_balance: nat64;
   };
   CanisterCalled: record {
     canister: principal;

@@ -208,7 +208,7 @@ mod wallet {
         )
         .await
         {
-            Ok(x) => x,
+            Ok(x) => Principal::try_from(x).unwrap(),
             Err((code, msg)) => {
                 ic_cdk::trap(&format!(
                     "An error happened during the call: {}: {}",
@@ -216,7 +216,6 @@ mod wallet {
                 ));
             }
         };
-        let canister_id = Principal::try_from(canister_id).unwrap();
 
         // call_with_payment
 
@@ -260,6 +259,9 @@ mod wallet {
                 }
             };
         }
+        events::record(events::EventKind::CanisterCreated {
+            canister: canister_id.clone(),
+        });
         CreateResult { canister_id }
     }
 
@@ -283,14 +285,20 @@ mod wallet {
     #[update(guard = "is_custodian", name = "wallet::call")]
     async fn call(args: CallCanisterArgs) -> CallResult {
         match api::call::call_raw(
-            args.canister,
+            args.canister.clone(),
             &args.method_name,
             args.args,
             args.cycles as i64,
         )
         .await
         {
-            Ok(x) => CallResult { r#return: x },
+            Ok(x) => {
+                events::record(events::EventKind::CanisterCalled {
+                    canister: args.canister,
+                    method_name: args.method_name,
+                });
+                CallResult { r#return: x }
+            }
             Err((code, msg)) => {
                 ic_cdk::trap(&format!(
                     "An error happened during the call: {}: {}",

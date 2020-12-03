@@ -30,21 +30,21 @@ echo
 echo == Initial cycle balances for Alice and Bob.
 echo
 
-echo Alice = $(dfx canister call alice cycle_balance)
-echo Bob = $(dfx canister call bob cycle_balance)
+echo Alice = $(dfx canister call alice "wallet::balance")
+echo Bob = $(dfx canister call bob "wallet::balance")
 
 echo
 echo == Transfer 1000000000000 cycles from Alice to Bob.
 echo
 
-eval dfx --identity id_alice canister call alice send_cycles "'(principal \"$(dfx canister id bob)\", 1000000000000)'"
+eval dfx --identity id_alice canister call alice "wallet::send" "'(principal \"$(dfx canister id bob)\", 1000000000000)'"
 
 echo
 echo == Final cycle balances for Alice and Bob.
 echo
 
-echo Alice = $(dfx canister call alice cycle_balance)
-echo Bob = $(dfx canister call bob cycle_balance)
+echo Alice = $(dfx canister call alice "wallet::balance")
+echo Bob = $(dfx canister call bob "wallet::balance")
 
 echo
 echo == Setting custodian of Alices wallet to Charlie
@@ -59,10 +59,10 @@ dfx --identity id_alice canister install alice --mode=upgrade
 echo
 echo == Using Charlie to send cycles...
 echo
-eval dfx --identity id_charlie canister call alice send_cycles "'(principal \"$(dfx canister id bob)\", 1000000000000)'"
+eval dfx --identity id_charlie canister call alice "wallet::send" "'(principal \"$(dfx canister id bob)\", 1000000000000)'"
 
-echo Alice = $(dfx canister call alice cycle_balance)
-echo Alice^ = $(dfx --identity id_charlie canister call alice cycle_balance)
-echo Bob = $(dfx canister call bob cycle_balance)
+echo Alice = $(dfx canister call alice "wallet::balance")
+echo Alice^ = $(dfx --identity id_charlie canister call alice "wallet::balance")
+echo Bob = $(dfx canister call bob "wallet::balance")
 
 dfx stop

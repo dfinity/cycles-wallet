@@ -28,7 +28,7 @@
       "type": "assets"
     }
   },
-  "dfx": "0.6.15",
+  "dfx": "0.6.16",
   "networks": {
     "local": {
       "bind": "0.0.0.0:8080",
