@@ -106,12 +106,11 @@ fn deauthorize(custodian: Principal) {
 
 mod wallet {
     use crate::{events, is_custodian};
-    use candid::{CandidType, Encode};
+    use candid::CandidType;
     use ic_cdk::{api, caller};
     use ic_cdk_macros::*;
     use ic_types::Principal;
     use serde::Deserialize;
-    use std::convert::TryFrom;
 
     /***************************************************************************************************
      * Cycle Management
@@ -183,7 +182,7 @@ mod wallet {
         controller: Option<Principal>,
     }
 
-    #[derive(CandidType)]
+    #[derive(CandidType, Deserialize)]
     struct CreateResult {
         canister_id: Principal,
     }
@@ -198,17 +197,16 @@ mod wallet {
         /***************************************************************************************************
          * Create Canister
          **************************************************************************************************/
-        // call_raw
-
-        let canister_id = match api::call::call_raw(
+        // call_with_payment
+        let (create_result,): (CreateResult,) = match api::call::call_with_payment(
             Principal::management_canister(),
             "create_canister",
-            Encode!(&()).unwrap(),
+            (),
             args.cycles as i64,
         )
         .await
         {
-            Ok(x) => Principal::try_from(x).unwrap(),
+            Ok(x) => x,
             Err((code, msg)) => {
                 ic_cdk::trap(&format!(
                     "An error happened during the call: {}: {}",
@@ -216,25 +214,6 @@ mod wallet {
                 ));
             }
         };
-
-        // call_with_payment
-
-        // let canister_id: Principal = match api::call::call_with_payment(
-        //     Principal::management_canister(),
-        //     "create_canister",
-        //     ((), ()),
-        //     args.cycles as i64,
-        // )
-        // .await
-        // {
-        //     Ok(x) => x,
-        //     Err((code, msg)) => {
-        //         ic_cdk::trap(&format!(
-        //             "An error happened during the call: {}: {}",
-        //             code as u8, msg
-        //         ));
-        //     }
-        // };
 
         /***************************************************************************************************
          * Set Controller
@@ -246,7 +225,7 @@ mod wallet {
             match api::call::call(
                 Principal::management_canister(),
                 "set_controller",
-                (canister_id.clone(), new_controller),
+                (create_result.canister_id.clone(), new_controller),
             )
             .await
             {
@@ -260,9 +239,9 @@ mod wallet {
             };
         }
         events::record(events::EventKind::CanisterCreated {
-            canister: canister_id.clone(),
+            canister: create_result.canister_id.clone(),
         });
-        CreateResult { canister_id }
+        create_result
     }
 
     /***************************************************************************************************
