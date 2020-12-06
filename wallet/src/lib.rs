@@ -132,7 +132,7 @@ mod wallet {
     }
 
     /// Return the cycle balance of this canister.
-    #[query(name = "wallet::balance")]
+    #[query(name = "wallet_balance")]
     fn balance() -> BalanceResult {
         BalanceResult {
             amount: api::canister_balance() as u64,
@@ -140,11 +140,11 @@ mod wallet {
     }
 
     /// Send cycles to another canister.
-    #[update(name = "wallet::send")]
+    #[update(name = "wallet_send")]
     async fn send(args: SendCyclesArgs) {
         let _: () = api::call::call_with_payment(
             args.canister.clone(),
-            "wallet::receive",
+            "wallet_receive",
             (),
             args.amount as i64,
         )
@@ -158,7 +158,7 @@ mod wallet {
     }
 
     /// Receive cycles from another canister.
-    #[update(name = "wallet::receive")]
+    #[update(name = "wallet_receive")]
     fn receive() -> ReceiveResult {
         let from = caller();
         let amount = ic_cdk::api::call::msg_cycles_available();
@@ -187,7 +187,7 @@ mod wallet {
         canister_id: Principal,
     }
 
-    #[update(guard = "is_custodian", name = "wallet::create_canister")]
+    #[update(guard = "is_custodian", name = "wallet_create_canister")]
     async fn create_canister(args: CreateCanisterArgs) -> CreateResult {
         // cost of create_canister is 1 trillion cycles
         // so cycles provided here should be more than 1 trillion
@@ -197,7 +197,6 @@ mod wallet {
         /***************************************************************************************************
          * Create Canister
          **************************************************************************************************/
-        // call_with_payment
         let (create_result,): (CreateResult,) = match api::call::call_with_payment(
             Principal::management_canister(),
             "create_canister",
@@ -261,7 +260,7 @@ mod wallet {
     }
 
     /// Forward a call to another canister.
-    #[update(guard = "is_custodian", name = "wallet::call")]
+    #[update(guard = "is_custodian", name = "wallet_call")]
     async fn call(args: CallCanisterArgs) -> CallResult {
         match api::call::call_raw(
             args.canister.clone(),

@@ -39,18 +39,18 @@ service : {
   deauthorize: (principal) -> ();
 
   // Cycle Management
-  "wallet::balance": () -> (record { amount: nat64 }) query;
-  "wallet::send": (record { canister: principal; amount: nat64 }) -> ();
-  "wallet::receive": () -> (record { accepted: nat64 });  // Endpoint for receiving cycles.
+  wallet_balance: () -> (record { amount: nat64 }) query;
+  wallet_send: (record { canister: principal; amount: nat64 }) -> ();
+  wallet_receive: () -> (record { accepted: nat64 });  // Endpoint for receiving cycles.
 
   // Managing canister
-  "wallet::create_canister": (record {
+  wallet_create_canister: (record {
     cycles: nat64;
     controller: opt principal;  // If omitted, set the controller to this wallet.
   }) -> (record { canister_id: principal });
 
   // Call Forwarding
-  "wallet::call": (record {
+  wallet_call: (record {
     canister: principal;
     method_name: text;
     args: blob;
