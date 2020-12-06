@@ -1,39 +1,37 @@
 {
-  "__comment": [
-    "This file is missing the Wallet UI canister. That is because the wallet canister ",
-    "includes its own UI (by implementing the `retrieve` method). The wallet build ",
-    "script runs webpack which builds the wallet UI canister, and then includes its ",
-    "output in the WASM (through Rust). This is why you won't see an asset canister ",
-    "here."
-  ],
   "canisters": {
     "alice": {
-      "build": "wallet/build.sh alice",
+      "build": "wallet/build.sh",
       "candid": "wallet/src/lib.did",
       "type": "custom",
-      "wasm": "wallet/target/wasm32-unknown-unknown/release/wallet-alice.wasm"
+      "wasm": "wallet/target/wasm32-unknown-unknown/release/wallet-opt.wasm"
     },
     "bob": {
-      "build": "wallet/build.sh bob",
+      "build": "wallet/build.sh",
       "candid": "wallet/src/lib.did",
       "type": "custom",
-      "wasm": "wallet/target/wasm32-unknown-unknown/release/wallet-bob.wasm"
+      "wasm": "wallet/target/wasm32-unknown-unknown/release/wallet-opt.wasm"
     },
     "wallet": {
-      "build": "wallet/build.sh main",
+      "build": "wallet/build.sh",
       "candid": "wallet/src/lib.did",
       "type": "custom",
-      "wasm": "wallet/target/wasm32-unknown-unknown/release/wallet-main.wasm"
+      "wasm": "wallet/target/wasm32-unknown-unknown/release/wallet-opt.wasm"
+    },
+    "wallet_ui": {
+      "dependencies": [
+        "wallet"
+      ],
+      "frontend": {
+        "entrypoint": "wallet_ui/index.tsx"
+      },
+      "type": "assets"
     }
   },
+  "dfx": "0.6.16",
   "networks": {
-    "ic": {
-      "providers": [
-        "https://gw.dfinity.network"
-      ]
-    },
     "local": {
-      "bind": "127.0.0.1:8001",
+      "bind": "0.0.0.0:8080",
       "type": "ephemeral"
     }
   },
