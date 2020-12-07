@@ -37,7 +37,7 @@ echo
 echo == Create a new canister with Alice as controller using 1000000000000 cycles.
 echo
 
-echo New canister id = $(dfx --identity id_alice canister call alice wallet_create_canister "(record { cycles = 1000000000000 })")
+echo New canister id = $(dfx --identity id_alice canister call alice wallet_create_canister "(record { cycles = 1000000000000; controller = null })")
 
 echo
 echo == Transfer 1000000000000 cycles from Alice to Bob.
