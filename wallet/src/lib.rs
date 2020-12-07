@@ -1,7 +1,7 @@
 use ic_cdk::export::candid::CandidType;
+use ic_cdk::export::Principal;
 use ic_cdk::*;
 use ic_cdk_macros::*;
-use ic_types::principal::Principal;
 use serde::Deserialize;
 
 mod custodians;
@@ -108,9 +108,9 @@ mod wallet {
     use crate::{events, is_custodian};
     use ic_cdk::export::candid::types::{Field, Label, Serializer, Type, TypeId};
     use ic_cdk::export::candid::CandidType;
+    use ic_cdk::export::Principal;
     use ic_cdk::{api, caller};
     use ic_cdk_macros::*;
-    use ic_types::Principal;
     use serde::Deserialize;
 
     /***************************************************************************************************
