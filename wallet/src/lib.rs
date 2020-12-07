@@ -189,11 +189,6 @@ mod wallet {
 
     #[update(guard = "is_custodian", name = "wallet_create_canister")]
     async fn create_canister(args: CreateCanisterArgs) -> CreateResult {
-        // cost of create_canister is 1 trillion cycles
-        // so cycles provided here should be more than 1 trillion
-        // i.e. the wallet should have 1 trillion at least
-        // can be rejected if not enough
-
         /***************************************************************************************************
          * Create Canister
          **************************************************************************************************/
@@ -217,10 +212,7 @@ mod wallet {
         /***************************************************************************************************
          * Set Controller
          **************************************************************************************************/
-        // what is the set_controller cycle cost? for now dont check for set controller cycle cost
-        // TODO: ask public spec for ability to call create_canister with an optional controller specified
         if let Some(new_controller) = args.controller {
-            // dont call set_controller if controller is None
             match api::call::call(
                 Principal::management_canister(),
                 "set_controller",
