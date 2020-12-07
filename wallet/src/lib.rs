@@ -246,9 +246,35 @@ mod wallet {
         cycles: u64,
     }
 
-    #[derive(CandidType)]
+    // #[derive(CandidType)]
     struct CallResult {
         r#return: Vec<u8>,
+    }
+
+    /// Due to https://github.com/dfinity/candid/issues/148 we need to manually
+    /// implement CandidType trait (for now).
+    /// TODO: reuse derive(CandidType) once the issue above is fixed.
+    impl CandidType for CallResult {
+        fn id() -> candid::types::TypeId {
+            candid::types::TypeId::of::<Self>()
+        }
+
+        fn _ty() -> candid::types::Type {
+            candid::types::Type::Record(vec![
+                candid::types::Field {
+                    id: candid::types::Label::Named("return".to_owned()),
+                    ty: candid::types::Type::Vec(Box::new(candid::types::Type::Nat8))
+                }
+            ])
+        }
+
+        fn idl_serialize<S>(&self, serializer: S) -> Result<(), S::Error> where
+            S: candid::types::Serializer {
+            use ic_cdk::export::candid::types::Compound;
+
+            let mut compound = serializer.serialize_struct()?;
+            compound.serialize_element(&self.r#return)
+        }
     }
 
     /// Forward a call to another canister.
