@@ -1,9 +1,8 @@
-use candid::CandidType;
+use ic_cdk::export::candid::CandidType;
+use ic_cdk::export::Principal;
 use ic_cdk::*;
 use ic_cdk_macros::*;
-use ic_types::principal::Principal;
 use serde::Deserialize;
-use std::collections::BTreeMap;
 
 mod custodians;
 mod events;
@@ -105,90 +104,204 @@ fn deauthorize(custodian: Principal) {
     record(EventKind::CustodianRemoved { custodian })
 }
 
-/***************************************************************************************************
- * WebAuthn Support
- **************************************************************************************************/
+mod wallet {
+    use crate::{events, is_custodian};
+    use ic_cdk::export::candid::types::{Field, Label, Serializer, Type, TypeId};
+    use ic_cdk::export::candid::CandidType;
+    use ic_cdk::export::Principal;
+    use ic_cdk::{api, caller};
+    use ic_cdk_macros::*;
+    use serde::Deserialize;
 
-#[derive(CandidType, Clone)]
-struct Device {
-    name: String,
-    id: String,
-    public_key: String,
-}
-
-#[update(guard = "is_custodian")]
-fn register(device: String, webauthn_id: String, custodian: String) {
-    let device_credentials_store = storage::get_mut::<BTreeMap<String, (String, String)>>();
-    let credentials = (webauthn_id, custodian);
-    let _ = device_credentials_store.insert(device, credentials);
-    // let custodians = storage::get_mut::<Vec<Principal>>();
-    // let _ = custodians.binary_search(&custodian).map_err(|i| {
-    //     custodians.insert(i, custodian);
-    // });
-}
-
-#[query]
-fn get_devices() -> Vec<Device> {
-    let device_credentials_store = storage::get_mut::<BTreeMap<String, (String, String)>>();
-    let mut devices = vec![];
-    for (name, (id, public_key)) in device_credentials_store {
-        devices.push(Device {
-            name: name.clone(),
-            id: id.clone(),
-            public_key: public_key.clone(),
-        })
+    /***************************************************************************************************
+     * Cycle Management
+     **************************************************************************************************/
+    #[derive(CandidType)]
+    struct BalanceResult {
+        amount: u64,
     }
 
-    devices
-}
+    #[derive(CandidType, Deserialize)]
+    struct SendCyclesArgs {
+        canister: Principal,
+        amount: u64,
+    }
 
-/***************************************************************************************************
- * Cycle Management
- **************************************************************************************************/
+    #[derive(CandidType)]
+    struct ReceiveResult {
+        accepted: u64,
+    }
 
-/// Return the cycle balance of this canister.
-#[query]
-fn cycle_balance() -> u64 {
-    api::canister_balance() as u64
-}
+    /// Return the cycle balance of this canister.
+    #[query(name = "wallet_balance")]
+    fn balance() -> BalanceResult {
+        BalanceResult {
+            amount: api::canister_balance() as u64,
+        }
+    }
 
-/// Send cycles to another canister.
-#[update(guard = "is_custodian")]
-async fn send_cycles(to: Principal, amount: u64) {
-    let _: () = api::call::call_with_payment(to.clone(), "receive_cycles", (), amount as i64)
+    /// Send cycles to another canister.
+    #[update(name = "wallet_send")]
+    async fn send(args: SendCyclesArgs) {
+        let _: () = api::call::call_with_payment(
+            args.canister.clone(),
+            "wallet_receive",
+            (),
+            args.amount as i64,
+        )
         .await
         .unwrap();
 
-    events::record(events::EventKind::CyclesSent { to, amount });
-}
-
-/// Receive cycles from another canister.
-#[update]
-fn receive_cycles() {
-    let from = caller();
-    let amount = ic_cdk::api::call::msg_cycles_available();
-    if amount > 0 {
-        events::record(events::EventKind::CyclesReceived {
-            from,
-            amount: amount as u64,
+        events::record(events::EventKind::CyclesSent {
+            to: args.canister,
+            amount: args.amount,
         });
     }
-    ic_cdk::api::call::msg_cycles_accept(amount);
-}
 
-/***************************************************************************************************
- * Call Forwarding
- **************************************************************************************************/
+    /// Receive cycles from another canister.
+    #[update(name = "wallet_receive")]
+    fn receive() -> ReceiveResult {
+        let from = caller();
+        let amount = ic_cdk::api::call::msg_cycles_available();
+        if amount > 0 {
+            events::record(events::EventKind::CyclesReceived {
+                from,
+                amount: amount as u64,
+            });
+        }
+        ReceiveResult {
+            accepted: ic_cdk::api::call::msg_cycles_accept(amount) as u64,
+        }
+    }
 
-/// Forward a call to another canister.
-#[update(guard = "is_custodian")]
-async fn call(id: Principal, method: String, args: Vec<u8>, amount: u64) -> Vec<u8> {
-    match api::call::call_raw(id, &method, args, amount as i64)
+    /***************************************************************************************************
+     * Managing Canister
+     **************************************************************************************************/
+    #[derive(CandidType, Deserialize)]
+    struct CreateCanisterArgs {
+        cycles: u64,
+        controller: Option<Principal>,
+    }
+
+    #[derive(CandidType, Deserialize)]
+    struct CreateResult {
+        canister_id: Principal,
+    }
+
+    #[update(guard = "is_custodian", name = "wallet_create_canister")]
+    async fn create_canister(args: CreateCanisterArgs) -> CreateResult {
+        /***************************************************************************************************
+         * Create Canister
+         **************************************************************************************************/
+        let (create_result,): (CreateResult,) = match api::call::call_with_payment(
+            Principal::management_canister(),
+            "create_canister",
+            (),
+            args.cycles as i64,
+        )
         .await
-    {
-        Ok(x) => x,
-        Err((code, msg)) => {
-            ic_cdk::trap(&format!("An error happened during the call: {}: {}", code as u8, msg));
+        {
+            Ok(x) => x,
+            Err((code, msg)) => {
+                ic_cdk::trap(&format!(
+                    "An error happened during the call: {}: {}",
+                    code as u8, msg
+                ));
+            }
+        };
+
+        /***************************************************************************************************
+         * Set Controller
+         **************************************************************************************************/
+        if let Some(new_controller) = args.controller {
+            match api::call::call(
+                Principal::management_canister(),
+                "set_controller",
+                (create_result.canister_id.clone(), new_controller),
+            )
+            .await
+            {
+                Ok(x) => x,
+                Err((code, msg)) => {
+                    ic_cdk::trap(&format!(
+                        "An error happened during the call: {}: {}",
+                        code as u8, msg
+                    ));
+                }
+            };
+        }
+        events::record(events::EventKind::CanisterCreated {
+            canister: create_result.canister_id.clone(),
+        });
+        create_result
+    }
+
+    /***************************************************************************************************
+     * Call Forwarding
+     **************************************************************************************************/
+    #[derive(CandidType, Deserialize)]
+    struct CallCanisterArgs {
+        canister: Principal,
+        method_name: String,
+        args: Vec<u8>,
+        cycles: u64,
+    }
+
+    // #[derive(CandidType)]
+    struct CallResult {
+        r#return: Vec<u8>,
+    }
+
+    /// Due to https://github.com/dfinity/candid/issues/148 we need to manually
+    /// implement CandidType trait (for now).
+    /// TODO: reuse derive(CandidType) once the issue above is fixed.
+    impl CandidType for CallResult {
+        fn id() -> TypeId {
+            TypeId::of::<Self>()
+        }
+
+        fn _ty() -> Type {
+            Type::Record(vec![Field {
+                id: Label::Named("return".to_owned()),
+                ty: Type::Vec(Box::new(Type::Nat8)),
+            }])
+        }
+
+        fn idl_serialize<S>(&self, serializer: S) -> Result<(), S::Error>
+        where
+            S: Serializer,
+        {
+            use ic_cdk::export::candid::types::Compound;
+
+            let mut compound = serializer.serialize_struct()?;
+            compound.serialize_element(&self.r#return)
+        }
+    }
+
+    /// Forward a call to another canister.
+    #[update(guard = "is_custodian", name = "wallet_call")]
+    async fn call(args: CallCanisterArgs) -> CallResult {
+        match api::call::call_raw(
+            args.canister.clone(),
+            &args.method_name,
+            args.args,
+            args.cycles as i64,
+        )
+        .await
+        {
+            Ok(x) => {
+                events::record(events::EventKind::CanisterCalled {
+                    canister: args.canister,
+                    method_name: args.method_name,
+                });
+                CallResult { r#return: x }
+            }
+            Err((code, msg)) => {
+                ic_cdk::trap(&format!(
+                    "An error happened during the call: {}: {}",
+                    code as u8, msg
+                ));
+            }
         }
     }
 }

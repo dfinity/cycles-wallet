@@ -8,7 +8,7 @@ set -e
 
 npm install
 
-dfx start --background
+dfx start --background --clean
 
 dfx identity new id_alice || true
 dfx identity new id_bob || true
@@ -30,21 +30,27 @@ echo
 echo == Initial cycle balances for Alice and Bob.
 echo
 
-echo Alice = $(dfx canister call alice cycle_balance)
-echo Bob = $(dfx canister call bob cycle_balance)
+echo Alice = $(dfx canister call alice wallet_balance)
+echo Bob = $(dfx canister call bob wallet_balance)
+
+echo
+echo == Create a new canister with Alice as controller using 1000000000000 cycles.
+echo
+
+echo New canister id = $(dfx --identity id_alice canister call alice wallet_create_canister "(record { cycles = 1000000000000; controller = null })")
 
 echo
 echo == Transfer 1000000000000 cycles from Alice to Bob.
 echo
 
-eval dfx --identity id_alice canister call alice send_cycles "'(principal \"$(dfx canister id bob)\", 1000000000000)'"
+eval dfx --identity id_alice canister call alice wallet_send "'(record { canister = principal \"$(dfx canister id bob)\"; amount = 1000000000000 })'"
 
 echo
 echo == Final cycle balances for Alice and Bob.
 echo
 
-echo Alice = $(dfx canister call alice cycle_balance)
-echo Bob = $(dfx canister call bob cycle_balance)
+echo Alice = $(dfx canister call alice wallet_balance)
+echo Bob = $(dfx canister call bob wallet_balance)
 
 echo
 echo == Setting custodian of Alices wallet to Charlie
@@ -59,10 +65,10 @@ dfx --identity id_alice canister install alice --mode=upgrade
 echo
 echo == Using Charlie to send cycles...
 echo
-eval dfx --identity id_charlie canister call alice send_cycles "'(principal \"$(dfx canister id bob)\", 1000000000000)'"
+eval dfx --identity id_charlie canister call alice wallet_send "'(record { canister = principal \"$(dfx canister id bob)\"; amount = 1000000000000 })'"
 
-echo Alice = $(dfx canister call alice cycle_balance)
-echo Alice^ = $(dfx --identity id_charlie canister call alice cycle_balance)
-echo Bob = $(dfx canister call bob cycle_balance)
+echo Alice = $(dfx canister call alice wallet_balance)
+echo Alice^ = $(dfx --identity id_charlie canister call alice wallet_balance)
+echo Bob = $(dfx canister call bob wallet_balance)
 
 dfx stop

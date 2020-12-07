@@ -76,12 +76,18 @@ pub enum EventKind {
         from: Principal,
         amount: u64,
     },
-
     CustodianAdded {
         custodian: Principal,
     },
     CustodianRemoved {
         custodian: Principal,
+    },
+    CanisterCreated {
+        canister: Principal,
+    },
+    CanisterCalled {
+        canister: Principal,
+        method_name: String,
     },
 }
 
