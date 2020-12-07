@@ -1,4 +1,4 @@
-use candid::CandidType;
+use ic_cdk::export::candid::CandidType;
 use ic_cdk::*;
 use ic_cdk_macros::*;
 use ic_types::principal::Principal;
@@ -106,7 +106,8 @@ fn deauthorize(custodian: Principal) {
 
 mod wallet {
     use crate::{events, is_custodian};
-    use candid::CandidType;
+    use ic_cdk::export::candid::types::{Field, Label, Serializer, Type, TypeId};
+    use ic_cdk::export::candid::CandidType;
     use ic_cdk::{api, caller};
     use ic_cdk_macros::*;
     use ic_types::Principal;
@@ -255,21 +256,21 @@ mod wallet {
     /// implement CandidType trait (for now).
     /// TODO: reuse derive(CandidType) once the issue above is fixed.
     impl CandidType for CallResult {
-        fn id() -> candid::types::TypeId {
-            candid::types::TypeId::of::<Self>()
+        fn id() -> TypeId {
+            TypeId::of::<Self>()
         }
 
-        fn _ty() -> candid::types::Type {
-            candid::types::Type::Record(vec![
-                candid::types::Field {
-                    id: candid::types::Label::Named("return".to_owned()),
-                    ty: candid::types::Type::Vec(Box::new(candid::types::Type::Nat8))
-                }
-            ])
+        fn _ty() -> Type {
+            Type::Record(vec![Field {
+                id: Label::Named("return".to_owned()),
+                ty: Type::Vec(Box::new(Type::Nat8)),
+            }])
         }
 
-        fn idl_serialize<S>(&self, serializer: S) -> Result<(), S::Error> where
-            S: candid::types::Serializer {
+        fn idl_serialize<S>(&self, serializer: S) -> Result<(), S::Error>
+        where
+            S: Serializer,
+        {
             use ic_cdk::export::candid::types::Compound;
 
             let mut compound = serializer.serialize_struct()?;
