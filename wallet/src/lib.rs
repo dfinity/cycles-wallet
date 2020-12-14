@@ -4,11 +4,11 @@ use ic_cdk::*;
 use ic_cdk_macros::*;
 use serde::Deserialize;
 
-mod custodians;
+mod address;
 mod events;
 
+use crate::address::{AddressBook, AddressEntry, Role};
 use crate::events::EventBuffer;
-use custodians::CustodianSet;
 use events::{record, Event, EventKind};
 
 // TODO: add this as argument to init when dfx 0.7 gets out.
@@ -23,24 +23,21 @@ fn init() {
     storage::get_mut::<events::EventBuffer>().resize(32);
 
     let caller = caller();
-    set_controller(caller.clone());
-    authorize(caller);
+    add_controller(caller);
 }
 
 /// Until the stable storage works better in the ic-cdk, this does the job just fine.
 #[derive(CandidType, Deserialize)]
 struct StableStorage {
-    controller: Principal,
-    custodians: Vec<Principal>,
+    address_book: Vec<AddressEntry>,
     events: EventBuffer,
 }
 
 #[pre_upgrade]
 fn pre_upgrade() {
-    let custodians_set = storage::get::<CustodianSet>();
+    let address_book = storage::get::<AddressBook>();
     let stable = StableStorage {
-        controller: custodians_set.get_controller().clone(),
-        custodians: custodians_set.custodians().cloned().collect(),
+        address_book: address_book.iter().cloned().collect(),
         events: storage::get::<EventBuffer>().clone(),
     };
     storage::stable_save((stable,)).unwrap();
@@ -48,17 +45,31 @@ fn pre_upgrade() {
 
 #[post_upgrade]
 fn post_upgrade() {
-    let (storage,): (StableStorage,) = storage::stable_restore().unwrap();
-    let event_buffer = storage::get_mut::<events::EventBuffer>();
-    let custodians = storage::get_mut::<CustodianSet>();
+    if let Ok((storage,)) = storage::stable_restore::<(StableStorage,)>() {
+        let event_buffer = storage::get_mut::<events::EventBuffer>();
+        let address_book = storage::get_mut::<AddressBook>();
 
-    // Before cloning the buffer, we need to set the capacity properly.
-    event_buffer.resize(storage.events.capacity());
-    event_buffer.clone_from(&storage.events);
+        // Before cloning the buffer, we need to set the capacity properly.
+        event_buffer.resize(storage.events.capacity());
+        event_buffer.clone_from(&storage.events);
 
-    custodians.set_controller(storage.controller);
-    for c in storage.custodians {
-        custodians.add_custodian(c);
+        for entry in storage.address_book.into_iter() {
+            address_book.add(entry)
+        }
+    } else {
+        init()
+    }
+}
+
+/***************************************************************************************************
+ * Frontend
+ **************************************************************************************************/
+#[query]
+fn retrieve(path: String) -> &'static [u8] {
+    if path == "index.js" {
+        include_bytes!("../../dist/index.js")
+    } else {
+        trap(&format!(r#"Cannot find "{}" in the assets."#, path));
     }
 }
 
@@ -67,15 +78,24 @@ fn post_upgrade() {
  **************************************************************************************************/
 
 /// Get the controller of this canister.
-#[query]
-fn get_controller() -> &'static Principal {
-    storage::get_mut::<CustodianSet>().get_controller()
+#[query(guard = "is_custodian")]
+fn get_controllers() -> Vec<&'static Principal> {
+    storage::get_mut::<AddressBook>()
+        .controllers()
+        .map(|e| &e.id)
+        .collect()
 }
 
 /// Set the controller (transfer of ownership).
 #[update(guard = "is_controller")]
-fn set_controller(controller: Principal) {
-    storage::get_mut::<CustodianSet>().set_controller(controller)
+fn add_controller(controller: Principal) {
+    storage::get_mut::<AddressBook>().add(AddressEntry::create(controller, None, Role::Controller))
+}
+
+/// Remove the controller.
+#[update(guard = "is_controller")]
+fn remove_controller(controller: Principal) {
+    storage::get_mut::<AddressBook>().remove(&controller)
 }
 
 /***************************************************************************************************
@@ -83,24 +103,29 @@ fn set_controller(controller: Principal) {
  **************************************************************************************************/
 
 /// Get the custodians of this canister.
-#[query]
-fn get_custodians() -> &'static Vec<Principal> {
-    storage::get::<Vec<Principal>>()
+#[query(guard = "is_custodian")]
+fn get_custodians() -> Vec<&'static Principal> {
+    storage::get::<AddressBook>()
+        .custodians()
+        .map(|e| &e.id)
+        .collect()
 }
 
 /// Authorize a custodian.
 #[update(guard = "is_controller")]
 fn authorize(custodian: Principal) {
-    let custodians = storage::get_mut::<CustodianSet>();
-    custodians.add_custodian(custodian.clone());
+    storage::get_mut::<AddressBook>().add(AddressEntry::create(
+        custodian.clone(),
+        None,
+        Role::Custodian,
+    ));
     record(EventKind::CustodianAdded { custodian })
 }
 
 /// Deauthorize a custodian.
 #[update(guard = "is_controller")]
 fn deauthorize(custodian: Principal) {
-    let custodians = storage::get_mut::<CustodianSet>();
-    custodians.remove_custodian(custodian.clone());
+    storage::get_mut::<AddressBook>().remove(&custodian);
     record(EventKind::CustodianRemoved { custodian })
 }
 
@@ -133,7 +158,7 @@ mod wallet {
     }
 
     /// Return the cycle balance of this canister.
-    #[query(name = "wallet_balance")]
+    #[query(guard = "is_custodian", name = "wallet_balance")]
     fn balance() -> BalanceResult {
         BalanceResult {
             amount: api::canister_balance() as u64,
@@ -141,7 +166,7 @@ mod wallet {
     }
 
     /// Send cycles to another canister.
-    #[update(name = "wallet_send")]
+    #[update(guard = "is_custodian", name = "wallet_send")]
     async fn send(args: SendCyclesArgs) {
         let _: () = api::call::call_with_payment(
             args.canister.clone(),
@@ -307,11 +332,31 @@ mod wallet {
 }
 
 /***************************************************************************************************
+ * Address Book
+ **************************************************************************************************/
+
+// Address book
+#[update]
+fn add_address(address: AddressEntry) -> () {
+    storage::get_mut::<AddressBook>().add(address)
+}
+
+#[query]
+fn list_address() -> Vec<&'static AddressEntry> {
+    storage::get::<AddressBook>().iter().collect()
+}
+
+#[update]
+fn remove_address(address: Principal) -> () {
+    storage::get_mut::<AddressBook>().remove(&address)
+}
+
+/***************************************************************************************************
  * Events
  **************************************************************************************************/
 
 /// Return the recent events observed by this canister.
-#[query]
+#[query(guard = "is_custodian")]
 fn get_events() -> &'static [Event] {
     events::get_events()
 }
@@ -322,7 +367,7 @@ fn get_events() -> &'static [Event] {
 
 /// Check if the caller is the initializer.
 fn is_controller() -> Result<(), String> {
-    if storage::get::<CustodianSet>().is_controller(&caller()) {
+    if storage::get::<AddressBook>().is_controller(&caller()) {
         Ok(())
     } else {
         Err("Only the controller can call this method.".to_string())
@@ -331,7 +376,7 @@ fn is_controller() -> Result<(), String> {
 
 /// Check if the caller is a custodian.
 fn is_custodian() -> Result<(), String> {
-    if storage::get::<CustodianSet>().is_custodian(&caller()) {
+    if storage::get::<AddressBook>().is_custodian(&caller()) {
         Ok(())
     } else {
         Err("Only a custodian can call this method.".to_string())

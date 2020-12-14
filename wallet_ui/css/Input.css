@@ -15,11 +15,6 @@ input {
   font-size: 24px;
 }
 
-label {
-  display: block;
-  margin-bottom: 5px;
-}
-
 output {
   border: 2px solid white;
   border-radius: 10px;

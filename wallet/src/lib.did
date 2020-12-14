@@ -22,16 +22,30 @@ type EventKind = variant {
   }
 };
 
-type event = record {
+type Event = record {
   id: nat32;
   timestamp: nat64;
   kind: EventKind;
 };
 
+type role = variant {
+  Contact;
+  Custodian;
+  Controller;
+};
+
+// An entry in the address book. It must have an ID and a role.
+type AddressEntry = record {
+  id: principal;
+  name: opt text;
+  role: role;
+};
+
 service : {
   // Controller Management
-  get_controller: () -> (principal) query;
-  set_controller: (principal) -> ();
+  get_controllers: () -> (vec principal) query;
+  add_controller: (principal) -> ();
+  remove_controller: (principal) -> ();
 
   // Custodian Management
   get_custodians: () -> (vec principal) query;
@@ -57,6 +71,11 @@ service : {
     cycles: nat64;
   }) -> (record { return: blob });
 
+  // Address book
+  add_address: (address: AddressEntry) -> ();
+  list_address: () -> (vec AddressEntry);
+  remove_address: (address: principal) -> ();
+
   // Events
-  get_events: () -> (vec event) query;
+  get_events: () -> (vec Event) query;
 }

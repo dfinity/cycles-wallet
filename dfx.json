@@ -1,37 +1,16 @@
 {
   "canisters": {
-    "alice": {
-      "build": "wallet/build.sh",
-      "candid": "wallet/src/lib.did",
-      "type": "custom",
-      "wasm": "wallet/target/wasm32-unknown-unknown/release/wallet-opt.wasm"
-    },
-    "bob": {
-      "build": "wallet/build.sh",
-      "candid": "wallet/src/lib.did",
-      "type": "custom",
-      "wasm": "wallet/target/wasm32-unknown-unknown/release/wallet-opt.wasm"
-    },
     "wallet": {
       "build": "wallet/build.sh",
       "candid": "wallet/src/lib.did",
       "type": "custom",
       "wasm": "wallet/target/wasm32-unknown-unknown/release/wallet-opt.wasm"
-    },
-    "wallet_ui": {
-      "dependencies": [
-        "wallet"
-      ],
-      "frontend": {
-        "entrypoint": "wallet_ui/index.tsx"
-      },
-      "type": "assets"
     }
   },
   "dfx": "0.6.16",
   "networks": {
     "local": {
-      "bind": "0.0.0.0:8080",
+      "bind": "0.0.0.0:8000",
       "type": "ephemeral"
     }
   },
