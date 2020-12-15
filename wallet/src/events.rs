@@ -1,3 +1,4 @@
+use crate::address::Role;
 use candid::CandidType;
 use ic_cdk::{api, storage};
 use ic_types::Principal;
@@ -76,11 +77,13 @@ pub enum EventKind {
         from: Principal,
         amount: u64,
     },
-    CustodianAdded {
-        custodian: Principal,
+    AddressAdded {
+        id: Principal,
+        name: Option<String>,
+        role: Role,
     },
-    CustodianRemoved {
-        custodian: Principal,
+    AddressRemoved {
+        id: Principal,
     },
     CanisterCreated {
         canister: Principal,

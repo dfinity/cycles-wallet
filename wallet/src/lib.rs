@@ -20,10 +20,8 @@ use events::{record, Event, EventKind};
 /// Initialize this canister.
 #[init]
 fn init() {
-    storage::get_mut::<events::EventBuffer>().resize(32);
-
-    let caller = caller();
-    add_controller(caller);
+    storage::get_mut::<events::EventBuffer>().resize(128);
+    add_address(AddressEntry::new(caller(), None, Role::Controller));
 }
 
 /// Until the stable storage works better in the ic-cdk, this does the job just fine.
@@ -54,7 +52,7 @@ fn post_upgrade() {
         event_buffer.clone_from(&storage.events);
 
         for entry in storage.address_book.into_iter() {
-            address_book.add(entry)
+            address_book.insert(entry)
         }
     } else {
         init()
@@ -89,13 +87,18 @@ fn get_controllers() -> Vec<&'static Principal> {
 /// Set the controller (transfer of ownership).
 #[update(guard = "is_controller")]
 fn add_controller(controller: Principal) {
-    storage::get_mut::<AddressBook>().add(AddressEntry::create(controller, None, Role::Controller))
+    add_address(AddressEntry::new(controller, None, Role::Controller));
 }
 
-/// Remove the controller.
+/// Remove a controller. This is equivalent to moving the role to a regular user.
 #[update(guard = "is_controller")]
 fn remove_controller(controller: Principal) {
-    storage::get_mut::<AddressBook>().remove(&controller)
+    let book = storage::get_mut::<AddressBook>();
+
+    if let Some(mut entry) = book.take(&controller) {
+        entry.role = Role::Contact;
+        book.insert(entry);
+    }
 }
 
 /***************************************************************************************************
@@ -114,19 +117,13 @@ fn get_custodians() -> Vec<&'static Principal> {
 /// Authorize a custodian.
 #[update(guard = "is_controller")]
 fn authorize(custodian: Principal) {
-    storage::get_mut::<AddressBook>().add(AddressEntry::create(
-        custodian.clone(),
-        None,
-        Role::Custodian,
-    ));
-    record(EventKind::CustodianAdded { custodian })
+    add_address(AddressEntry::new(custodian.clone(), None, Role::Custodian));
 }
 
 /// Deauthorize a custodian.
 #[update(guard = "is_controller")]
 fn deauthorize(custodian: Principal) {
-    storage::get_mut::<AddressBook>().remove(&custodian);
-    record(EventKind::CustodianRemoved { custodian })
+    remove_address(custodian)
 }
 
 mod wallet {
@@ -338,7 +335,12 @@ mod wallet {
 // Address book
 #[update]
 fn add_address(address: AddressEntry) -> () {
-    storage::get_mut::<AddressBook>().add(address)
+    storage::get_mut::<AddressBook>().insert(address);
+    record(EventKind::AddressAdded {
+        id: address.id.clone(),
+        name: address.name.clone(),
+        role: address.role.clone(),
+    })
 }
 
 #[query]
@@ -348,7 +350,10 @@ fn list_address() -> Vec<&'static AddressEntry> {
 
 #[update]
 fn remove_address(address: Principal) -> () {
-    storage::get_mut::<AddressBook>().remove(&address)
+    storage::get_mut::<AddressBook>().remove(&address);
+    record(EventKind::AddressRemoved {
+        id: address.id.clone(),
+    })
 }
 
 /***************************************************************************************************

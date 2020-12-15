@@ -11,6 +11,7 @@ export function CycleBalance() {
   const history = useHistory();
 
   function refreshBalance() {
+    console.log("REFERESH !!! ! BTHE NALNANCE!!!");
     Wallet.wallet_balance().then(
       ({ amount }) => setCycles(amount.toNumber()),
       () => history.push("/authorize")

@@ -42,6 +42,10 @@ export function Authorize() {
             </output>
           </div>
         </p>
+        <p>
+          After this step has been performed, you can refresh this page (or it
+          will refresh automatically after a while).
+        </p>
       </section>
     );
   } else if (principal && principal.isAnonymous()) {

@@ -39,7 +39,7 @@ impl PartialEq for AddressEntry {
 }
 
 impl AddressEntry {
-    pub fn create(id: Principal, name: Option<String>, role: Role) -> AddressEntry {
+    pub fn new(id: Principal, name: Option<String>, role: Role) -> AddressEntry {
         AddressEntry { id, name, role }
     }
 
@@ -58,7 +58,7 @@ pub struct AddressBook(BTreeSet<AddressEntry>);
 
 impl AddressBook {
     #[inline]
-    pub fn add(&mut self, entry: AddressEntry) {
+    pub fn insert(&mut self, entry: AddressEntry) {
         if let Some(mut existing) = self.0.take(&entry) {
             if entry.name.is_some() {
                 existing.name = entry.name;
@@ -86,11 +86,15 @@ impl AddressBook {
     #[inline]
     pub fn remove(&mut self, principal: &Principal) {
         // Because we order by ID, we can create entries and remove them.
-        self.0.remove(&AddressEntry::create(
-            principal.clone(),
-            None,
-            Role::Contact,
-        ));
+        self.0
+            .remove(&AddressEntry::new(principal.clone(), None, Role::Contact));
+    }
+
+    #[inline]
+    pub fn take(&mut self, principal: &Principal) -> Option<AddressEntry> {
+        // Because we order by ID, we can create entries and remove them.
+        self.0
+            .take(&AddressEntry::new(principal.clone(), None, Role::Contact))
     }
 
     #[inline]
@@ -133,12 +137,12 @@ mod tests {
     #[test]
     fn can_update_existing() {
         let mut book: AddressBook = Default::default();
-        book.add(AddressEntry::create(
+        book.insert(AddressEntry::new(
             Principal::anonymous(),
             None,
             Role::Contact,
         ));
-        book.add(AddressEntry::create(
+        book.insert(AddressEntry::new(
             Principal::anonymous(),
             None,
             Role::Controller,
