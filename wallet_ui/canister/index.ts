@@ -14,11 +14,22 @@ interface ActorInterface {
 }
 
 export const Wallet: ActorSubclass<ActorInterface> = (() => {
-  const canister = window.ic.canister;
-  if (canister) {
-    const canisterId = Actor.canisterIdOf(canister);
-    return Actor.createActor<ActorInterface>(factory, { canisterId });
+  const params = new URLSearchParams(location.search);
+
+  let walletId: Principal | null = null;
+  const maybeWalletId = params.get("wallet");
+  if (maybeWalletId) {
+    walletId = Principal.fromText(maybeWalletId);
   } else {
-    throw new Error("Need to have a canister set in bootstrap.");
+    const maybeCanister = window.ic.canister;
+    if (maybeCanister) {
+      walletId = Actor.canisterIdOf(maybeCanister);
+    }
+  }
+
+  if (!walletId) {
+    throw new Error("Need to have a wallet ID.");
+  } else {
+    return Actor.createActor<ActorInterface>(factory, { canisterId: walletId });
   }
 })();

@@ -1,10 +1,13 @@
+const TerserPlugin = require("terser-webpack-plugin");
 const path = require("path");
+
+const dist = path.join(__dirname, "dist");
 
 module.exports = {
   entry: path.join(__dirname, "wallet_ui/index.tsx"),
   output: {
     filename: "index.js",
-    path: path.join(__dirname, "dist"),
+    path: dist,
   },
   mode: "production",
   module: {
@@ -38,5 +41,23 @@ module.exports = {
       fs: false,
       path: false,
     },
+  },
+  optimization: {
+    // minimize: true,
+    minimizer: [
+      new TerserPlugin({
+        parallel: true,
+        terserOptions: {
+          ecma: 8,
+          // comments: false,
+          // https://github.com/webpack-contrib/terser-webpack-plugin#terseroptions
+        },
+      }),
+    ],
+  },
+  devServer: {
+    contentBase: dist,
+    compress: true,
+    port: 9000,
   },
 };

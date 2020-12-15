@@ -324,9 +324,7 @@ fn list_address() -> Vec<&'static AddressEntry> {
 #[update]
 fn remove_address(address: Principal) -> () {
     storage::get_mut::<AddressBook>().remove(&address);
-    record(EventKind::AddressRemoved {
-        id: address.id.clone(),
-    })
+    record(EventKind::AddressRemoved { id: address })
 }
 
 /***************************************************************************************************

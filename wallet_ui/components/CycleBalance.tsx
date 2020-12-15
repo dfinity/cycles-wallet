@@ -4,14 +4,13 @@ import ReactCountUp from "react-countup";
 import { Wallet } from "../canister";
 import "../css/CycleBalance.css";
 
-const FREQUENCY_IN_SECONDS = 5;
+const CHECK_BALANCE_FREQUENCY_IN_SECONDS = 5;
 
 export function CycleBalance() {
   const [cycles, setCycles] = useState<number | undefined>(undefined);
   const history = useHistory();
 
   function refreshBalance() {
-    console.log("REFERESH !!! ! BTHE NALNANCE!!!");
     Wallet.wallet_balance().then(
       ({ amount }) => setCycles(amount.toNumber()),
       () => history.push("/authorize")
@@ -19,7 +18,10 @@ export function CycleBalance() {
   }
 
   useEffect(() => {
-    const iv = setInterval(refreshBalance, FREQUENCY_IN_SECONDS * 1000);
+    const iv = setInterval(
+      refreshBalance,
+      CHECK_BALANCE_FREQUENCY_IN_SECONDS * 1000
+    );
     refreshBalance();
     return () => clearInterval(iv);
   });

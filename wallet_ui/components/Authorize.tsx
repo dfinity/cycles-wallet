@@ -1,23 +1,33 @@
 import React, { useEffect, useState } from "react";
 import { Actor, GlobalInternetComputer, Principal } from "@dfinity/agent";
-import "../css/Input.css";
-import "../css/Page.css";
 import { Wallet } from "../canister";
 import { useHistory } from "react-router";
 
 declare const window: GlobalInternetComputer;
 
+const CHECK_ACCESS_FREQUENCY_IN_SECONDS = 15;
+
 export function Authorize() {
   const [principal, setPrincipal] = useState<Principal | null>(null);
   const history = useHistory();
 
-  useEffect(() => {
-    window.ic.agent.getPrincipal().then(setPrincipal);
+  function checkAccess() {
     Wallet.wallet_balance().then(
       () => history.push("/"),
       () => {}
     );
-  });
+  }
+
+  useEffect(() => {
+    window.ic.agent.getPrincipal().then(setPrincipal);
+    checkAccess();
+
+    const id = setInterval(
+      checkAccess,
+      CHECK_ACCESS_FREQUENCY_IN_SECONDS * 1000
+    );
+    return () => clearInterval(id);
+  }, []);
 
   if (principal && !principal.isAnonymous()) {
     const canisterId =
