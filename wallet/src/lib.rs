@@ -128,7 +128,6 @@ fn deauthorize(custodian: Principal) {
 
 mod wallet {
     use crate::{events, is_custodian};
-    use ic_cdk::export::candid::types::{Field, Label, Serializer, Type, TypeId};
     use ic_cdk::export::candid::CandidType;
     use ic_cdk::export::Principal;
     use ic_cdk::{api, caller};
@@ -269,35 +268,9 @@ mod wallet {
         cycles: u64,
     }
 
-    // #[derive(CandidType)]
+    #[derive(CandidType)]
     struct CallResult {
         r#return: Vec<u8>,
-    }
-
-    /// Due to https://github.com/dfinity/candid/issues/148 we need to manually
-    /// implement CandidType trait (for now).
-    /// TODO: reuse derive(CandidType) once the issue above is fixed.
-    impl CandidType for CallResult {
-        fn id() -> TypeId {
-            TypeId::of::<Self>()
-        }
-
-        fn _ty() -> Type {
-            Type::Record(vec![Field {
-                id: Label::Named("return".to_owned()),
-                ty: Type::Vec(Box::new(Type::Nat8)),
-            }])
-        }
-
-        fn idl_serialize<S>(&self, serializer: S) -> Result<(), S::Error>
-        where
-            S: Serializer,
-        {
-            use ic_cdk::export::candid::types::Compound;
-
-            let mut compound = serializer.serialize_struct()?;
-            compound.serialize_element(&self.r#return)
-        }
     }
 
     /// Forward a call to another canister.
@@ -335,11 +308,11 @@ mod wallet {
 // Address book
 #[update]
 fn add_address(address: AddressEntry) -> () {
-    storage::get_mut::<AddressBook>().insert(address);
+    storage::get_mut::<AddressBook>().insert(address.clone());
     record(EventKind::AddressAdded {
-        id: address.id.clone(),
-        name: address.name.clone(),
-        role: address.role.clone(),
+        id: address.id,
+        name: address.name,
+        role: address.role,
     })
 }
 
