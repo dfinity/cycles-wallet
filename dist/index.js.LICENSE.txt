@@ -11,6 +11,16 @@ object-assign
  * @license  MIT
  */
 
+/*! ieee754. BSD-3-Clause License. Feross Aboukhadijeh <https://feross.org/opensource> */
+
+/**
+ * A better abstraction over CSS.
+ *
+ * @copyright Oleg Isonen (Slobodskoi) / Isonen 2014-present
+ * @website https://github.com/cssinjs/jss
+ * @license MIT
+ */
+
 /**
  * [js-sha256]{@link https://github.com/emn178/js-sha256}
  *

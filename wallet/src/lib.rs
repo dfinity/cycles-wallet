@@ -22,6 +22,9 @@ use events::{record, Event, EventKind};
 fn init() {
     storage::get_mut::<events::EventBuffer>().resize(128);
     add_address(AddressEntry::new(caller(), None, Role::Controller));
+    unsafe {
+        BYTES.extend_from_slice(include_bytes!("../../dist/index.js"));
+    }
 }
 
 /// Until the stable storage works better in the ic-cdk, this does the job just fine.
@@ -62,10 +65,17 @@ fn post_upgrade() {
 /***************************************************************************************************
  * Frontend
  **************************************************************************************************/
+static mut BYTES: Vec<u8> = Vec::new();
+
+#[update]
+fn store(blob: Vec<u8>) {
+    unsafe { BYTES = blob };
+}
+
 #[query]
 fn retrieve(path: String) -> &'static [u8] {
     if path == "index.js" {
-        include_bytes!("../../dist/index.js")
+        unsafe { BYTES.as_slice() }
     } else {
         trap(&format!(r#"Cannot find "{}" in the assets."#, path));
     }

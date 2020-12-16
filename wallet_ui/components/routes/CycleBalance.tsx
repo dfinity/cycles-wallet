@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from "react";
 import { useHistory } from "react-router";
 import ReactCountUp from "react-countup";
-import { Wallet } from "../canister";
-import "../css/CycleBalance.css";
+import { Wallet } from "../../canister";
+import "../../css/CycleBalance.css";
 
 const CHECK_BALANCE_FREQUENCY_IN_SECONDS = 5;
 

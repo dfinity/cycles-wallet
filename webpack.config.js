@@ -42,22 +42,4 @@ module.exports = {
       path: false,
     },
   },
-  optimization: {
-    // minimize: true,
-    minimizer: [
-      new TerserPlugin({
-        parallel: true,
-        terserOptions: {
-          ecma: 8,
-          // comments: false,
-          // https://github.com/webpack-contrib/terser-webpack-plugin#terseroptions
-        },
-      }),
-    ],
-  },
-  devServer: {
-    contentBase: dist,
-    compress: true,
-    port: 9000,
-  },
 };
