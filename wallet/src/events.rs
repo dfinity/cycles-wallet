@@ -3,68 +3,34 @@ use candid::CandidType;
 use ic_cdk::{api, storage};
 use ic_types::Principal;
 use serde::Deserialize;
+use std::cmp::min;
 
 #[derive(CandidType, Clone, Default, Deserialize)]
 pub struct EventBuffer {
-    next_index: usize,
     events: Vec<Event>,
 }
 
 impl EventBuffer {
     #[inline]
-    pub fn resize(&mut self, new_capacity: usize) {
-        // If previous vector is empty, just replace it with a new one.
-        if self.events.is_empty() {
-            self.next_index = 0;
-            self.events = Vec::with_capacity(new_capacity);
-        } else {
-            // Swap vectors and copy old events.
-            let old_events = self.events.as_slice();
-            let index = self.next_index;
-            let mut new_events: Vec<Event> = Vec::with_capacity(new_capacity);
-            for event in &old_events[index..old_events.len()] {
-                if new_events.len() > new_capacity {
-                    break;
-                }
-                new_events.push(event.clone());
-            }
-            for event in &old_events[..index] {
-                if new_events.len() > new_capacity {
-                    break;
-                }
-                new_events.push(event.clone());
-            }
-            self.next_index = new_events.len();
-            self.events = new_events;
-        }
+    pub fn clear(&mut self) {
+        self.events.clear();
     }
 
     #[inline]
-    pub fn add(&mut self, event: Event) {
-        if self.events.capacity() == 0 {
-            return;
-        }
-
-        let i = self.next_index;
-        let next = (i + 1) % self.events.capacity();
-        self.next_index = next;
-
-        if i >= self.events.len() {
-            self.events.push(event);
-        } else {
-            self.events[i] = event;
-        }
+    pub fn push(&mut self, event: Event) {
+        self.events.push(event);
     }
 
     #[inline]
-    pub fn capacity(&self) -> usize {
-        self.events.capacity()
+    pub fn len(&self) -> u32 {
+        self.events.len() as u32
+    }
+
+    #[inline]
+    pub fn as_slice(&self) -> &[Event] {
+        self.events.as_slice()
     }
 }
-
-/// The type of an event identifier.
-#[derive(Default)]
-struct NextUniqueId(u32);
 
 /// The type of an event in the event logs.
 #[derive(CandidType, Clone, Deserialize)]
@@ -87,10 +53,12 @@ pub enum EventKind {
     },
     CanisterCreated {
         canister: Principal,
+        cycles: u64,
     },
     CanisterCalled {
         canister: Principal,
         method_name: String,
+        cycles: u64,
     },
 }
 
@@ -101,27 +69,27 @@ pub struct Event {
     pub kind: EventKind,
 }
 
-impl Event {
-    fn new(kind: EventKind) -> Self {
-        let id = storage::get_mut::<NextUniqueId>();
-        id.0 += 1;
-
-        Self {
-            id: id.0,
-            timestamp: api::time() as u64,
-            kind,
-        }
-    }
-}
-
 /// Record an event.
 pub fn record(kind: EventKind) {
     let buffer = storage::get_mut::<EventBuffer>();
-    let event = Event::new(kind);
-    buffer.add(event);
+    buffer.push(Event {
+        id: buffer.len(),
+        timestamp: api::time() as u64,
+        kind,
+    });
 }
 
-pub fn get_events() -> &'static [Event] {
+pub fn get_events(from: Option<u32>, to: Option<u32>) -> &'static [Event] {
     let buffer = storage::get::<EventBuffer>();
-    buffer.events.as_slice()
+
+    let from = from.unwrap_or_else(|| {
+        if buffer.len() <= 20 {
+            0
+        } else {
+            buffer.len() - 20
+        }
+    }) as usize;
+    let to = min(buffer.len() - 1, to.unwrap_or(u32::MAX)) as usize;
+
+    &buffer.as_slice()[from..to]
 }

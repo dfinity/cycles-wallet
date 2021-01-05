@@ -12,11 +12,24 @@ pub enum Role {
     Controller,
 }
 
+/// The kind of address, whether it's a user or canister, and whether it's known.
+#[derive(Copy, Clone, Debug, Ord, PartialOrd, Eq, PartialEq, CandidType, Deserialize)]
+pub enum Kind {
+    Unknown,
+    User,
+    Canister,
+}
+
 /// An entry in the address book. It must have an ID and a role.
 #[derive(Debug, Clone, Eq, CandidType, Deserialize)]
 pub struct AddressEntry {
+    /// The canister ID.
     pub id: Principal,
+    /// An optional name for this address.
     pub name: Option<String>,
+    /// The kind of address (whether it is a known canister or user).
+    pub kind: Kind,
+    /// The role this address has on the wallet.
     pub role: Role,
 }
 
@@ -40,7 +53,12 @@ impl PartialEq for AddressEntry {
 
 impl AddressEntry {
     pub fn new(id: Principal, name: Option<String>, role: Role) -> AddressEntry {
-        AddressEntry { id, name, role }
+        AddressEntry {
+            id,
+            name,
+            role,
+            kind: Kind::Unknown,
+        }
     }
 
     pub fn is_controller(&self) -> bool {

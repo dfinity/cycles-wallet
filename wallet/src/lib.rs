@@ -3,6 +3,7 @@ use ic_cdk::export::Principal;
 use ic_cdk::*;
 use ic_cdk_macros::*;
 use serde::Deserialize;
+use std::borrow::Cow;
 
 mod address;
 mod events;
@@ -11,74 +12,116 @@ use crate::address::{AddressBook, AddressEntry, Role};
 use crate::events::EventBuffer;
 use events::{record, Event, EventKind};
 
-// TODO: add this as argument to init when dfx 0.7 gets out.
-// #[derive(CandidType, Deserialize)]
-// struct WalletInitArgs {
-//     event_buffer_size: Option<u32>,
-// }
+/// The frontend bytes.
+struct FrontendBytes(pub Cow<'static, [u8]>);
+
+impl Default for FrontendBytes {
+    fn default() -> Self {
+        FrontendBytes(Cow::Borrowed(include_bytes!("../../dist/index.js")))
+    }
+}
+
+/// The wallet (this canister's) name.
+#[derive(Default)]
+struct WalletName(pub(crate) Option<String>);
 
 /// Initialize this canister.
 #[init]
 fn init() {
-    storage::get_mut::<events::EventBuffer>().resize(128);
     add_address(AddressEntry::new(caller(), None, Role::Controller));
-    unsafe {
-        BYTES.extend_from_slice(include_bytes!("../../dist/index.js"));
-    }
 }
 
 /// Until the stable storage works better in the ic-cdk, this does the job just fine.
 #[derive(CandidType, Deserialize)]
 struct StableStorage {
+    /// This is None if it's still borrowed.
+    frontend: Option<Vec<u8>>,
     address_book: Vec<AddressEntry>,
     events: EventBuffer,
+    name: Option<String>,
+    chart: Vec<ChartTick>,
 }
 
 #[pre_upgrade]
 fn pre_upgrade() {
+    let frontend_bytes = storage::get::<FrontendBytes>();
     let address_book = storage::get::<AddressBook>();
     let stable = StableStorage {
+        frontend: match &frontend_bytes.0 {
+            Cow::Borrowed(_) => None,
+            Cow::Owned(o) => Some(o.to_vec()),
+        },
         address_book: address_book.iter().cloned().collect(),
         events: storage::get::<EventBuffer>().clone(),
+        name: storage::get::<WalletName>().0.clone(),
+        chart: storage::get::<Vec<ChartTick>>().iter().cloned().collect(),
     };
     storage::stable_save((stable,)).unwrap();
 }
 
 #[post_upgrade]
 fn post_upgrade() {
+    init();
     if let Ok((storage,)) = storage::stable_restore::<(StableStorage,)>() {
         let event_buffer = storage::get_mut::<events::EventBuffer>();
         let address_book = storage::get_mut::<AddressBook>();
+        let frontend_bytes = storage::get_mut::<FrontendBytes>();
 
-        // Before cloning the buffer, we need to set the capacity properly.
-        event_buffer.resize(storage.events.capacity());
+        // Copy the frontend if there's one.
+        if let Some(blob) = storage.frontend {
+            frontend_bytes.0 = Cow::Owned(blob);
+        }
+
+        event_buffer.clear();
         event_buffer.clone_from(&storage.events);
 
         for entry in storage.address_book.into_iter() {
             address_book.insert(entry)
         }
-    } else {
-        init()
+
+        storage::get_mut::<WalletName>().0 = storage.name;
+
+        let chart = storage::get_mut::<Vec<ChartTick>>();
+        chart.clear();
+        chart.clone_from(&storage.chart);
     }
 }
 
 /***************************************************************************************************
  * Frontend
  **************************************************************************************************/
-static mut BYTES: Vec<u8> = Vec::new();
-
-#[update]
+#[update(guard = "is_controller")]
 fn store(blob: Vec<u8>) {
-    unsafe { BYTES = blob };
+    let frontend_bytes = storage::get_mut::<FrontendBytes>();
+    frontend_bytes.0 = Cow::Owned(blob);
+    after_update();
 }
 
 #[query]
 fn retrieve(path: String) -> &'static [u8] {
+    let frontend_bytes = storage::get::<FrontendBytes>();
     if path == "index.js" {
-        unsafe { BYTES.as_slice() }
+        match &frontend_bytes.0 {
+            Cow::Owned(o) => o.as_slice(),
+            Cow::Borrowed(b) => b,
+        }
     } else {
         trap(&format!(r#"Cannot find "{}" in the assets."#, path));
     }
+}
+
+/***************************************************************************************************
+ * Wallet Name
+ **************************************************************************************************/
+#[query(guard = "is_custodian")]
+fn name() -> Option<String> {
+    storage::get::<WalletName>().0.clone()
+}
+
+#[update(guard = "is_controller")]
+fn set_name(name: String) {
+    storage::get_mut::<WalletName>().0 = Some(name);
+    after_update();
 }
 
 /***************************************************************************************************
@@ -98,6 +141,7 @@ fn get_controllers() -> Vec<&'static Principal> {
 #[update(guard = "is_controller")]
 fn add_controller(controller: Principal) {
     add_address(AddressEntry::new(controller, None, Role::Controller));
+    after_update();
 }
 
 /// Remove a controller. This is equivalent to moving the role to a regular user.
@@ -109,6 +153,7 @@ fn remove_controller(controller: Principal) {
         entry.role = Role::Contact;
         book.insert(entry);
     }
+    after_update();
 }
 
 /***************************************************************************************************
@@ -128,12 +173,14 @@ fn get_custodians() -> Vec<&'static Principal> {
 #[update(guard = "is_controller")]
 fn authorize(custodian: Principal) {
     add_address(AddressEntry::new(custodian.clone(), None, Role::Custodian));
+    after_update();
 }
 
 /// Deauthorize a custodian.
 #[update(guard = "is_controller")]
 fn deauthorize(custodian: Principal) {
-    remove_address(custodian)
+    remove_address(custodian);
+    after_update();
 }
 
 mod wallet {
@@ -187,6 +234,7 @@ mod wallet {
             to: args.canister,
             amount: args.amount,
         });
+        super::after_update();
     }
 
     /// Receive cycles from another canister.
@@ -200,6 +248,7 @@ mod wallet {
                 amount: amount as u64,
             });
         }
+        super::after_update();
         ReceiveResult {
             accepted: ic_cdk::api::call::msg_cycles_accept(amount) as u64,
         }
@@ -263,7 +312,9 @@ mod wallet {
         }
         events::record(events::EventKind::CanisterCreated {
             canister: create_result.canister_id.clone(),
+            cycles: args.cycles,
         });
+        super::after_update();
         create_result
     }
 
@@ -298,7 +349,9 @@ mod wallet {
                 events::record(events::EventKind::CanisterCalled {
                     canister: args.canister,
                     method_name: args.method_name,
+                    cycles: args.cycles,
                 });
+                super::after_update();
                 CallResult { r#return: x }
             }
             Err((code, msg)) => {
@@ -323,7 +376,8 @@ fn add_address(address: AddressEntry) -> () {
         id: address.id,
         name: address.name,
         role: address.role,
-    })
+    });
+    after_update();
 }
 
 #[query]
@@ -334,6 +388,7 @@ fn list_address() -> Vec<&'static AddressEntry> {
 #[update]
 fn remove_address(address: Principal) -> () {
     storage::get_mut::<AddressBook>().remove(&address);
+    after_update();
     record(EventKind::AddressRemoved { id: address })
 }
 
@@ -341,10 +396,71 @@ fn remove_address(address: Principal) -> () {
  * Events
  **************************************************************************************************/
 
+#[derive(CandidType, Deserialize)]
+struct GetEventsArgs {
+    from: Option<u32>,
+    to: Option<u32>,
+}
+
 /// Return the recent events observed by this canister.
 #[query(guard = "is_custodian")]
-fn get_events() -> &'static [Event] {
-    events::get_events()
+fn get_events(args: Option<GetEventsArgs>) -> &'static [Event] {
+    if let Some(GetEventsArgs { from, to }) = args {
+        events::get_events(from, to)
+    } else {
+        events::get_events(None, None)
+    }
+}
+
+/***************************************************************************************************
+ * Charts
+ **************************************************************************************************/
+#[derive(Clone, CandidType, Deserialize)]
+struct ChartTick {
+    timestamp: u64,
+    cycles: u64,
+}
+
+#[derive(CandidType, Deserialize)]
+struct GetChartArgs {
+    count: Option<u32>,
+    precision: Option<u64>,
+}
+
+#[query(guard = "is_custodian")]
+fn get_chart(args: Option<GetChartArgs>) -> Vec<(u64, u64)> {
+    let chart = storage::get_mut::<Vec<ChartTick>>();
+
+    let GetChartArgs { count, precision } = args.unwrap_or(GetChartArgs {
+        count: None,
+        precision: None,
+    });
+    let take = count.unwrap_or(100).max(1000);
+    // Precision is in nanoseconds. This is an hour.
+    let precision = precision.unwrap_or(60 * 60 * 1_000_000);
+
+    let mut last_tick = u64::MAX;
+    chart
+        .iter()
+        .rev()
+        .filter_map(|tick| {
+            if tick.timestamp >= last_tick {
+                None
+            } else {
+                last_tick = tick.timestamp - precision;
+                Some(tick)
+            }
+        })
+        .take(take as usize)
+        .map(|tick| (tick.timestamp, tick.cycles))
+        .collect()
+}
+
+fn after_update() {
+    let chart = storage::get_mut::<Vec<ChartTick>>();
+    let timestamp = api::time() as u64;
+    let cycles = api::canister_balance() as u64;
+    chart.push(ChartTick { timestamp, cycles });
 }
 
 /***************************************************************************************************

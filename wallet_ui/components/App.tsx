@@ -1,20 +1,11 @@
 import React, { useEffect, useState } from "react";
-import clsx from "clsx";
 import { makeStyles } from "@material-ui/core/styles";
 import CssBaseline from "@material-ui/core/CssBaseline";
-import Switch from "@material-ui/core/Switch";
-import Drawer from "@material-ui/core/Drawer";
-import Box from "@material-ui/core/Box";
-import AppBar from "@material-ui/core/AppBar";
-import Toolbar from "@material-ui/core/Toolbar";
-import List from "@material-ui/core/List";
+import { WalletAppBar } from "./WalletAppBar";
 import Typography from "@material-ui/core/Typography";
 import Divider from "@material-ui/core/Divider";
 import IconButton from "@material-ui/core/IconButton";
 import Badge from "@material-ui/core/Badge";
-import Container from "@material-ui/core/Container";
-import Grid from "@material-ui/core/Grid";
-import Paper from "@material-ui/core/Paper";
 import Link from "@material-ui/core/Link";
 import MenuIcon from "@material-ui/icons/Menu";
 import ChevronLeftIcon from "@material-ui/icons/ChevronLeft";
@@ -29,6 +20,7 @@ import {
   HashRouter as Router,
   Switch as RouterSwitch,
   Route,
+  useRouteMatch,
 } from "react-router-dom";
 
 // For Switch Theming
@@ -36,9 +28,10 @@ import { createMuiTheme, ThemeProvider } from "@material-ui/core/styles";
 
 // Routes
 import { Authorize } from "./routes/Authorize";
-import { CycleBalance } from "./routes/CycleBalance";
+import { Dashboard } from "./routes/Dashboard";
+import { useLocalStorage } from "../utils/hooks";
 
-function Copyright() {
+export function Copyright() {
   return (
     <Typography variant="body2" color="textSecondary" align="center">
       {"Copyright © "}
@@ -50,8 +43,6 @@ function Copyright() {
     </Typography>
   );
 }
-
-const drawerWidth = 240;
 
 const useStyles = makeStyles((theme) => ({
   root: {
@@ -66,13 +57,6 @@ const useStyles = makeStyles((theme) => ({
     justifyContent: "flex-end",
     padding: "0 8px",
     ...theme.mixins.toolbar,
-  },
-  appBar: {
-    zIndex: theme.zIndex.drawer + 1,
-    transition: theme.transitions.create(["width", "margin"], {
-      easing: theme.transitions.easing.sharp,
-      duration: theme.transitions.duration.leavingScreen,
-    }),
   },
   menuButton: {
     marginRight: 36,
@@ -144,8 +128,8 @@ function useDarkState(): [boolean, (newState?: boolean) => void] {
   ];
 }
 
-export default function Dashboard() {
-  const [open, setOpen] = useState(true);
+export default function App() {
+  const [open, setOpen] = useLocalStorage("app-menu-open", false);
   const [darkState, setDarkState] = useDarkState();
   const palletType = darkState ? "dark" : "light";
   const mainPrimaryColor = darkState ? orange[500] : lightBlue[500];
@@ -163,53 +147,27 @@ export default function Dashboard() {
   });
   const classes = useStyles();
 
-  const fixedHeightPaper = clsx(classes.paper, classes.fixedHeight);
-
   return (
     <ThemeProvider theme={darkTheme}>
       <Router>
         <div className={classes.root}>
           <CssBaseline />
-          <AppBar position="absolute" className={classes.appBar}>
-            <Toolbar className={classes.toolbar}>
-              <Typography
-                component="h1"
-                variant="h6"
-                color="inherit"
-                noWrap
-                className={classes.title}
-              >
-                Wallet
-              </Typography>
-              <Switch
-                checked={darkState}
-                onChange={() => setDarkState(!darkState)}
-              />
-              <IconButton color="inherit">
-                <Badge badgeContent={4} color="secondary">
-                  <NotificationsIcon />
-                </Badge>
-              </IconButton>
-            </Toolbar>
-          </AppBar>
+          <WalletAppBar
+            dark={darkState}
+            onDarkToggle={() => setDarkState(!darkState)}
+            open={open}
+            onOpenToggle={() => setOpen(!open)}
+          />
 
-          <main className={classes.content}>
-            <div className={classes.appBarSpacer} />
+          <RouterSwitch>
+            <Route path="/authorize">
+              <Authorize dark={darkState} />
+            </Route>
 
-            <RouterSwitch>
-              <Route path="/authorize">
-                <Authorize />
-              </Route>
-
-              <Route path="/">
-                <CycleBalance />
-              </Route>
-            </RouterSwitch>
-
-            <Box pt={4}>
-              <Copyright />
-            </Box>
-          </main>
+            <Route path="/">
+              <Dashboard open={open} onOpenToggle={() => setOpen(!open)} />
+            </Route>
+          </RouterSwitch>
         </div>
       </Router>
     </ThemeProvider>

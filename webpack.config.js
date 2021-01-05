@@ -12,7 +12,7 @@ module.exports = {
   mode: "production",
   module: {
     rules: [
-      { test: /\.[jt]sx?$/, loader: "ts-loader" },
+      { test: /\.(jsx|tsx?)$/, loader: "ts-loader" },
       {
         exclude: /node_modules/,
         test: /\.css$/,

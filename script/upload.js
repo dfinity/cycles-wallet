@@ -15,7 +15,7 @@ const actor = Dfn.Actor.createActor(
     IDL.Service({
       store: IDL.Func([IDL.Vec(IDL.Nat8)], [], []),
     }),
-  { agent, canisterId: "rrkah-fqaaa-aaaaa-aaaaq-cai" }
+  { agent, canisterId: "rrkah-fqaaa-aaaaa-aaaaq-cai" },
 );
 
 // Read the blob

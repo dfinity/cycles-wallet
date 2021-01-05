@@ -5,9 +5,21 @@
       "candid": "wallet/src/lib.did",
       "type": "custom",
       "wasm": "wallet/target/wasm32-unknown-unknown/release/wallet-opt.wasm"
+    },
+    "alice": {
+      "build": "wallet/build.sh",
+      "candid": "wallet/src/lib.did",
+      "type": "custom",
+      "wasm": "wallet/target/wasm32-unknown-unknown/release/wallet-opt.wasm"
     }
   },
   "networks": {
+    "ic": {
+      "providers": [
+        "https://gw.dfinity.network"
+      ],
+      "type": "persistent"
+    },
     "local": {
       "bind": "0.0.0.0:8000",
       "type": "ephemeral"
