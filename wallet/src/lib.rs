@@ -94,7 +94,7 @@ fn post_upgrade() {
 fn store(blob: Vec<u8>) {
     let frontend_bytes = storage::get_mut::<FrontendBytes>();
     frontend_bytes.0 = Cow::Owned(blob);
-    after_update();
+    update_chart();
 }
 
 #[query]
@@ -121,7 +121,7 @@ fn name() -> Option<String> {
 #[update(guard = "is_controller")]
 fn set_name(name: String) {
     storage::get_mut::<WalletName>().0 = Some(name);
-    after_update();
+    update_chart();
 }
 
 /***************************************************************************************************
@@ -141,7 +141,7 @@ fn get_controllers() -> Vec<&'static Principal> {
 #[update(guard = "is_controller")]
 fn add_controller(controller: Principal) {
     add_address(AddressEntry::new(controller, None, Role::Controller));
-    after_update();
+    update_chart();
 }
 
 /// Remove a controller. This is equivalent to moving the role to a regular user.
@@ -153,7 +153,7 @@ fn remove_controller(controller: Principal) {
         entry.role = Role::Contact;
         book.insert(entry);
     }
-    after_update();
+    update_chart();
 }
 
 /***************************************************************************************************
@@ -173,14 +173,14 @@ fn get_custodians() -> Vec<&'static Principal> {
 #[update(guard = "is_controller")]
 fn authorize(custodian: Principal) {
     add_address(AddressEntry::new(custodian.clone(), None, Role::Custodian));
-    after_update();
+    update_chart();
 }
 
 /// Deauthorize a custodian.
 #[update(guard = "is_controller")]
 fn deauthorize(custodian: Principal) {
     remove_address(custodian);
-    after_update();
+    update_chart();
 }
 
 mod wallet {
@@ -234,7 +234,7 @@ mod wallet {
             to: args.canister,
             amount: args.amount,
         });
-        super::after_update();
+        super::update_chart();
     }
 
     /// Receive cycles from another canister.
@@ -248,7 +248,7 @@ mod wallet {
                 amount: amount as u64,
             });
         }
-        super::after_update();
+        super::update_chart();
         ReceiveResult {
             accepted: ic_cdk::api::call::msg_cycles_accept(amount) as u64,
         }
@@ -314,7 +314,7 @@ mod wallet {
             canister: create_result.canister_id.clone(),
             cycles: args.cycles,
         });
-        super::after_update();
+        super::update_chart();
         create_result
     }
 
@@ -351,7 +351,7 @@ mod wallet {
                     method_name: args.method_name,
                     cycles: args.cycles,
                 });
-                super::after_update();
+                super::update_chart();
                 CallResult { r#return: x }
             }
             Err((code, msg)) => {
@@ -377,7 +377,7 @@ fn add_address(address: AddressEntry) -> () {
         name: address.name,
         role: address.role,
     });
-    after_update();
+    update_chart();
 }
 
 #[query]
@@ -388,7 +388,7 @@ fn list_address() -> Vec<&'static AddressEntry> {
 #[update]
 fn remove_address(address: Principal) -> () {
     storage::get_mut::<AddressBook>().remove(&address);
-    after_update();
+    update_chart();
     record(EventKind::AddressRemoved { id: address })
 }
 
@@ -456,7 +456,7 @@ fn get_chart(args: Option<GetChartArgs>) -> Vec<(u64, u64)> {
         .collect()
 }
 
-fn after_update() {
+fn update_chart() {
     let chart = storage::get_mut::<Vec<ChartTick>>();
     let timestamp = api::time() as u64;
     let cycles = api::canister_balance() as u64;

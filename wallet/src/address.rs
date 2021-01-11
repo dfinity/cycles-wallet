@@ -88,6 +88,9 @@ impl AddressBook {
             if entry.role > existing.role {
                 existing.role = entry.role;
             }
+            if !matches!(entry.kind, Kind::Unknown) {
+                existing.kind = entry.kind;
+            }
             self.0.insert(existing);
         } else {
             self.0.insert(entry);
