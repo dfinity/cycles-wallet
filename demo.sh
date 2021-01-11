@@ -17,14 +17,12 @@ dfx identity new id_charlie || true
 dfx --identity id_alice canister create alice
 dfx --identity id_bob canister create bob
 dfx --identity default canister create wallet
-dfx --identity default canister create wallet_ui
 
 dfx build
 
 dfx --identity id_alice canister install alice
 dfx --identity id_bob canister install bob
 dfx --identity default canister install wallet
-dfx --identity default canister install wallet_ui
 
 echo
 echo == Initial cycle balances for Alice and Bob.
