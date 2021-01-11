@@ -1,3 +1,24 @@
+/**
+ * This file is a HUGE proxy for the Wallet canister itself. It is used because the
+ * current SDK has limitations which makes it impossible to do "the right thing" in
+ * this event.
+ *
+ * . We use the same canister ID as the frontend as backend. In this case this means
+ *   we cannot just create a new wallet canister actor using the DID.js, as it doesn't
+ *   exist when the UI is compiled.
+ * . We use many types from the Agent, but in order to save on space, we should not
+ *   import directly from `@dfinity/agent`. Instead we import types and stub the runtime
+ *   implementation of those types to the ones in `window.ic`. This tricks the compiler
+ *   into using those classes at runtime, but still validating typescript using the
+ *   correct types.
+ *   This saves us about 150kb of frontend code already exists in bootstrap.
+ * . We want to memoize values as much as possible (like charts and events). Although
+ *   this is not yet implemented, this allows to have a single point of override when
+ *   we want to do so.
+ *
+ * It is thus very important that the frontend only uses this file when communicating
+ * with the wallet canister.
+ */
 import { convertIdlEventMap, Event, factory } from "./wallet.did";
 import type * as agent from "@dfinity/agent";
 

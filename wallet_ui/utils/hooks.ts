@@ -1,5 +1,13 @@
 import { useState } from "react";
 
+/**
+ * Use a local storage value that persists across reloads. This does NOT listen to
+ * changes using the storage event.
+ * Values must be JSON parseable and stringifiable.
+ *
+ * @param key The local storage key to use.
+ * @param initialValue The initial value to use.
+ */
 export function useLocalStorage<T>(key: string, initialValue: T) {
   // State to store our value
   // Pass initial state function to useState so logic is only executed once
@@ -11,7 +19,7 @@ export function useLocalStorage<T>(key: string, initialValue: T) {
       return item ? JSON.parse(item) : initialValue;
     } catch (error) {
       // If error also return initialValue
-      console.log(error);
+      console.error(error);
       return initialValue;
     }
   });
