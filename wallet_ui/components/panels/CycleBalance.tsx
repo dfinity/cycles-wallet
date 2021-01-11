@@ -61,64 +61,63 @@ export function CycleBalance() {
     }
   }, [refreshRate]);
 
-  if (cycles !== undefined) {
-    const suffix =
-      SUFFIX_LIST[Math.min(6, Math.floor(Math.log10(5000000000000) / 3))];
-    const ll = SUFFIX_LIST.indexOf(suffix);
-    const humanCycles = parseFloat((cycles / 10 ** (ll * 3)).toFixed(5));
-
-    return (
-      <React.Fragment>
-        <Typography component="h2" variant="h6" color="primary" gutterBottom>
-          Balance (cycles)
-        </Typography>
-
-        <Typography component="p" variant="h4">
-          {(() => {
-            if (cycles !== undefined) {
-              return (
-                <ReactCountUp
-                  end={humanCycles}
-                  duration={
-                    /* countup.js uses falsey checks, so we cannot use 0. Duration is in seconds. */
-                    first ? 0.001 : undefined
-                  }
-                  decimals={6}
-                  decimal="."
-                  preserveValue
-                  separator=","
-                  suffix={" " + suffix}
-                />
-              );
-            } else {
-              return <></>;
-            }
-          })()}
-        </Typography>
-        <Typography color="textSecondary" className={classes.depositContext}>
-          <Timeago date={timeStamp} />
-        </Typography>
-        <Typography>
-          <FormControl className={classes.formControl}>
-            <InputLabel id="autorefresh-label">Autorefresh</InputLabel>
-            <Select
-              labelId="autorefresh-label"
-              value={refreshRate}
-              onChange={({ target }) => {
-                if (typeof target.value == "number")
-                  setRefreshRate(target.value);
-              }}
-            >
-              <MenuItem value={0}>Never</MenuItem>
-              <MenuItem value={5}>Constantly</MenuItem>
-              <MenuItem value={30}>Few Seconds</MenuItem>
-              <MenuItem value={300}>Few Minutes</MenuItem>
-            </Select>
-          </FormControl>
-        </Typography>
-      </React.Fragment>
-    );
-  } else {
+  if (cycles === undefined) {
     return <></>;
   }
+
+  const suffix =
+    SUFFIX_LIST[Math.min(6, Math.floor(Math.log10(5000000000000) / 3))];
+  const ll = SUFFIX_LIST.indexOf(suffix);
+  const humanCycles = parseFloat((cycles / 10 ** (ll * 3)).toFixed(5));
+
+  return (
+    <React.Fragment>
+      <Typography component="h2" variant="h6" color="primary" gutterBottom>
+        Balance (cycles)
+      </Typography>
+
+      <Typography component="p" variant="h4">
+        {(() => {
+          if (cycles === undefined) {
+            return <></>;
+          }
+
+          return (
+            <ReactCountUp
+              end={humanCycles}
+              duration={
+                /* countup.js uses falsey checks, so we cannot use 0. Duration is in seconds. */
+                first ? 0.001 : undefined
+              }
+              decimals={6}
+              decimal="."
+              preserveValue
+              separator=","
+              suffix={" " + suffix}
+            />
+          );
+        })()}
+      </Typography>
+      <Typography color="textSecondary" className={classes.depositContext}>
+        <Timeago date={timeStamp} />
+      </Typography>
+      <Typography>
+        <FormControl className={classes.formControl}>
+          <InputLabel id="autorefresh-label">Autorefresh</InputLabel>
+          <Select
+            labelId="autorefresh-label"
+            value={refreshRate}
+            onChange={({ target }) => {
+              if (typeof target.value == "number") setRefreshRate(target.value);
+            }}
+          >
+            <MenuItem value={0}>Never</MenuItem>
+            <MenuItem value={5}>Constantly</MenuItem>
+            <MenuItem value={30}>Few Seconds</MenuItem>
+            <MenuItem value={300}>Few Minutes</MenuItem>
+          </Select>
+        </FormControl>
+      </Typography>
+    </React.Fragment>
+  );
 }

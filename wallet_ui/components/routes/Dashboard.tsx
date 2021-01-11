@@ -132,21 +132,6 @@ export function Dashboard(props: { open: boolean; onOpenToggle: () => void }) {
             </ListItemIcon>
             <ListItemText primary="Send Cycles" />
           </ListItem>
-          {/*
-          <ListItem button>
-            <ListItemIcon>
-              <AddCircleOutlineIcon />
-            </ListItemIcon>
-            <ListItemText primary="Create Canister" />
-          </ListItem>
-          <Divider />
-          <ListItem button>
-            <ListItemIcon>
-              <ContactsIcon />
-            </ListItemIcon>
-            <ListItemText primary="Address Book" />
-          </ListItem>
-          */}
         </List>
       </Drawer>
 

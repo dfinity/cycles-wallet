@@ -21,6 +21,11 @@ interface TransactionRowProps {
 }
 
 const useRowStyles = makeStyles((_theme) => ({
+  // Certain rows have two rows; one that's the regular table row, and one
+  // that's invisible until the row is "expanded". Both have the same styles
+  // which includes a bottom border. This rule removes the bottom border to
+  // any row followed by another, which effectively removes the first border
+  // when there's 2 (so they don't show double borders on those rows).
   root: {
     "& > *": {
       borderBottom: "unset",
@@ -99,22 +104,20 @@ function CanisterCreatedRow({ event }: TransactionRowProps) {
   const createdCanister = event.kind.CanisterCreated!;
 
   return (
-    <>
-      <TableRow className={classes.root}>
-        <TableCell component="th" scope="row">
-          <ReactTimeago date={event.timestamp} />
-        </TableCell>
-        <TableCell>Canister Created</TableCell>
-        <TableCell>
-          Created{" "}
-          <code>
-            {createdCanister.canister.toText()} (used{" "}
-            {createdCanister.cycles.toNumber().toLocaleString()} cycles)
-          </code>
-        </TableCell>
-        <TableCell />
-      </TableRow>
-    </>
+    <TableRow className={classes.root}>
+      <TableCell component="th" scope="row">
+        <ReactTimeago date={event.timestamp} />
+      </TableCell>
+      <TableCell>Canister Created</TableCell>
+      <TableCell>
+        Created{" "}
+        <code>
+          {createdCanister.canister.toText()} (used{" "}
+          {createdCanister.cycles.toNumber().toLocaleString()} cycles)
+        </code>
+      </TableCell>
+      <TableCell />
+    </TableRow>
   );
 }
 

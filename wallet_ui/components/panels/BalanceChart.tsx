@@ -74,75 +74,75 @@ export function BalanceChart() {
     );
   }, [precision]);
 
-  if (data !== undefined) {
-    const min = Math.min(
-      ...data.map(({ scaledAmount }) => Math.floor(scaledAmount))
-    );
-    const max = Math.min(
-      ...data.map(({ scaledAmount }) => Math.ceil(scaledAmount))
-    );
+  if (data === undefined) {
+    return <></>;
+  }
 
-    // prettier-ignore
-    const ticks = [
+  const min = Math.min(
+    ...data.map(({ scaledAmount }) => Math.floor(scaledAmount))
+  );
+  const max = Math.min(
+    ...data.map(({ scaledAmount }) => Math.ceil(scaledAmount))
+  );
+
+  // prettier-ignore
+  const ticks = [
       0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18,
     ].slice(min, max + 1);
-    // prettier-ignore
-    const tickArray = [
+  // prettier-ignore
+  const tickArray = [
       "1", "10", "100", "1,000", "10k", "100k", "1M", "10M", "100M", "1B", "10B", "100B",
       "1T", "10T", "100T", "1P", "10P", "100P",
     ];
 
-    return (
-      <React.Fragment>
-        <Typography className={classes.formControlParagraph}>
-          <FormControl hiddenLabel className={classes.formControl}>
-            <Select
-              value={precision}
-              onChange={({ target }) => {
-                if (typeof target.value == "number") setPrecision(target.value);
-              }}
-            >
-              <MenuItem value={0}>Minutes</MenuItem>
-              <MenuItem value={1}>Hours</MenuItem>
-              <MenuItem value={2}>Days</MenuItem>
-              <MenuItem value={3}>Weeks</MenuItem>
-              <MenuItem value={4}>Months</MenuItem>
-            </Select>
-          </FormControl>
-        </Typography>
-        <Typography
-          component="h2"
-          variant="h6"
-          color="primary"
-          className={classes.title}
-        >
-          Balance History
-        </Typography>
-        <ResponsiveContainer>
-          <LineChart
-            data={data}
-            margin={{ top: 16, right: 16, bottom: 16, left: 16 }}
+  return (
+    <React.Fragment>
+      <Typography className={classes.formControlParagraph}>
+        <FormControl hiddenLabel className={classes.formControl}>
+          <Select
+            value={precision}
+            onChange={({ target }) => {
+              if (typeof target.value == "number") setPrecision(target.value);
+            }}
           >
-            <XAxis dataKey="humanDate" stroke={theme.palette.text.secondary} />
-            <YAxis
-              stroke={theme.palette.text.secondary}
-              ticks={ticks}
-              tickFormatter={(x) => tickArray[x]}
-              dataKey="scaledAmount"
-              domain={[min, max]}
-            />
-            <Tooltip content={<CustomTooltip />} />
-            <Line
-              type="monotone"
-              dataKey={(x) => x.scaledAmount}
-              stroke={theme.palette.primary.main}
-              isAnimationActive={false}
-            />
-          </LineChart>
-        </ResponsiveContainer>
-      </React.Fragment>
-    );
-  } else {
-    return <></>;
-  }
+            <MenuItem value={0}>Minutes</MenuItem>
+            <MenuItem value={1}>Hours</MenuItem>
+            <MenuItem value={2}>Days</MenuItem>
+            <MenuItem value={3}>Weeks</MenuItem>
+            <MenuItem value={4}>Months</MenuItem>
+          </Select>
+        </FormControl>
+      </Typography>
+      <Typography
+        component="h2"
+        variant="h6"
+        color="primary"
+        className={classes.title}
+      >
+        Balance History
+      </Typography>
+      <ResponsiveContainer>
+        <LineChart
+          data={data}
+          margin={{ top: 16, right: 16, bottom: 16, left: 16 }}
+        >
+          <XAxis dataKey="humanDate" stroke={theme.palette.text.secondary} />
+          <YAxis
+            stroke={theme.palette.text.secondary}
+            ticks={ticks}
+            tickFormatter={(x) => tickArray[x]}
+            dataKey="scaledAmount"
+            domain={[min, max]}
+          />
+          <Tooltip content={<CustomTooltip />} />
+          <Line
+            type="monotone"
+            dataKey={(x) => x.scaledAmount}
+            stroke={theme.palette.primary.main}
+            isAnimationActive={false}
+          />
+        </LineChart>
+      </ResponsiveContainer>
+    </React.Fragment>
+  );
 }

@@ -35,6 +35,19 @@ module.exports = {
       },
     ],
   },
+  optimization: {
+    minimize: true,
+    minimizer: [
+      new TerserPlugin({
+        test: /\.[tj]s(\?.*)?$/i,
+        terserOptions: {
+          format: {
+            comments: false,
+          },
+        },
+      }),
+    ],
+  },
   resolve: {
     extensions: [".js", ".ts", ".jsx", ".tsx"],
     fallback: {
