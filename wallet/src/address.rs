@@ -5,6 +5,10 @@ use serde::Deserialize;
 use std::cmp::Ordering;
 use std::collections::BTreeSet;
 
+/// The role of the address, whether it's a Contact, Custodian, or a Controller. A Controller is more
+/// privileged than a Custodian, and a Custodian is more privileged than a Contact. For instance,
+/// only a Controller may add/remove Controllers and/or Custodians, rename the wallet, etc. in addition to
+/// the custodial ability to get the wallet balance, send cycles, forward calls, etc.
 #[derive(Clone, Debug, Ord, PartialOrd, Eq, PartialEq, CandidType, Deserialize)]
 pub enum Role {
     Contact,
