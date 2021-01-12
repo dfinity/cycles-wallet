@@ -27,13 +27,10 @@ jobs:
           rm install.sh
           popd
 
-      - name: Install Node
-        run: |
-          pushd /tmp
-          wget -O install-node.sh -q https://deb.nodesource.com/setup_12.x
-          sudo bash install-node.sh
-          sudo apt-get install -y nodejs
-          popd
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v1
+        with:
+          node-version: 0.12
 
       - name: Demo
         run: sh demo.sh
