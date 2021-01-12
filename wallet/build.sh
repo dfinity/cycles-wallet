@@ -1,19 +1,32 @@
 #!/bin/sh
+set -e
 
-cargo build --manifest-path $(dirname $0)/Cargo.toml --target wasm32-unknown-unknown --release || exit 1
+[ -x "$(which npm)" ] || {
+  echo "You need npm installed to build the frontend."
+  echo "This is an error."
+  exit 1
+}
 
-CURRENT_DIR=`pwd`
-cd $(dirname $0)/
-cargo install ic-cdk-optimizer --root target || exit 1
+# Build frontend before wallet.
+npm run build
+
+WALLET_DIR="$(dirname "$0")"
+
+cargo build --manifest-path "$WALLET_DIR/Cargo.toml" --target wasm32-unknown-unknown --release
+
+CURRENT_DIR="$(pwd)"
+cd "$WALLET_DIR/"
+cargo install ic-cdk-optimizer --root target
 STATUS=$?
-cd $CURRENT_DIR
+cd "$CURRENT_DIR"
 
 if [ "$STATUS" -eq "0" ]; then
-  $(dirname $0)/target/bin/ic-cdk-optimizer \
-      $(dirname $0)/target/wasm32-unknown-unknown/release/wallet.wasm \
-      -o $(dirname $0)/target/wasm32-unknown-unknown/release/wallet-opt.wasm
+  "$WALLET_DIR"/target/bin/ic-cdk-optimizer \
+      "$WALLET_DIR"/target/wasm32-unknown-unknown/release/wallet.wasm \
+      -o "$WALLET_DIR"/target/wasm32-unknown-unknown/release/wallet-opt.wasm
 
   true
 else
+  echo Could not install ic-cdk-optimizer.
   false
 fi
