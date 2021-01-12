@@ -1,9 +1,9 @@
 use ic_cdk::export::candid::CandidType;
 use ic_cdk::export::Principal;
-use serde::export::Formatter;
 use serde::Deserialize;
 use std::cmp::Ordering;
 use std::collections::BTreeSet;
+use std::fmt::Formatter;
 
 /// The role of the address, whether it's a [Contact], [Custodian], or a [Controller]. A
 /// [Controller] is the most privileged role, and can rename the wallet, add entries to the
