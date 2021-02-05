@@ -83,6 +83,15 @@ export const factory: IDL.InterfaceFactory = ({ IDL }) => {
     role: Role,
   });
   return IDL.Service({
+    name : IDL.Func(
+      [],
+      [
+        IDL.Record({
+          name : IDL.Opt(IDL.Text)
+        })
+      ],
+      ['query'],
+    ),
     wallet_create_canister: IDL.Func(
       [
         IDL.Record({
