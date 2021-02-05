@@ -1,5 +1,6 @@
 const fs = require("fs");
 const path = require("path");
+const child_process = require('child_process');
 const Dfn = require("@dfinity/agent");
 
 const agent = new Dfn.HttpAgent({
@@ -10,8 +11,7 @@ const agent = new Dfn.HttpAgent({
 global.crypto = require("@trust/webcrypto");
 global.ic = { agent };
 
-// replace this with the output from `dfx canister id wallet`
-const canisterId = "ryjl3-tyaaa-aaaaa-aaaba-cai";
+const canisterId = child_process.execSync("dfx canister id wallet").toString().trimRight();
 
 const actor = Dfn.Actor.createActor(
   ({ IDL }) =>
