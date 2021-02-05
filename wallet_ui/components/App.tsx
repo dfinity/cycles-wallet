@@ -134,6 +134,7 @@ export default function App() {
   const palletType = darkState ? "dark" : "light";
   const mainPrimaryColor = darkState ? orange[500] : lightBlue[500];
   const mainSecondaryColor = darkState ? deepOrange[900] : deepPurple[500];
+  document.title = "Cycles Wallet";
   const darkTheme = createMuiTheme({
     palette: {
       type: palletType,

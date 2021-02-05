@@ -4,6 +4,8 @@
   "name": "wallet-ui",
   "scripts": {
     "build": "webpack",
+    "presideload-ui": "npm run build",
+    "sideload-ui": "node script/upload.js",
     "test": "jest --verbose"
   },
   "version": "0.1.0",
@@ -11,7 +13,7 @@
   "dependencies": {
     "@babel/core": "7.9.0",
     "@babel/preset-react": "7.9.0",
-    "@dfinity/agent": "0.6.17",
+    "@dfinity/agent": "0.6.22",
     "@material-ui/core": "^4.11.2",
     "@material-ui/icons": "^4.11.2",
     "@types/react-router-dom": "^5.1.6",

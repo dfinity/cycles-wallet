@@ -10,12 +10,15 @@ const agent = new Dfn.HttpAgent({
 global.crypto = require("@trust/webcrypto");
 global.ic = { agent };
 
+// replace this with the output from `dfx canister id wallet`
+const canisterId = "ryjl3-tyaaa-aaaaa-aaaba-cai";
+
 const actor = Dfn.Actor.createActor(
   ({ IDL }) =>
     IDL.Service({
       store: IDL.Func([IDL.Vec(IDL.Nat8)], [], []),
     }),
-  { agent, canisterId: "rrkah-fqaaa-aaaaa-aaaaq-cai" },
+  { agent, canisterId },
 );
 
 // Read the blob
