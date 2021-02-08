@@ -43,6 +43,7 @@ interface BigNumber {
 }
 
 interface ActorInterface {
+  name(): Promise<[string] | []>;
   wallet_balance(): Promise<{ amount: BigNumber }>;
   wallet_send(args: { canister: Principal; amount: number }): Promise<void>;
   get_events(args: [{ from: [number?]; to: [number?] }?]): Promise<any[]>;
@@ -95,6 +96,9 @@ function precisionToNanoseconds(precision: ChartPrecision) {
 }
 
 export const Wallet = {
+  async name(): Promise<string> {
+    return (await WalletCanister.name())[0] || '';
+  },
   async init(): Promise<void> {
     await this.balance();
   },

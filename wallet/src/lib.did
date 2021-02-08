@@ -54,7 +54,7 @@ type AddressEntry = record {
 
 service : {
   // Wallet Name
-  name: () -> (record { name: opt text; }) query;
+  name: () -> (opt text) query;
   set_name: (text) -> ();
 
   // Controller Management
