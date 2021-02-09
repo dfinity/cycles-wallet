@@ -381,7 +381,7 @@ fn add_address(address: AddressEntry) -> () {
 }
 
 #[query]
-fn list_address() -> Vec<&'static AddressEntry> {
+fn list_addresses() -> Vec<&'static AddressEntry> {
     storage::get::<AddressBook>().iter().collect()
 }
 

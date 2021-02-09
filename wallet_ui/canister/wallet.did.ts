@@ -124,7 +124,7 @@ export const factory: IDL.InterfaceFactory = ({ IDL }) => {
     get_custodians: IDL.Func([], [IDL.Vec(IDL.Principal)], ["query"]),
 
     add_address: IDL.Func([AddressEntry], [], []),
-    list_address: IDL.Func([], [IDL.Vec(AddressEntry)], ["query"]),
+    list_addresses: IDL.Func([], [IDL.Vec(AddressEntry)], ["query"]),
     remove_address: IDL.Func([IDL.Principal], [], []),
 
     get_events: IDL.Func(
