@@ -8,6 +8,7 @@ set -e
 }
 
 # Build frontend before wallet.
+npm install
 npm run build
 
 WALLET_DIR="$(dirname "$0")"
