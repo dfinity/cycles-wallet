@@ -56,7 +56,15 @@ fn pre_upgrade() {
         name: storage::get::<WalletName>().0.clone(),
         chart: storage::get::<Vec<ChartTick>>().to_vec(),
     };
-    storage::stable_save((stable,)).unwrap();
+    match storage::stable_save((stable,)) {
+        Ok(_) => (),
+        Err(candid_err) => {
+            ic_cdk::trap(&format!(
+                "An error occurred when saving to stable memory (pre_upgrade): {}",
+                candid_err
+            ));
+        }
+    };
 }
 
 #[post_upgrade]
