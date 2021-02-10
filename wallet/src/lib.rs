@@ -54,7 +54,7 @@ fn pre_upgrade() {
         address_book: address_book.iter().cloned().collect(),
         events: storage::get::<EventBuffer>().clone(),
         name: storage::get::<WalletName>().0.clone(),
-        chart: storage::get::<Vec<ChartTick>>().iter().cloned().collect(),
+        chart: storage::get::<Vec<ChartTick>>().to_vec(),
     };
     storage::stable_save((stable,)).unwrap();
 }
@@ -172,7 +172,7 @@ fn get_custodians() -> Vec<&'static Principal> {
 /// Authorize a custodian.
 #[update(guard = "is_controller")]
 fn authorize(custodian: Principal) {
-    add_address(AddressEntry::new(custodian.clone(), None, Role::Custodian));
+    add_address(AddressEntry::new(custodian, None, Role::Custodian));
     update_chart();
 }
 
@@ -221,14 +221,22 @@ mod wallet {
     /// Send cycles to another canister.
     #[update(guard = "is_custodian", name = "wallet_send")]
     async fn send(args: SendCyclesArgs) {
-        let _: () = api::call::call_with_payment(
+        let (_,): ((),) = match api::call::call_with_payment(
             args.canister.clone(),
             "wallet_receive",
             (),
             args.amount as i64,
         )
         .await
-        .unwrap();
+        {
+            Ok(x) => x,
+            Err((code, msg)) => {
+                ic_cdk::trap(&format!(
+                    "An error happened during the call: {}: {}",
+                    code as u8, msg
+                ));
+            }
+        };
 
         events::record(events::EventKind::CyclesSent {
             to: args.canister,
@@ -370,7 +378,7 @@ mod wallet {
 
 // Address book
 #[update]
-fn add_address(address: AddressEntry) -> () {
+fn add_address(address: AddressEntry) {
     storage::get_mut::<AddressBook>().insert(address.clone());
     record(EventKind::AddressAdded {
         id: address.id,
@@ -386,7 +394,7 @@ fn list_addresses() -> Vec<&'static AddressEntry> {
 }
 
 #[update]
-fn remove_address(address: Principal) -> () {
+fn remove_address(address: Principal) {
     storage::get_mut::<AddressBook>().remove(&address);
     update_chart();
     record(EventKind::AddressRemoved { id: address })
@@ -431,26 +439,20 @@ struct GetChartArgs {
 fn get_chart(args: Option<GetChartArgs>) -> Vec<(u64, u64)> {
     let chart = storage::get_mut::<Vec<ChartTick>>();
 
-    let GetChartArgs { count, precision } = args.unwrap_or(GetChartArgs {
+    let GetChartArgs {
+        count,
+        precision: _,
+    } = args.unwrap_or(GetChartArgs {
         count: None,
         precision: None,
     });
     let take = count.unwrap_or(100).max(1000);
-    // Precision is in nanoseconds. This is an hour.
-    let precision = precision.unwrap_or(60 * 60 * 1_000_000);
 
-    let mut last_tick = u64::MAX;
+    let last_tick = u64::MAX;
     chart
         .iter()
         .rev()
-        .filter_map(|tick| {
-            if tick.timestamp >= last_tick {
-                None
-            } else {
-                last_tick = tick.timestamp - precision;
-                Some(tick)
-            }
-        })
+        .filter(|tick| tick.timestamp < last_tick)
         .take(take as usize)
         .map(|tick| (tick.timestamp, tick.cycles))
         .collect()
