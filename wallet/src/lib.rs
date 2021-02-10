@@ -150,6 +150,7 @@ fn get_controllers() -> Vec<&'static Principal> {
 fn add_controller(controller: Principal) {
     add_address(AddressEntry::new(controller, None, Role::Controller));
     update_chart();
+    pre_upgrade();
 }
 
 /// Remove a controller. This is equivalent to moving the role to a regular user.
@@ -162,6 +163,7 @@ fn remove_controller(controller: Principal) {
         book.insert(entry);
     }
     update_chart();
+    pre_upgrade();
 }
 
 /***************************************************************************************************
@@ -182,6 +184,7 @@ fn get_custodians() -> Vec<&'static Principal> {
 fn authorize(custodian: Principal) {
     add_address(AddressEntry::new(custodian, None, Role::Custodian));
     update_chart();
+    pre_upgrade();
 }
 
 /// Deauthorize a custodian.
@@ -189,6 +192,7 @@ fn authorize(custodian: Principal) {
 fn deauthorize(custodian: Principal) {
     remove_address(custodian);
     update_chart();
+    pre_upgrade();
 }
 
 mod wallet {
@@ -251,6 +255,7 @@ mod wallet {
             amount: args.amount,
         });
         super::update_chart();
+        super::pre_upgrade();
     }
 
     /// Receive cycles from another canister.
@@ -265,6 +270,7 @@ mod wallet {
             });
         }
         super::update_chart();
+        super::pre_upgrade();
         ReceiveResult {
             accepted: ic_cdk::api::call::msg_cycles_accept(amount) as u64,
         }
@@ -331,6 +337,7 @@ mod wallet {
             cycles: args.cycles,
         });
         super::update_chart();
+        super::pre_upgrade();
         create_result
     }
 
@@ -394,6 +401,7 @@ fn add_address(address: AddressEntry) {
         role: address.role,
     });
     update_chart();
+    pre_upgrade();
 }
 
 #[query]
@@ -405,6 +413,7 @@ fn list_addresses() -> Vec<&'static AddressEntry> {
 fn remove_address(address: Principal) {
     storage::get_mut::<AddressBook>().remove(&address);
     update_chart();
+    pre_upgrade();
     record(EventKind::AddressRemoved { id: address })
 }
 
