@@ -3,13 +3,7 @@ import { makeStyles } from "@material-ui/core/styles";
 import CssBaseline from "@material-ui/core/CssBaseline";
 import { WalletAppBar } from "./WalletAppBar";
 import Typography from "@material-ui/core/Typography";
-import Divider from "@material-ui/core/Divider";
-import IconButton from "@material-ui/core/IconButton";
-import Badge from "@material-ui/core/Badge";
 import Link from "@material-ui/core/Link";
-import MenuIcon from "@material-ui/icons/Menu";
-import ChevronLeftIcon from "@material-ui/icons/ChevronLeft";
-import NotificationsIcon from "@material-ui/icons/Notifications";
 import {
   orange,
   lightBlue,
@@ -20,9 +14,9 @@ import {
   HashRouter as Router,
   Switch as RouterSwitch,
   Route,
-  useRouteMatch,
 } from "react-router-dom";
-
+import { authenticator } from "@dfinity/authentication";
+import AuthenticationContext from "./authentication/AuthenticationContext";
 // For Switch Theming
 import { createMuiTheme, ThemeProvider } from "@material-ui/core/styles";
 
@@ -30,6 +24,9 @@ import { createMuiTheme, ThemeProvider } from "@material-ui/core/styles";
 import { Authorize } from "./routes/Authorize";
 import { Dashboard } from "./routes/Dashboard";
 import { useLocalStorage } from "../utils/hooks";
+import { KeyedLocalStorage, readOrCreateSession, Session } from "../session";
+import { makeLog } from "@dfinity/agent";
+import { useInternetComputerAuthentication } from "../authentication-react";
 
 export function Copyright() {
   return (
@@ -128,7 +125,10 @@ function useDarkState(): [boolean, (newState?: boolean) => void] {
   ];
 }
 
-export default function App() {
+export default function App(props: {
+  sessionStorage: KeyedLocalStorage;
+}) {
+  const log = makeLog('App')
   const [open, setOpen] = useLocalStorage("app-menu-open", false);
   const [darkState, setDarkState] = useDarkState();
   const palletType = darkState ? "dark" : "light";
@@ -146,9 +146,15 @@ export default function App() {
     },
   });
   const classes = useStyles();
-
+  const authentication = useInternetComputerAuthentication({
+    authenticator,
+    href: location.href,
+    sessionStorage: props.sessionStorage,
+  })
+  log('debug', 'AuthenticationContext.Provider', { value: authentication })
   return (
     <ThemeProvider theme={darkTheme}>
+    <AuthenticationContext.Provider value={authentication}>
       <Router>
         <div className={classes.root}>
           <CssBaseline />
@@ -170,6 +176,7 @@ export default function App() {
           </RouterSwitch>
         </div>
       </Router>
+    </AuthenticationContext.Provider>
     </ThemeProvider>
   );
 }

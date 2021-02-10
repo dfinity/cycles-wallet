@@ -1,4 +1,5 @@
 const TerserPlugin = require("terser-webpack-plugin");
+const { ProvidePlugin } = require('webpack');
 const path = require("path");
 
 const dist = path.join(__dirname, "dist");
@@ -9,7 +10,7 @@ module.exports = {
     filename: "index.js",
     path: dist,
   },
-  mode: "production",
+  mode: 'production',
   module: {
     rules: [
       { test: /\.(jsx|tsx?)$/, loader: "ts-loader" },
@@ -53,6 +54,15 @@ module.exports = {
     fallback: {
       fs: false,
       path: false,
+      // note that the trailing slash is important to resolve this to https://www.npmjs.com/package/assert
+      // not the nodejs standard library 'assert'
+      assert: require.resolve("assert/"),
+      stream: require.resolve('stream-browserify'),
     },
   },
+  plugins: [
+    new ProvidePlugin({
+      process: 'process/browser',
+    }),
+  ]
 };

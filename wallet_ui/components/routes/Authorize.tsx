@@ -1,5 +1,5 @@
 import DoneIcon from "@material-ui/icons/Done";
-import React, { useEffect, useState } from "react";
+import React, { useContext, useEffect, useState } from "react";
 import {
   Wallet,
   Principal,
@@ -22,6 +22,9 @@ import { darcula, docco } from "react-syntax-highlighter/dist/esm/styles/hljs";
 import { CopyToClipboard } from "react-copy-to-clipboard";
 import Box from "@material-ui/core/Box";
 import { Copyright } from "../App";
+import AuthenticationButton from "../authentication/AuthenticationButton";
+import AuthenticationContext from "../authentication/AuthenticationContext";
+import { makeLog } from "@dfinity/agent";
 
 SyntaxHighlighter.registerLanguage("bash", bash);
 SyntaxHighlighter.registerLanguage("plaintext", plaintext);
@@ -55,7 +58,8 @@ export function Authorize({ dark }: { dark: boolean }) {
   const [copied, setCopied] = useState(false);
   const history = useHistory();
   const classes = useStyles();
-
+  const authentication = useContext(AuthenticationContext)
+  makeLog('Authorize')('debug', 'authentication from AuthenticationContext', { authentication })
   function checkAccess() {
     Wallet.init().then(
       () => history.push("/"),
@@ -155,6 +159,15 @@ export function Authorize({ dark }: { dark: boolean }) {
               <Typography variant="body1" color="textPrimary">
                 You are using an anonymous Principal. You need to sign up.
               </Typography>
+              <AuthenticationButton
+                session={authentication.session}
+                request={{
+                  scope: [],
+                  redirectUri: new URL(location.href)
+                }}
+              >
+                Sign Up
+              </AuthenticationButton>
             </Paper>
           </Grid>
         </Grid>
