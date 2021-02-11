@@ -9,6 +9,8 @@ set -e
 
 # Build frontend before wallet.
 npm install
+npm run build || true
+# once again with determination, because the last build might have failed
 npm run build
 
 WALLET_DIR="$(dirname "$0")"
