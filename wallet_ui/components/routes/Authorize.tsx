@@ -26,7 +26,7 @@ import AuthenticationButton from "../authentication/AuthenticationButton";
 import AuthenticationContext from "../authentication/AuthenticationContext";
 import { makeLog } from "@dfinity/agent";
 // @ts-ignore
-// import walletCanister from 'ic:canisters/wallet';
+import walletCanister from 'ic:canisters/wallet';
 // @ts-ignore
 import aliceCanister from 'ic:canisters/alice';
 // @ts-ignore
@@ -174,7 +174,7 @@ export function Authorize({ dark }: { dark: boolean }) {
                 request={{
                   scope: [
                     ...[
-                      // walletCanister,
+                      walletCanister,
                       aliceCanister,
                       bobCanister,
                     ].map(c => ({
