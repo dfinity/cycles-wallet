@@ -447,20 +447,27 @@ struct GetChartArgs {
 fn get_chart(args: Option<GetChartArgs>) -> Vec<(u64, u64)> {
     let chart = storage::get_mut::<Vec<ChartTick>>();
 
-    let GetChartArgs {
-        count,
-        precision: _,
-    } = args.unwrap_or(GetChartArgs {
+    let GetChartArgs { count, precision } = args.unwrap_or(GetChartArgs {
         count: None,
         precision: None,
     });
     let take = count.unwrap_or(100).max(1000);
+    // Precision is in nanoseconds. This is an hour.
+    let precision = precision.unwrap_or(60 * 60 * 1_000_000);
 
-    let last_tick = u64::MAX;
+    let mut last_tick = u64::MAX;
+    #[allow(clippy::unnecessary_filter_map)]
     chart
         .iter()
         .rev()
-        .filter(|tick| tick.timestamp < last_tick)
+        .filter_map(|tick| {
+            if tick.timestamp >= last_tick {
+                None
+            } else {
+                last_tick = tick.timestamp - precision;
+                Some(tick)
+            }
+        })
         .take(take as usize)
         .map(|tick| (tick.timestamp, tick.cycles))
         .collect()
