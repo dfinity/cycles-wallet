@@ -43,7 +43,9 @@ interface BigNumber {
 }
 
 interface ActorInterface {
+  name(): Promise<[string] | []>;
   wallet_balance(): Promise<{ amount: BigNumber }>;
+  wallet_create_canister(args: { controller: [Principal?]; cycles: number }): Promise<{ canister_id: Principal }>;
   wallet_send(args: { canister: Principal; amount: number }): Promise<void>;
   get_events(args: [{ from: [number?]; to: [number?] }?]): Promise<any[]>;
   get_chart(
@@ -95,6 +97,9 @@ function precisionToNanoseconds(precision: ChartPrecision) {
 }
 
 export const Wallet = {
+  async name(): Promise<string> {
+    return (await WalletCanister.name())[0] || '';
+  },
   async init(): Promise<void> {
     await this.balance();
   },
@@ -114,8 +119,14 @@ export const Wallet = {
       ])
     ).map(([a, b]) => [new Date(a.toNumber() / 1000000), b.toNumber()]);
   },
+  async create_canister(p: { controller?: Principal; cycles: number; }): Promise<Principal> {
+    const result = await WalletCanister.wallet_create_canister({
+      controller: p.controller ? [p.controller] : [],
+      cycles: p.cycles,
+    });
+    return result.canister_id;
+  },
   async send(p: { canister: Principal; amount: number }): Promise<void> {
     await WalletCanister.wallet_send(p);
-    console.log(p);
   },
 };

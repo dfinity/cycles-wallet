@@ -1,5 +1,6 @@
 const fs = require("fs");
 const path = require("path");
+const child_process = require('child_process');
 const Dfn = require("@dfinity/agent");
 
 const agent = new Dfn.HttpAgent({
@@ -10,12 +11,14 @@ const agent = new Dfn.HttpAgent({
 global.crypto = require("@trust/webcrypto");
 global.ic = { agent };
 
+const canisterId = child_process.execSync("dfx canister id wallet").toString().trimRight();
+
 const actor = Dfn.Actor.createActor(
   ({ IDL }) =>
     IDL.Service({
       store: IDL.Func([IDL.Vec(IDL.Nat8)], [], []),
     }),
-  { agent, canisterId: "rrkah-fqaaa-aaaaa-aaaaq-cai" },
+  { agent, canisterId },
 );
 
 // Read the blob

@@ -4,6 +4,8 @@
   "name": "wallet-ui",
   "scripts": {
     "build": "webpack",
+    "presideload-ui": "npm run build",
+    "sideload-ui": "node script/upload.js",
     "test": "jest --verbose"
   },
   "version": "0.1.0",

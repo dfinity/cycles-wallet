@@ -28,8 +28,8 @@ echo
 echo == Initial cycle balances for Alice and Bob.
 echo
 
-echo Alice = $(dfx canister call alice wallet_balance)
-echo Bob = $(dfx canister call bob wallet_balance)
+echo Alice = $(dfx --identity id_alice canister call alice wallet_balance)
+echo Bob = $(dfx --identity id_bob canister call bob wallet_balance)
 
 echo
 echo == Create a new canister with Alice as controller using 1000000000000 cycles.
@@ -47,8 +47,8 @@ echo
 echo == Final cycle balances for Alice and Bob.
 echo
 
-echo Alice = $(dfx canister call alice wallet_balance)
-echo Bob = $(dfx canister call bob wallet_balance)
+echo Alice = $(dfx --identity id_alice canister call alice wallet_balance)
+echo Bob = $(dfx --identity id_bob canister call bob wallet_balance)
 
 echo
 echo == Setting custodian of Alices wallet to Charlie
@@ -65,8 +65,8 @@ echo == Using Charlie to send cycles...
 echo
 eval dfx --identity id_charlie canister call alice wallet_send "'(record { canister = principal \"$(dfx canister id bob)\"; amount = 1000000000000 })'"
 
-echo Alice = $(dfx canister call alice wallet_balance)
+echo Alice = $(dfx --identity id_alice canister call alice wallet_balance)
 echo Alice^ = $(dfx --identity id_charlie canister call alice wallet_balance)
-echo Bob = $(dfx canister call bob wallet_balance)
+echo Bob = $(dfx --identity id_bob canister call bob wallet_balance)
 
 dfx stop

@@ -21,6 +21,7 @@ import AddCircleOutlineIcon from "@material-ui/icons/AddCircleOutline";
 import ContactsIcon from "@material-ui/icons/Contacts";
 import { SendCyclesDialog } from "../panels/SendCycles";
 import { BalanceChart } from "../panels/BalanceChart";
+import { CreateCanisterDialog } from "../panels/CreateCanister";
 import Dialog from "@material-ui/core/Dialog";
 import DialogTitle from "@material-ui/core/DialogTitle";
 import { DialogContent } from "@material-ui/core";
@@ -93,6 +94,7 @@ const useStyles = makeStyles((theme) => ({
 
 export function Dashboard(props: { open: boolean; onOpenToggle: () => void }) {
   const [cyclesDialogOpen, setCyclesDialogOpen] = useState(false);
+  const [canisterCreateDialogOpen, setCanisterCreateDialogOpen] = useState(false);
   const [errorDialogContent, setErrorDialogContent] = useState<any | undefined>(
     undefined
   );
@@ -106,6 +108,14 @@ export function Dashboard(props: { open: boolean; onOpenToggle: () => void }) {
   }
   function handleCyclesDialogOpen() {
     setCyclesDialogOpen(true);
+  }
+
+  function handleCanisterCreateDialogClose(maybeErr?: any) {
+    setCanisterCreateDialogOpen(false);
+    setErrorDialogContent(maybeErr);
+  }
+  function handleCanisterCreateDialogOpen() {
+    setCanisterCreateDialogOpen(true);
   }
 
   return (
@@ -132,12 +142,23 @@ export function Dashboard(props: { open: boolean; onOpenToggle: () => void }) {
             </ListItemIcon>
             <ListItemText primary="Send Cycles" />
           </ListItem>
+          <ListItem button onClick={handleCanisterCreateDialogOpen}>
+            <ListItemIcon>
+              <AddCircleOutlineIcon />
+            </ListItemIcon>
+            <ListItemText primary="Create a Canister" />
+          </ListItem>
         </List>
       </Drawer>
 
       <SendCyclesDialog
         open={cyclesDialogOpen}
         close={handleCyclesDialogClose}
+      />
+
+      <CreateCanisterDialog
+        open={canisterCreateDialogOpen}
+        close={handleCanisterCreateDialogClose}
       />
 
       <Dialog

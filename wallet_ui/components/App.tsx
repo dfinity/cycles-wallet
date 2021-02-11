@@ -20,6 +20,9 @@ import AuthenticationContext from "./authentication/AuthenticationContext";
 // For Switch Theming
 import { createMuiTheme, ThemeProvider } from "@material-ui/core/styles";
 
+// For document title setting
+import { Wallet } from '../canister';
+
 // Routes
 import { Authorize } from "./routes/Authorize";
 import { Dashboard } from "./routes/Dashboard";
@@ -134,6 +137,12 @@ export default function App(props: {
   const palletType = darkState ? "dark" : "light";
   const mainPrimaryColor = darkState ? orange[500] : lightBlue[500];
   const mainSecondaryColor = darkState ? deepOrange[900] : deepPurple[500];
+
+  useEffect(() => {
+    Wallet.name().then((name) => {
+      document.title = name;
+    });
+  }, []);
   const darkTheme = createMuiTheme({
     palette: {
       type: palletType,
