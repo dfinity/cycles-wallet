@@ -25,12 +25,6 @@ import { Copyright } from "../App";
 import AuthenticationButton from "../authentication/AuthenticationButton";
 import AuthenticationContext from "../authentication/AuthenticationContext";
 import { makeLog } from "@dfinity/agent";
-// // @ts-ignore
-// import walletCanister from 'ic:canisters/wallet';
-// // @ts-ignore
-// import aliceCanister from 'ic:canisters/alice';
-// // @ts-ignore
-// import bobCanister from 'ic:canisters/bob';
 
 SyntaxHighlighter.registerLanguage("bash", bash);
 SyntaxHighlighter.registerLanguage("plaintext", plaintext);
