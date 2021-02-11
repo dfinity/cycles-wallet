@@ -174,7 +174,7 @@ export function Authorize({ dark }: { dark: boolean }) {
                 request={{
                   scope: [
                     ...[
-                      getLocationCanisterPrincipal(location),
+                      canister ? Actor.canisterIdOf(canister): getLocationCanisterPrincipal(location),
                     ].map(principal => ({
                       type: "CanisterScope" as const,
                       principal,
