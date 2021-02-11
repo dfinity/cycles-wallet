@@ -69,7 +69,6 @@ fn pre_upgrade() {
 
 #[post_upgrade]
 fn post_upgrade() {
-    init();
     if let Ok((storage,)) = storage::stable_restore::<(StableStorage,)>() {
         let event_buffer = storage::get_mut::<events::EventBuffer>();
         let address_book = storage::get_mut::<AddressBook>();
