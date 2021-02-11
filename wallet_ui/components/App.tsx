@@ -150,7 +150,7 @@ export default function App(props: {
     authenticator,
     href: location.href,
     sessionStorage: props.sessionStorage,
-  })
+  });
   log('debug', 'AuthenticationContext.Provider', { value: authentication })
   return (
     <ThemeProvider theme={darkTheme}>

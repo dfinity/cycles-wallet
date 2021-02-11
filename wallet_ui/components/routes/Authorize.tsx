@@ -25,6 +25,12 @@ import { Copyright } from "../App";
 import AuthenticationButton from "../authentication/AuthenticationButton";
 import AuthenticationContext from "../authentication/AuthenticationContext";
 import { makeLog } from "@dfinity/agent";
+// @ts-ignore
+// import walletCanister from 'ic:canisters/wallet';
+// @ts-ignore
+import aliceCanister from 'ic:canisters/alice';
+// @ts-ignore
+import bobCanister from 'ic:canisters/bob';
 
 SyntaxHighlighter.registerLanguage("bash", bash);
 SyntaxHighlighter.registerLanguage("plaintext", plaintext);
@@ -54,6 +60,7 @@ const useStyles = makeStyles((theme) => ({
 }));
 
 export function Authorize({ dark }: { dark: boolean }) {
+  const log = makeLog('Authorize')
   const [principal, setPrincipal] = useState<Principal | null>(null);
   const [copied, setCopied] = useState(false);
   const history = useHistory();
@@ -68,7 +75,10 @@ export function Authorize({ dark }: { dark: boolean }) {
   }
 
   useEffect(() => {
-    getPrincipal().then(setPrincipal);
+    getPrincipal().then(p => {
+      log('debug', 'getPrincipal() got p, passing it to setPrincipal now', p)
+      setPrincipal(p);
+    });
     checkAccess();
 
     const id = setInterval(
@@ -76,7 +86,7 @@ export function Authorize({ dark }: { dark: boolean }) {
       CHECK_ACCESS_FREQUENCY_IN_SECONDS * 1000
     );
     return () => clearInterval(id);
-  }, []);
+  }, [authentication]);
 
   if (principal && !principal.isAnonymous()) {
     const canisterId = canister && Actor.canisterIdOf(canister);
@@ -162,7 +172,16 @@ export function Authorize({ dark }: { dark: boolean }) {
               <AuthenticationButton
                 session={authentication.session}
                 request={{
-                  scope: [],
+                  scope: [
+                    ...[
+                      // walletCanister,
+                      aliceCanister,
+                      bobCanister,
+                    ].map(c => ({
+                      type: "CanisterScope" as const,
+                      principal: Actor.canisterIdOf(c),
+                    }))
+                  ],
                   redirectUri: new URL(location.href)
                 }}
               >

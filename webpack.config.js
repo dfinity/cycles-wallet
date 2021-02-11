@@ -1,10 +1,54 @@
 const TerserPlugin = require("terser-webpack-plugin");
-const { ProvidePlugin } = require('webpack');
+const { ProvidePlugin, Compiler, NormalModule } = require('webpack');
 const path = require("path");
-
 const dist = path.join(__dirname, "dist");
+const fs = require('fs');
 
-module.exports = {
+class IcSchemeResolverPlugin {
+  apply = compiler => {
+    compiler.hooks.compilation.tap(
+      "IcSchemeResolverPlugin",
+      (compilation, { normalModuleFactory }) => {
+        normalModuleFactory.hooks.resolveForScheme
+          .for("ic")
+          .tap("IcSchemeResolverPlugin", resourceData => {
+            const filePath = this.resolveIcFile(resourceData.resource)
+            return fs.existsSync(filePath);
+          });
+        NormalModule.getCompilationHooks(compilation)
+        .readResourceForScheme.for("ic")
+        .tap("IcSchemeResolverPlugin", resource => {
+          const filePath = this.resolveIcFile(resource);
+          return fs.readFileSync(filePath);
+        });
+      }
+    );
+  }
+  resolveIcFile(icFile) {
+    const icModulePattern = /ic:([^/]+)\/(.+)$/;
+    const match = icFile.match(icModulePattern);
+    if ( ! match) { return; }
+    const [,kind,canisterName] = match;
+    const networkName = process.env["DFX_NETWORK"] || "local";
+    const outputRoot = path.join(
+      __dirname,
+      ".dfx",
+      networkName,
+      "canisters",
+      canisterName,
+    );
+    switch (kind) {
+      case "canisters":
+        return path.join(outputRoot, canisterName + ".js")
+      case "idl":
+        return path.join(outputRoot, canisterName + ".did.js");
+      default:
+        return undefined
+    }
+  }
+}
+
+function WebpackConfiguration() { return {
   entry: path.join(__dirname, "wallet_ui/index.tsx"),
   output: {
     filename: "index.js",
@@ -64,5 +108,8 @@ module.exports = {
     new ProvidePlugin({
       process: 'process/browser',
     }),
+    new IcSchemeResolverPlugin(),
   ]
-};
+}};
+
+module.exports = WebpackConfiguration();

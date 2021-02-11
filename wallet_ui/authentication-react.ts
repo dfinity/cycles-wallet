@@ -1,8 +1,15 @@
 import * as React from "react";
-import type { Authenticator } from "@dfinity/authentication"
-import { AuthenticatorSession, KeyedLocalStorage, readOrCreateSession, writeSession } from "./session";
-import { makeLog } from "@dfinity/agent";
+import { useEffect, useRef } from "react";
+import { Authenticator, IdentitiesIterable } from "@dfinity/authentication"
+import { AuthenticatorSession, KeyedLocalStorage, readOrCreateSession, Session, writeSession } from "./session";
+import { AnonymousIdentity, createIdentityDescriptor, IdentityDescriptor, makeLog } from "@dfinity/agent";
 import * as assert from "assert";
+import { useValue } from "@repeaterjs/react-hooks";
+
+interface AuthenticationState {
+    identity: Readonly<IdentityDescriptor>
+    session: Readonly<Session>
+}
 
 export function useInternetComputerAuthentication(
     parameters: {
@@ -10,8 +17,12 @@ export function useInternetComputerAuthentication(
         href: string,
         sessionStorage: KeyedLocalStorage
     }
-) {
+): AuthenticationState {
+    const latestIdentityDescriptor: IdentityDescriptor = useValue(() => IdentitiesIterable(document)) || {
+        type: "AnonymousIdentity" as const,
+    };
     const log = makeLog('useInternetComputerAuthentication');
+    log('debug', { latestIdentityDescriptor })
     let session = readOrCreateSession(parameters.sessionStorage);
     if ( ! session.authenticationResponse) {
         // no authenticationResponse yet. We need one to authenticate.
@@ -25,7 +36,6 @@ export function useInternetComputerAuthentication(
             );
             session = readOrCreateSession(parameters.sessionStorage);
         }
-        assert.ok(session.authenticationResponse);
     }
     // call useSession
     React.useEffect(
@@ -39,7 +49,7 @@ export function useInternetComputerAuthentication(
             session.identity.secretKey.hex,
         ]
     )
-    return { session }
+    return { session, identity: Object.freeze(latestIdentityDescriptor) }
 }
 
 function isMaybeAuthenticationResponse(href: string) {
