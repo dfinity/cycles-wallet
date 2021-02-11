@@ -25,12 +25,6 @@ import { Copyright } from "../App";
 import AuthenticationButton from "../authentication/AuthenticationButton";
 import AuthenticationContext from "../authentication/AuthenticationContext";
 import { makeLog } from "@dfinity/agent";
-// @ts-ignore
-// import walletCanister from 'ic:canisters/wallet';
-// @ts-ignore
-// import aliceCanister from 'ic:canisters/alice';
-// @ts-ignore
-// import bobCanister from 'ic:canisters/bob';
 
 SyntaxHighlighter.registerLanguage("bash", bash);
 SyntaxHighlighter.registerLanguage("plaintext", plaintext);
@@ -174,12 +168,10 @@ export function Authorize({ dark }: { dark: boolean }) {
                 request={{
                   scope: [
                     ...[
-                      // walletCanister,
-                      // aliceCanister,
-                      // bobCanister,
-                    ].map(c => ({
+                      canister ? Actor.canisterIdOf(canister): getLocationCanisterPrincipal(location),
+                    ].map(principal => ({
                       type: "CanisterScope" as const,
-                      principal: Actor.canisterIdOf(c),
+                      principal,
                     }))
                   ],
                   redirectUri: new URL(location.href)
@@ -195,4 +187,15 @@ export function Authorize({ dark }: { dark: boolean }) {
   } else {
     return <></>;
   }
+}
+
+function getLocationCanisterPrincipal(location: Location): Principal {
+  const pattern = /canisterId=([^$&]+)/;
+  const match = location.href.match(pattern);
+  if ( ! match) {
+    throw new Error('Failed to parse url containing canisterId')
+  }
+  const [,canisterId] = match;
+  const canisterPrincipal = Principal.fromText(canisterId);
+  return canisterPrincipal;
 }
