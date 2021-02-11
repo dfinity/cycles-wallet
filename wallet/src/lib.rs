@@ -54,9 +54,17 @@ fn pre_upgrade() {
         address_book: address_book.iter().cloned().collect(),
         events: storage::get::<EventBuffer>().clone(),
         name: storage::get::<WalletName>().0.clone(),
-        chart: storage::get::<Vec<ChartTick>>().iter().cloned().collect(),
+        chart: storage::get::<Vec<ChartTick>>().to_vec(),
     };
-    storage::stable_save((stable,)).unwrap();
+    match storage::stable_save((stable,)) {
+        Ok(_) => (),
+        Err(candid_err) => {
+            ic_cdk::trap(&format!(
+                "An error occurred when saving to stable memory (pre_upgrade): {}",
+                candid_err
+            ));
+        }
+    };
 }
 
 #[post_upgrade]
@@ -172,7 +180,7 @@ fn get_custodians() -> Vec<&'static Principal> {
 /// Authorize a custodian.
 #[update(guard = "is_controller")]
 fn authorize(custodian: Principal) {
-    add_address(AddressEntry::new(custodian.clone(), None, Role::Custodian));
+    add_address(AddressEntry::new(custodian, None, Role::Custodian));
     update_chart();
 }
 
@@ -221,14 +229,22 @@ mod wallet {
     /// Send cycles to another canister.
     #[update(guard = "is_custodian", name = "wallet_send")]
     async fn send(args: SendCyclesArgs) {
-        let _: () = api::call::call_with_payment(
+        let (_,): (candid::parser::value::IDLValue,) = match api::call::call_with_payment(
             args.canister.clone(),
             "wallet_receive",
             (),
             args.amount as i64,
         )
         .await
-        .unwrap();
+        {
+            Ok(x) => x,
+            Err((code, msg)) => {
+                ic_cdk::trap(&format!(
+                    "An error happened during the call: {}: {}",
+                    code as u8, msg
+                ));
+            }
+        };
 
         events::record(events::EventKind::CyclesSent {
             to: args.canister,
@@ -370,7 +386,7 @@ mod wallet {
 
 // Address book
 #[update]
-fn add_address(address: AddressEntry) -> () {
+fn add_address(address: AddressEntry) {
     storage::get_mut::<AddressBook>().insert(address.clone());
     record(EventKind::AddressAdded {
         id: address.id,
@@ -386,7 +402,7 @@ fn list_addresses() -> Vec<&'static AddressEntry> {
 }
 
 #[update]
-fn remove_address(address: Principal) -> () {
+fn remove_address(address: Principal) {
     storage::get_mut::<AddressBook>().remove(&address);
     update_chart();
     record(EventKind::AddressRemoved { id: address })
@@ -440,6 +456,7 @@ fn get_chart(args: Option<GetChartArgs>) -> Vec<(u64, u64)> {
     let precision = precision.unwrap_or(60 * 60 * 1_000_000);
 
     let mut last_tick = u64::MAX;
+    #[allow(clippy::unnecessary_filter_map)]
     chart
         .iter()
         .rev()
