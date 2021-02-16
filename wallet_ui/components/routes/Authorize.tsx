@@ -5,7 +5,7 @@ import {
   Principal,
   Actor,
   canister,
-  getPrincipal,
+  getAgentPrincipal,
 } from "../../canister";
 import { useHistory } from "react-router";
 import Typography from "@material-ui/core/Typography";
@@ -55,7 +55,7 @@ const useStyles = makeStyles((theme) => ({
 
 export function Authorize({ dark }: { dark: boolean }) {
   const log = makeLog('Authorize')
-  const [principal, setPrincipal] = useState<Principal | null>(null);
+  const [agentPrincipal, setAgentPrincipal] = useState<Principal | null>(null);
   const [copied, setCopied] = useState(false);
   const history = useHistory();
   const classes = useStyles();
@@ -69,10 +69,12 @@ export function Authorize({ dark }: { dark: boolean }) {
   }
 
   useEffect(() => {
-    getPrincipal().then(p => {
+      getAgentPrincipal().then(setAgentPrincipal);
+().then(p => {
       log('debug', 'getPrincipal() got p, passing it to setPrincipal now', p)
       setPrincipal(p);
     });
+
     checkAccess();
 
     const id = setInterval(
@@ -82,14 +84,14 @@ export function Authorize({ dark }: { dark: boolean }) {
     return () => clearInterval(id);
   }, [authentication]);
 
-  if (principal && !principal.isAnonymous()) {
+  if (agentPrincipal && !agentPrincipal.isAnonymous()) {
     const canisterId = canister && Actor.canisterIdOf(canister);
     const isLocalhost = !!window.location.hostname.match(/^(.*\.)?localhost$/);
     const canisterCallShCode = `dfx canister${
       isLocalhost ? "" : " --network ic"
     } call "${
       canisterId?.toText() || ""
-    }" authorize '(principal "${principal.toText()}")'`;
+    }" authorize '(principal "${agentPrincipal.toText()}")'`;
 
     function copyHandler() {
       setCopied(true);
@@ -151,7 +153,7 @@ export function Authorize({ dark }: { dark: boolean }) {
         </Box>
       </main>
     );
-  } else if (principal && principal.isAnonymous()) {
+  } else if (agentPrincipal && agentPrincipal.isAnonymous()) {
     return (
       <Container maxWidth="lg" className={classes.container}>
         <Grid container spacing={3}>

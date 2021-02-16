@@ -34,7 +34,7 @@ export const Principal = Actor.canisterIdOf(window.ic.canister!)
   .constructor as typeof agent.Principal;
 export type Principal = agent.Principal;
 
-export async function getPrincipal(): Promise<Principal | null> {
+export async function getAgentPrincipal(): Promise<Principal | null> {
   return window.ic.agent.getPrincipal();
 }
 
@@ -54,18 +54,8 @@ interface ActorInterface {
 }
 
 export const WalletCanister: agent.ActorSubclass<ActorInterface> = (() => {
-  const params = new URLSearchParams(location.search);
-
   let walletId: Principal | null = null;
-  const maybeWalletId = params.get("wallet");
-  if (maybeWalletId) {
-    walletId = Principal.fromText(maybeWalletId);
-  } else {
-    const maybeCanister = window.ic.canister;
-    if (maybeCanister) {
-      walletId = Actor.canisterIdOf(maybeCanister);
-    }
-  }
+  walletId = getWalletId(walletId);
 
   if (!walletId) {
     throw new Error("Need to have a wallet ID.");
@@ -82,6 +72,20 @@ export enum ChartPrecision {
   Daily,
   Weekly,
   Monthly,
+}
+
+export function getWalletId(walletId: agent.Principal | null) {
+  const params = new URLSearchParams(location.search);
+  const maybeWalletId = params.get("wallet");
+  if (maybeWalletId) {
+    walletId = Principal.fromText(maybeWalletId);
+  } else {
+    const maybeCanister = window.ic.canister;
+    if (maybeCanister) {
+      walletId = Actor.canisterIdOf(maybeCanister);
+    }
+  }
+  return walletId;
 }
 
 function precisionToNanoseconds(precision: ChartPrecision) {
