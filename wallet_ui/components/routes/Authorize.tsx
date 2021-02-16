@@ -69,8 +69,7 @@ export function Authorize({ dark }: { dark: boolean }) {
   }
 
   useEffect(() => {
-      getAgentPrincipal().then(setAgentPrincipal);
-().then(p => {
+    getAgentPrincipal().then(p => {
       log('debug', 'getPrincipal() got p, passing it to setPrincipal now', p)
       setPrincipal(p);
     });
