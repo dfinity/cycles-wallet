@@ -88,22 +88,6 @@ export function WalletAppBar(props: {
 
   const menuId = "primary-search-account-menu";
 
-  const renderMenu = (
-    <Menu
-      anchorEl={anchorEl}
-      anchorOrigin={{ vertical: "top", horizontal: "right" }}
-      id={menuId}
-      keepMounted
-      transformOrigin={{ vertical: "top", horizontal: "right" }}
-      open={isMenuOpen}
-      onClose={handleMenuClose}
-    >
-      <MenuItem onClick={handleMenuClose}>
-        <FormControlLabel control={<Switch checked={dark} onChange={onDarkToggle} />} label="Dark Mode" />
-      </MenuItem>
-    </Menu>
-  );
-
   return (
     <AppBar position="absolute" className={clsx(classes.appBar, open && menu && classes.appBarShift)}>
       <Toolbar className={classes.toolbar}>
@@ -128,7 +112,19 @@ export function WalletAppBar(props: {
           </IconButton>
         </MenuItem>
       </Toolbar>
-      {renderMenu}
+      <Menu
+        anchorEl={anchorEl}
+        anchorOrigin={{ vertical: "top", horizontal: "right" }}
+        id={menuId}
+        keepMounted
+        transformOrigin={{ vertical: "top", horizontal: "right" }}
+        open={isMenuOpen}
+        onClose={handleMenuClose}
+      >
+        <MenuItem onClick={handleMenuClose}>
+          <FormControlLabel control={<Switch checked={dark} onChange={onDarkToggle} />} label="Dark Mode" />
+        </MenuItem>
+      </Menu>
     </AppBar>
   );
 }
