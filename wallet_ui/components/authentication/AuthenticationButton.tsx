@@ -1,8 +1,8 @@
 import * as React from "react";
 import Button from "@material-ui/core/Button";
 import { makeLog } from "@dfinity/agent";
-import { authenticator } from "@dfinity/authentication";
 import { AuthenticatorSession, Session } from "../../session";
+import { authenticator } from "../../utils/auth";
 
 const log = makeLog('AuthenticationButton')
 

@@ -35,7 +35,7 @@ export const Principal = Actor.canisterIdOf(window.ic.canister!)
 export type Principal = agent.Principal;
 
 export async function getAgentPrincipal(): Promise<Principal | null> {
-  return window.ic.agent.getPrincipal();
+  return Principal.anonymous();
 }
 
 interface BigNumber {

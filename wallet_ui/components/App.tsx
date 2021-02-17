@@ -15,7 +15,6 @@ import {
   Switch as RouterSwitch,
   Route,
 } from "react-router-dom";
-import { authenticator } from "@dfinity/authentication";
 import AuthenticationContext from "./authentication/AuthenticationContext";
 // For Switch Theming
 import { createMuiTheme, ThemeProvider } from "@material-ui/core/styles";
@@ -30,6 +29,7 @@ import { useLocalStorage } from "../utils/hooks";
 import { KeyedLocalStorage, readOrCreateSession, Session } from "../session";
 import { makeLog } from "@dfinity/agent";
 import { useInternetComputerAuthentication } from "../authentication-react";
+import { authenticator } from "../utils/auth";
 
 export function Copyright() {
   return (
