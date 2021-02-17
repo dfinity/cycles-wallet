@@ -20,17 +20,18 @@
  * with the wallet canister.
  */
 import { convertIdlEventMap, Event, factory } from "./wallet.did";
-import type * as agent from "@dfinity/agent";
+import * as agent from "@dfinity/agent";
 import { readSession, SessionSignIdentity } from "../session";
 
 export * from "./wallet.did";
 
-declare const window: agent.GlobalInternetComputer;
+declare const window: Window & agent.GlobalInternetComputer;
 
 export const canister = window.ic.canister;
 
 // Reuse the types from window, as they don't take any space (coming from bootstrap)
 export const Actor = window.ic.canister!.constructor! as typeof agent.Actor;
+export const HttpAgent = agent.HttpAgent;
 export const Principal = Actor.canisterIdOf(window.ic.canister!)
   .constructor as typeof agent.Principal;
 export type Principal = agent.Principal;
@@ -66,8 +67,15 @@ export const WalletCanister: agent.ActorSubclass<ActorInterface> = (() => {
   if (!walletId) {
     throw new Error("Need to have a wallet ID.");
   } else {
+    const maybeSession = readSession({ localStorage, key: 'wallet-rs-session' });
+    const isLocalhost = !!window.location.hostname.match(/^(.*\.)?localhost$/);
+
     return (Actor as any).createActor(factory as any, {
       canisterId: walletId,
+      agent: new HttpAgent({
+        ...!isLocalhost && { host: "https://gw.dfinity.network" },
+        ...maybeSession && { identity: SessionSignIdentity(maybeSession) }
+      })
     }) as agent.ActorSubclass<ActorInterface>;
   }
 })();

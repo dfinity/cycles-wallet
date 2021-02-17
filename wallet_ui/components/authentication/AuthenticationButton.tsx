@@ -1,10 +1,7 @@
 import * as React from "react";
 import Button from "@material-ui/core/Button";
-import { makeLog } from "@dfinity/agent";
 import { AuthenticatorSession, Session } from "../../session";
 import { authenticator } from "../../utils/auth";
-
-const log = makeLog('AuthenticationButton')
 
 type Scope = Parameters<(typeof authenticator)['sendAuthenticationRequest']>[0]['scope']
 type RedirectUri = Parameters<(typeof authenticator)['sendAuthenticationRequest']>[0]['redirectUri']
@@ -25,7 +22,7 @@ export default function (props: React.PropsWithChildren<{
     // If there is already an authenticationResponse, disable the button
     // const disabled = React.useMemo(() => Boolean(session.authenticationResponse), [session]);
     const onClickButton = (event: React.MouseEvent) => {
-        log('debug', 'onClick', {
+        console.log('debug', 'onClick', {
             event,
             session,
         });
@@ -33,7 +30,7 @@ export default function (props: React.PropsWithChildren<{
             ...props.request,
             session: AuthenticatorSession(props.session),
         };
-        log('debug', 'invoking `authenticator.sendAuthenticationRequest`', command)
+        console.log('debug', 'invoking `authenticator.sendAuthenticationRequest`', command)
         authenticator.sendAuthenticationRequest(command);
     }
     return <>

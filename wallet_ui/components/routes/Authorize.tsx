@@ -29,7 +29,7 @@ import { makeLog } from "@dfinity/agent";
 SyntaxHighlighter.registerLanguage("bash", bash);
 SyntaxHighlighter.registerLanguage("plaintext", plaintext);
 
-const CHECK_ACCESS_FREQUENCY_IN_SECONDS = 15;
+const CHECK_ACCESS_FREQUENCY_IN_SECONDS = 1;
 
 const useStyles = makeStyles((theme) => ({
   paper: {
@@ -55,7 +55,7 @@ const useStyles = makeStyles((theme) => ({
 
 export function Authorize({ dark }: { dark: boolean }) {
   const log = makeLog('Authorize')
-  const [agentPrincipal, setAgentPrincipal] = useState<Principal | null>(null);
+  const [userPrincipal, setUserPrincipal] = useState<Principal | null>(null);
   const [copied, setCopied] = useState(false);
   const history = useHistory();
   const classes = useStyles();
@@ -69,11 +69,7 @@ export function Authorize({ dark }: { dark: boolean }) {
   }
 
   useEffect(() => {
-    getAgentPrincipal().then(p => {
-      log('debug', 'getPrincipal() got p, passing it to setPrincipal now', p)
-      setAgentPrincipal(p);
-    });
-
+    getAgentPrincipal().then(p => setUserPrincipal(p));
     checkAccess();
 
     const id = setInterval(
@@ -83,14 +79,14 @@ export function Authorize({ dark }: { dark: boolean }) {
     return () => clearInterval(id);
   }, [authentication]);
 
-  if (agentPrincipal && !agentPrincipal.isAnonymous()) {
+  if (userPrincipal && authentication.session.authenticationResponse !== undefined) {
     const canisterId = canister && Actor.canisterIdOf(canister);
     const isLocalhost = !!window.location.hostname.match(/^(.*\.)?localhost$/);
     const canisterCallShCode = `dfx canister${
       isLocalhost ? "" : " --network ic"
     } call "${
       canisterId?.toText() || ""
-    }" authorize '(principal "${agentPrincipal.toText()}")'`;
+    }" authorize '(principal "${userPrincipal.toText()}")'`;
 
     function copyHandler() {
       setCopied(true);
@@ -152,38 +148,41 @@ export function Authorize({ dark }: { dark: boolean }) {
         </Box>
       </main>
     );
-  } else if (agentPrincipal && agentPrincipal.isAnonymous()) {
+  } else if (authentication.session.authenticationResponse === undefined) {
     return (
-      <Container maxWidth="lg" className={classes.container}>
-        <Grid container spacing={3}>
-          <Grid item xs={12}>
-            <Paper className={classes.paper}>
-              <Typography component="h1" variant="h4" color="primary">
-                Anonymous Device
-              </Typography>
-              <Typography variant="body1" color="textPrimary">
-                You are using an anonymous Principal. You need to sign up.
-              </Typography>
-              <AuthenticationButton
-                session={authentication.session}
-                request={{
-                  scope: [
-                    ...[
-                      canister ? Actor.canisterIdOf(canister): getLocationCanisterPrincipal(location),
-                    ].map(principal => ({
-                      type: "CanisterScope" as const,
-                      principal,
-                    }))
-                  ],
-                  redirectUri: new URL(location.href)
-                }}
-              >
-                Sign Up
-              </AuthenticationButton>
-            </Paper>
+      <main className={classes.content}>
+        <div className={classes.appBarSpacer} />
+        <Container maxWidth="lg" className={classes.container}>
+          <Grid container spacing={3}>
+            <Grid item xs={12}>
+              <Paper className={classes.paper}>
+                <Typography component="h1" variant="h4" color="primary">
+                  Anonymous Device
+                </Typography>
+                <Typography variant="body1" color="textPrimary">
+                  You are using an anonymous Principal. You need to sign up.
+                </Typography>
+                <AuthenticationButton
+                  session={authentication.session}
+                  request={{
+                    scope: [
+                      ...[
+                        canister ? Actor.canisterIdOf(canister): getLocationCanisterPrincipal(location),
+                      ].map(principal => ({
+                        type: "CanisterScope" as const,
+                        principal,
+                      }))
+                    ],
+                    redirectUri: new URL(location.href)
+                  }}
+                >
+                  Sign Up
+                </AuthenticationButton>
+              </Paper>
+            </Grid>
           </Grid>
-        </Grid>
-      </Container>
+        </Container>
+      </main>
     );
   } else {
     return <></>;

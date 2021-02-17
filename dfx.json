@@ -4,7 +4,10 @@
       "build": "wallet/build.sh",
       "candid": "wallet/src/lib.did",
       "type": "custom",
-      "wasm": "wallet/target/wasm32-unknown-unknown/release/wallet-opt.wasm"
+      "wasm": "wallet/target/wasm32-unknown-unknown/release/wallet-opt.wasm",
+      "initialization_values": {
+        "memory_allocation": "1GB"
+      }
     },
     "alice": {
       "build": "true",

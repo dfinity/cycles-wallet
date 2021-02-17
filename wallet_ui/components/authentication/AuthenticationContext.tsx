@@ -3,7 +3,7 @@ import * as React from "react";
 import { createSession, Session } from "../../session";
 
 interface AuthenticationContextValue {
-    identity: IdentityDescriptor
+    identity: { type: string; },
     session: Readonly<Session>
 }
 

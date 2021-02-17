@@ -1,4 +1,4 @@
-import { blobFromUint8Array, makeLog, SignIdentity } from "@dfinity/agent";
+import { AnonymousIdentity, blobFromUint8Array, makeLog, SignIdentity } from "@dfinity/agent";
 import { Ed25519KeyIdentity } from "@dfinity/authentication";
 
 export interface KeyedLocalStorage {
@@ -24,7 +24,6 @@ export function readSession(storage: KeyedLocalStorage): Readonly<Session> | und
   const log = makeLog("readSession");
   const { localStorage, key: localStorageKey } = storage;
   const stored = localStorage.getItem(localStorageKey);
-  console.log(stored, localStorageKey);
   if (!stored) {
     return;
   }
