@@ -7,6 +7,8 @@ import App from "./components/App";
 import "./css/main.css";
 import { KeyedLocalStorage } from "./session";
 
+(window as any).Buffer = require('buffer/').Buffer;
+
 const sessionStorage: KeyedLocalStorage = {
   localStorage,
   key: 'wallet-rs-session'

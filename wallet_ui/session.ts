@@ -24,6 +24,7 @@ export function readSession(storage: KeyedLocalStorage): Readonly<Session> | und
   const log = makeLog("readSession");
   const { localStorage, key: localStorageKey } = storage;
   const stored = localStorage.getItem(localStorageKey);
+  console.log(stored, localStorageKey);
   if (!stored) {
     return;
   }
@@ -116,7 +117,7 @@ function hexToBytes(hex: string) {
  * The only supported SignIdentity is Ed25519KeyIdentity (so far)
  * @param session - ic-whoami Session to use as inputs to SignIdentity construction
  */
-function SessionSignIdentity(session: Session): SignIdentity {
+export function SessionSignIdentity(session: Session): SignIdentity {
   makeLog('SessionSignIdentity')('debug', { session })
   const id = Ed25519KeyIdentity.fromSecretKey(
     hexToBytes(session.identity.secretKey.hex)

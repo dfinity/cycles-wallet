@@ -21,6 +21,7 @@
  */
 import { convertIdlEventMap, Event, factory } from "./wallet.did";
 import type * as agent from "@dfinity/agent";
+import { readSession, SessionSignIdentity } from "../session";
 
 export * from "./wallet.did";
 
@@ -35,6 +36,11 @@ export const Principal = Actor.canisterIdOf(window.ic.canister!)
 export type Principal = agent.Principal;
 
 export async function getAgentPrincipal(): Promise<Principal | null> {
+  const maybeSession = readSession({ localStorage, key: 'wallet-rs-session' });
+  if (maybeSession) {
+    const sessionIdentity = SessionSignIdentity(maybeSession);
+    return sessionIdentity.getPrincipal();
+  }
   return Principal.anonymous();
 }
 
