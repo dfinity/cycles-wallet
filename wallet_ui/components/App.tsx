@@ -28,7 +28,7 @@ import { Authorize } from "./routes/Authorize";
 import { Dashboard } from "./routes/Dashboard";
 import { useLocalStorage } from "../utils/hooks";
 import { KeyedLocalStorage, readOrCreateSession, Session } from "../session";
-import { makeLog } from "@dfinity/agent";
+import { makeLog } from "../log";
 import { useInternetComputerAuthentication } from "../authentication-react";
 
 export function Copyright() {

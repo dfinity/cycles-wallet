@@ -1,10 +1,9 @@
 import * as React from "react";
-import { useEffect, useRef } from "react";
 import { Authenticator, IdentitiesIterable } from "@dfinity/authentication"
 import { AuthenticatorSession, KeyedLocalStorage, readOrCreateSession, readSession, Session, writeSession } from "./session";
-import { AnonymousIdentity, createIdentityDescriptor, IdentityDescriptor, makeLog } from "@dfinity/agent";
-import * as assert from "assert";
+import { IdentityDescriptor } from "@dfinity/agent";
 import { useValue } from "@repeaterjs/react-hooks";
+import { makeLog } from "./log";
 
 interface AuthenticationState {
     identity: Readonly<IdentityDescriptor>

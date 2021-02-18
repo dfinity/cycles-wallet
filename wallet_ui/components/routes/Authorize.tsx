@@ -24,7 +24,7 @@ import Box from "@material-ui/core/Box";
 import { Copyright } from "../App";
 import AuthenticationButton from "../authentication/AuthenticationButton";
 import AuthenticationContext from "../authentication/AuthenticationContext";
-import { makeLog } from "@dfinity/agent";
+import { makeLog } from "../../log";
 
 SyntaxHighlighter.registerLanguage("bash", bash);
 SyntaxHighlighter.registerLanguage("plaintext", plaintext);

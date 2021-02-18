@@ -1,5 +1,6 @@
-import { blobFromUint8Array, makeLog, SignIdentity } from "@dfinity/agent";
+import { blobFromUint8Array, SignIdentity } from "@dfinity/agent";
 import { Ed25519KeyIdentity } from "@dfinity/authentication";
+import { makeLog } from "./log";
 
 export interface KeyedLocalStorage {
   key: string;
