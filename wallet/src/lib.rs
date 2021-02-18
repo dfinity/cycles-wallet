@@ -340,6 +340,53 @@ mod wallet {
         create_result
     }
 
+    #[derive(CandidType, Deserialize)]
+    struct CreateWalletArgs {
+        cycles: u64,
+        controller: Option<Principal>,
+        wasm_module: Vec<u8>,
+    }
+
+    #[update(guard = "is_custodian", name = "wallet_create_wallet")]
+    async fn create_wallet(args: CreateWalletArgs) -> CreateResult {
+        let (create_result,): (CreateResult,) = match api::call::call_with_payment(
+            Principal::management_canister(),
+            "create_canister",
+            (),
+            args.cycles as i64,
+        )
+        .await
+        {
+            Ok(x) => x,
+            Err((code, msg)) => {
+                ic_cdk::trap(&format!(
+                    "An error happened during the call: {}: {}",
+                    code as u8, msg
+                ));
+            }
+        };
+
+
+        let (create_result,): (CreateResult,) = match api::call::call_with_payment(
+            Principal::management_canister(),
+            "install_code",
+            (),
+            args.cycles as i64,
+        )
+        .await
+        {
+            Ok(x) => x,
+            Err((code, msg)) => {
+                ic_cdk::trap(&format!(
+                    "An error happened during the call: {}: {}",
+                    code as u8, msg
+                ));
+            }
+        };
+
+
+    }
+
     /***************************************************************************************************
      * Call Forwarding
      **************************************************************************************************/
