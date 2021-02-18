@@ -41,6 +41,7 @@ struct StableStorage {
     events: EventBuffer,
     name: Option<String>,
     chart: Vec<ChartTick>,
+    wasm_module: Option<Vec<u8>>,
 }
 
 #[pre_upgrade]
@@ -340,15 +341,8 @@ mod wallet {
         create_result
     }
 
-    #[derive(CandidType, Deserialize)]
-    struct CreateWalletArgs {
-        cycles: u64,
-        controller: Option<Principal>,
-        wasm_module: Vec<u8>,
-    }
-
     #[update(guard = "is_custodian", name = "wallet_create_wallet")]
-    async fn create_wallet(args: CreateWalletArgs) -> CreateResult {
+    async fn create_wallet(args: CreateCanisterArgs) -> CreateResult {
         let (create_result,): (CreateResult,) = match api::call::call_with_payment(
             Principal::management_canister(),
             "create_canister",
@@ -366,11 +360,34 @@ mod wallet {
             }
         };
 
+        #[derive(candid::CandidType)]
+        enum InstallMode {
+            Install,
+        }
 
-        let (create_result,): (CreateResult,) = match api::call::call_with_payment(
+        #[derive(candid::CandidType)]
+        struct CanisterInstall {
+            mode: InstallMode,
+            canister_id: Principal,
+            // wasm_module: Vec<u8>,
+            arg: Vec<u8>,
+            compute_allocation: Option<candid::Nat>,
+            memory_allocation: Option<candid::Nat>,
+        }
+
+        let install_config = CanisterInstall {
+            mode: InstallMode::Install,
+            canister_id: create_result.canister_id.clone(),
+            // wasm_module: args.wasm_module,
+            arg: Default::default(),
+            compute_allocation: None,
+            memory_allocation: None,
+        };
+
+        let (_,): (candid::parser::value::IDLValue,) = match api::call::call_with_payment(
             Principal::management_canister(),
             "install_code",
-            (),
+            (install_config,),
             args.cycles as i64,
         )
         .await
@@ -384,8 +401,37 @@ mod wallet {
             }
         };
 
-
+        if let Some(new_controller) = args.controller {
+            match api::call::call(
+                Principal::management_canister(),
+                "set_controller",
+                (create_result.canister_id.clone(), new_controller),
+            )
+            .await
+            {
+                Ok(x) => x,
+                Err((code, msg)) => {
+                    ic_cdk::trap(&format!(
+                        "An error happened during the call: {}: {}",
+                        code as u8, msg
+                    ));
+                }
+            };
+        }
+        // events::record(events::EventKind::CanisterCreated {
+        //     canister: create_result.canister_id.clone(),
+        //     cycles: args.cycles,
+        // });
+        super::update_chart();
+        create_result
     }
+
+
+    #[update(guard = "is_custodian", name = "wallet_store_wallet_wasm")]
+    async fn store_wallet_wasm(wasm_module: Vec<u8>) {
+        
+    }
+
 
     /***************************************************************************************************
      * Call Forwarding
