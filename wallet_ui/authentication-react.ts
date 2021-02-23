@@ -1,8 +1,7 @@
 import * as React from "react";
-import { Authenticator, IdentitiesIterable } from "@dfinity/authentication"
+import { Authenticator, IdentityRequestedEvent } from "@dfinity/authentication"
 import { AuthenticatorSession, KeyedLocalStorage, readOrCreateSession, readSession, Session, writeSession } from "./session";
-import { IdentityDescriptor } from "@dfinity/agent";
-import { useValue } from "@repeaterjs/react-hooks";
+import { IdentityDescriptor, isIdentityDescriptor } from "@dfinity/agent";
 import { makeLog } from "./log";
 
 interface AuthenticationState {
@@ -27,9 +26,24 @@ export function useInternetComputerAuthentication(
 ): AuthenticationState {
     // IdentitiesIterable will async yield the current identity, and then each new identity
     // This will assign each new async value to `latestIdentityDescriptor`.
-    const latestIdentityDescriptor: IdentityDescriptor = useValue(() => IdentitiesIterable(document)) || {
+    const [latestIdentityDescriptor, setLatestIdentityDescriptor] = React.useState<IdentityDescriptor>({
         type: "AnonymousIdentity" as const,
-    };
+    });
+    // Do this once on first use of hook (no deps to re-trigger)
+    React.useEffect(
+        () => {
+            document.dispatchEvent(IdentityRequestedEvent({
+                onIdentity(maybeIdentity) {
+                    if ( ! isIdentityDescriptor(maybeIdentity)) {
+                        console.warn('IdentityRequestedEvent onIdentity called, but its not isIdentityDescriptor...', { maybeIdentity });
+                        return;
+                    }
+                    setLatestIdentityDescriptor(maybeIdentity);
+                }
+            }))
+        },
+        [],
+    );
     const log = makeLog('useInternetComputerAuthentication');
     // get session from storage, or create it if this is the first time this user-agent
     // has loaded this page.
