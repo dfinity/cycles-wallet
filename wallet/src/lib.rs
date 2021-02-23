@@ -21,9 +21,20 @@ impl Default for FrontendBytes {
     }
 }
 
+struct WalletWASMBytes(pub Cow<'static, [u8]>);
+
+impl Default for WalletWASMBytes {
+    fn default() -> Self {
+        WalletWASMBytes(Cow::Borrowed(Default::default()))
+    }
+}
+
 /// The wallet (this canister's) name.
 #[derive(Default)]
 struct WalletName(pub(crate) Option<String>);
+
+// #[derive(CandidType, Deserialize, Default)]
+// struct WalletWasmModule(pub Vec<u8>);
 
 /// Initialize this canister.
 #[init]
@@ -47,6 +58,7 @@ struct StableStorage {
 fn pre_upgrade() {
     let frontend_bytes = storage::get::<FrontendBytes>();
     let address_book = storage::get::<AddressBook>();
+    let wallet_bytes = storage::get::<WalletWASMBytes>();
     let stable = StableStorage {
         frontend: match &frontend_bytes.0 {
             Cow::Borrowed(_) => None,
@@ -56,6 +68,10 @@ fn pre_upgrade() {
         events: storage::get::<EventBuffer>().clone(),
         name: storage::get::<WalletName>().0.clone(),
         chart: storage::get::<Vec<ChartTick>>().to_vec(),
+        wasm_module: match &wallet_bytes.0 {
+            Cow::Borrowed(_) => None,
+            Cow::Owned(o) => Some(o.to_vec()),
+        },
     };
     match storage::stable_save((stable,)) {
         Ok(_) => (),
@@ -196,9 +212,10 @@ mod wallet {
     use crate::{events, is_custodian};
     use ic_cdk::export::candid::CandidType;
     use ic_cdk::export::Principal;
-    use ic_cdk::{api, caller};
+    use ic_cdk::{api, caller, storage};
     use ic_cdk_macros::*;
     use serde::Deserialize;
+    use std::borrow::Cow;
 
     /***************************************************************************************************
      * Cycle Management
@@ -337,6 +354,7 @@ mod wallet {
 
     #[update(guard = "is_custodian", name = "wallet_create_wallet")]
     async fn create_wallet(args: CreateCanisterArgs) -> CreateResult {
+        // Create Canister
         let (create_result,): (CreateResult,) = match api::call::call_with_payment(
             Principal::management_canister(),
             "create_canister",
@@ -354,16 +372,24 @@ mod wallet {
             }
         };
 
+
+        // Install Wasm
         #[derive(candid::CandidType)]
         enum InstallMode {
             Install,
         }
 
+        let wallet_bytes = storage::get::<super::WalletWASMBytes>();
+        let wasm_module = match &wallet_bytes.0 {
+            Cow::Borrowed(_) => None,
+            Cow::Owned(o) => Some(o.to_vec()),
+        };
+
         #[derive(candid::CandidType)]
         struct CanisterInstall {
             mode: InstallMode,
             canister_id: Principal,
-            // wasm_module: Vec<u8>,
+            wasm_module: Vec<u8>,
             arg: Vec<u8>,
             compute_allocation: Option<candid::Nat>,
             memory_allocation: Option<candid::Nat>,
@@ -372,7 +398,7 @@ mod wallet {
         let install_config = CanisterInstall {
             mode: InstallMode::Install,
             canister_id: create_result.canister_id.clone(),
-            // wasm_module: args.wasm_module,
+            wasm_module: wasm_module.clone().unwrap(),
             arg: Default::default(),
             compute_allocation: None,
             memory_allocation: None,
@@ -395,6 +421,25 @@ mod wallet {
             }
         };
 
+        // Store wallet wasm
+        let (_,): (candid::parser::value::IDLValue,) = match api::call::call_with_payment(
+            create_result.canister_id.clone(),
+            "wallet_store_wallet_wasm",
+            (wasm_module.unwrap(),),
+            args.cycles as i64,
+        )
+        .await
+        {
+            Ok(x) => x,
+            Err((code, msg)) => {
+                ic_cdk::trap(&format!(
+                    "An error happened during the call: {}: {}",
+                    code as u8, msg
+                ));
+            }
+        };
+
+        // Set controller
         if let Some(new_controller) = args.controller {
             match api::call::call(
                 Principal::management_canister(),
@@ -420,12 +465,12 @@ mod wallet {
         create_result
     }
 
-
     #[update(guard = "is_custodian", name = "wallet_store_wallet_wasm")]
     async fn store_wallet_wasm(wasm_module: Vec<u8>) {
-        
+        let wallet_bytes = storage::get_mut::<super::WalletWASMBytes>();
+        wallet_bytes.0 = Cow::Owned(wasm_module);
+        // super::update_chart();
     }
-
 
     /***************************************************************************************************
      * Call Forwarding
