@@ -81,7 +81,6 @@ service : {
   wallet_create_wallet: (record {
     cycles: nat64;
     controller: opt principal;  // If omitted, set the controller to this wallet.
-    wasm_module: blob; // Wallet WASM module
   }) -> (record {canister_id: principal });
 
   wallet_store_wallet_wasm: (record {
