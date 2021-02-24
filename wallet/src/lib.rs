@@ -34,9 +34,6 @@ impl Default for WalletWASMBytes {
 #[derive(Default)]
 struct WalletName(pub(crate) Option<String>);
 
-// #[derive(CandidType, Deserialize, Default)]
-// struct WalletWasmModule(pub Vec<u8>);
-
 /// Initialize this canister.
 #[init]
 fn init() {

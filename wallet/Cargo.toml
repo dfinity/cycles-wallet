@@ -5,6 +5,7 @@ authors = ["DFINITY Stiftung <sdk@dfinity.org>"]
 edition = "2018"
 
 [profile.release]
+lto = true
 opt-level = 'z'
 
 [lib]
