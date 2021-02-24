@@ -372,17 +372,23 @@ mod wallet {
             }
         };
 
-
         // Install Wasm
-        #[derive(candid::CandidType)]
+        #[derive(candid::CandidType, Deserialize)]
         enum InstallMode {
+            #[serde(rename = "install")]
             Install,
+            #[serde(rename = "reinstall")]
+            Reinstall,
+            #[serde(rename = "upgrade")]
+            Upgrade,
         }
 
         let wallet_bytes = storage::get::<super::WalletWASMBytes>();
         let wasm_module = match &wallet_bytes.0 {
-            Cow::Borrowed(_) => None,
-            Cow::Owned(o) => Some(o.to_vec()),
+            Cow::Borrowed(_) => {
+                ic_cdk::trap("No wasm module stored.");
+            },
+            Cow::Owned(o) => o.to_vec(),
         };
 
         #[derive(candid::CandidType)]
@@ -398,13 +404,13 @@ mod wallet {
         let install_config = CanisterInstall {
             mode: InstallMode::Install,
             canister_id: create_result.canister_id.clone(),
-            wasm_module: wasm_module.clone().unwrap(),
-            arg: Default::default(),
+            wasm_module: wasm_module.clone(),
+            arg: b" ".to_vec(),
             compute_allocation: None,
             memory_allocation: None,
         };
 
-        let (_,): (candid::parser::value::IDLValue,) = match api::call::call_with_payment(
+        let _ = match api::call::call_with_payment(
             Principal::management_canister(),
             "install_code",
             (install_config,),
@@ -422,10 +428,10 @@ mod wallet {
         };
 
         // Store wallet wasm
-        let (_,): (candid::parser::value::IDLValue,) = match api::call::call_with_payment(
+        let _ = match api::call::call_with_payment(
             create_result.canister_id.clone(),
             "wallet_store_wallet_wasm",
-            (wasm_module.unwrap(),),
+            (wasm_module,),
             args.cycles as i64,
         )
         .await
@@ -457,10 +463,10 @@ mod wallet {
                 }
             };
         }
-        // events::record(events::EventKind::CanisterCreated {
-        //     canister: create_result.canister_id.clone(),
-        //     cycles: args.cycles,
-        // });
+        events::record(events::EventKind::CanisterCreated {
+            canister: create_result.canister_id.clone(),
+            cycles: args.cycles,
+        });
         super::update_chart();
         create_result
     }
@@ -469,7 +475,7 @@ mod wallet {
     async fn store_wallet_wasm(wasm_module: Vec<u8>) {
         let wallet_bytes = storage::get_mut::<super::WalletWASMBytes>();
         wallet_bytes.0 = Cow::Owned(wasm_module);
-        // super::update_chart();
+        super::update_chart();
     }
 
     /***************************************************************************************************
