@@ -56,7 +56,6 @@ struct StableStorage {
 fn pre_upgrade() {
     let frontend_bytes = storage::get::<FrontendBytes>();
     let address_book = storage::get::<AddressBook>();
-    let wallet_bytes = storage::get::<WalletWASMBytes>();
     let stable = StableStorage {
         frontend: match &frontend_bytes.0 {
             Cow::Borrowed(_) => None,
@@ -66,10 +65,7 @@ fn pre_upgrade() {
         events: storage::get::<EventBuffer>().clone(),
         name: storage::get::<WalletName>().0.clone(),
         chart: storage::get::<Vec<ChartTick>>().to_vec(),
-        wasm_module: match &wallet_bytes.0 {
-            None => None,
-            Some(o) => Some(o.to_vec()),
-        },
+        wasm_module: storage::get::<WalletWASMBytes>().0.clone(),
     };
     match storage::stable_save((stable,)) {
         Ok(_) => (),
@@ -103,6 +99,8 @@ fn post_upgrade() {
         }
 
         storage::get_mut::<WalletName>().0 = storage.name;
+
+        storage::get_mut::<WalletWASMBytes>().0 = storage.wasm_module;
 
         let chart = storage::get_mut::<Vec<ChartTick>>();
         chart.clear();
