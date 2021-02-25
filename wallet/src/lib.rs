@@ -411,8 +411,7 @@ mod wallet {
         };
 
         // Store wallet wasm
-        match api::call::call(canister_id, "wallet_store_wallet_wasm", (wasm_module,)).await
-        {
+        match api::call::call(canister_id, "wallet_store_wallet_wasm", (wasm_module,)).await {
             Ok(x) => x,
             Err((code, msg)) => {
                 ic_cdk::trap(&format!(
