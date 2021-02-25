@@ -1,5 +1,6 @@
 .DS_Store
 .dfx/
+canister_ids.json
 Cargo.lock
 node_modules/
 target/
