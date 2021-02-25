@@ -101,7 +101,6 @@ export class AuthenticationClient {
   async handleRedirectCallback(location: Location) {
     const maybeToken = this._getAccessToken(location);
     if (!maybeToken) {
-      console.log('no token...');
       return;
     }
     const key = this._key;

@@ -81,7 +81,6 @@ async function getWalletCanister(): Promise<ActorSubclass<ActorInterface>> {
     host: await site.getHost(),
     identity: authClient.getIdentity(),
   });
-  console.log('id:', authClient.getIdentity());
 
   if (!walletId) {
     throw new Error("Need to have a wallet ID.");
