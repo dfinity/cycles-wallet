@@ -2,22 +2,15 @@
  * This file was copied from bootstrap website, waiting for it to be its own package.
  */
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
-import { Identity, Principal } from '@dfinity/agent';
+import { Principal } from '@dfinity/agent';
 
-const localStorageCanisterIdKey = 'dfinity-ic-canister-id';
-const localStorageHostKey = 'dfinity-ic-host';
-const localStorageIdentityKey = 'dfinity-ic-user-identity';
-const localStorageLoginKey = 'dfinity-ic-login';
-
-function _getVariable(name: string, localStorageName: string): string | undefined;
+function _getVariable(name: string): string | undefined;
 function _getVariable(
   name: string,
-  localStorageName: string,
   defaultValue: string,
 ): string;
 function _getVariable(
   name: string,
-  localStorageName: string,
   defaultValue?: string,
 ): string | undefined {
   const params = new URLSearchParams(window.location.search);
@@ -27,16 +20,11 @@ function _getVariable(
     return maybeValue;
   }
 
-  const lsValue = localStorage.getItem(localStorageName);
-  if (lsValue) {
-    return lsValue;
-  }
-
   return defaultValue;
 }
 
 function _parseCanisterId(s: string | undefined): Principal | undefined {
-  s = s || _getVariable('canisterId', localStorageCanisterIdKey);
+  s = s || _getVariable('canisterId');
 
   if (s === undefined) {
     return undefined;
@@ -53,8 +41,6 @@ function _parseCanisterId(s: string | undefined): Principal | undefined {
 const ic0AppHostRe = /(?:(?<subdomain>.*)\.)?(?<canisterId>[^.]*)\.(?<domain>ic0\.app)$/;
 // A regex that matches `SUBDOMAIN.CANISTER_ID.sdk-test.dfinity.network` (the staging URL).
 const sdkTestHostRe = /(?:(?<subdomain>.*)\.)?(?<canisterId>[^.]*)\.(?<domain>sdk-test\.dfinity\.network)$/;
-// Matches `SUBDOMAIN.lvh.me`, which always resolves to 127.0.0.1 (old localhost staging).
-const lvhMeHostRe = /(?<subdomain>.*)\.(?<canisterId>[^.]*)\.(?<domain>lvh\.me)$/;
 // Localhost (development environment).
 const localhostHostRe = /(?<subdomain>(.*))\.(?<domain>localhost)$/;
 
@@ -105,11 +91,6 @@ function _parseLocation(location: URL): LocationInfo {
     return _createLocationInfo(maybeLocalhost.groups!, location, DomainKind.Localhost);
   }
 
-  const maybeLvh = lvhMeHostRe.exec(location.hostname);
-  if (maybeLvh) {
-    return _createLocationInfo(maybeLvh.groups!, location, DomainKind.Lvh);
-  }
-
   return _createLocationInfo({}, location, DomainKind.Unknown);
 }
 
@@ -117,34 +98,13 @@ export enum DomainKind {
   Unknown,
   Localhost,
   Ic0,
-  Lvh,
 }
 
 export class SiteInfo {
-  public static async worker(): Promise<SiteInfo> {
-    const siteInfo = await SiteInfo.fromWindow();
-    siteInfo._isWorker = true;
-
-    return siteInfo;
-  }
-
-  public static async unknown(): Promise<SiteInfo> {
-    const principal = await _getVariable('canisterId', localStorageCanisterIdKey);
-    return new SiteInfo({
-      domain: '',
-      subdomain: [],
-      kind: DomainKind.Unknown,
-      canisterId: principal !== undefined ? Principal.fromText(principal) : null,
-      secure: false,
-    });
-  }
-
   public static fromWindow(): SiteInfo {
     const locationInfo = _parseLocation(new URL(window.location.toString()));
     return new SiteInfo(locationInfo);
   }
-
-  private _isWorker = false;
 
   constructor(private readonly _info: LocationInfo) {}
 
@@ -160,52 +120,10 @@ export class SiteInfo {
   public get domain(): string {
     return this._info.domain;
   }
-  public get subdomain(): string[] {
-    return this._info.subdomain;
-  }
-
-  public async setLogin(username: string, password: string): Promise<void> {
-    await this.store(localStorageLoginKey, JSON.stringify([username, password]));
-  }
-
-  public async getLogin(): Promise<[string, string] | undefined> {
-    const maybeCreds = await this.retrieve(localStorageLoginKey);
-    return maybeCreds !== undefined ? JSON.parse(maybeCreds) : undefined;
-  }
-
-  public async hasUserIdentity(): Promise<boolean> {
-    let k = await _getVariable('userIdentity', localStorageIdentityKey);
-    if (k === undefined) {
-      k = await this.retrieve(localStorageIdentityKey);
-    }
-
-    return !!k;
-  }
-
-  public isUnknown(): boolean {
-    return this.kind === DomainKind.Unknown;
-  }
-
-  public async getWorkerHost(): Promise<string> {
-    if (this._isWorker) {
-      return '';
-    }
-
-    const protocol = this.secure ? 'https:' : 'http:';
-
-    switch (this.kind) {
-      case DomainKind.Unknown:
-        throw new Error('Cannot get worker host inside a worker.');
-      case DomainKind.Ic0:
-      case DomainKind.Lvh:
-      case DomainKind.Localhost:
-        return `${protocol}//z.${this.domain}`;
-    }
-  }
 
   public async getHost(): Promise<string> {
     // Figure out the host.
-    let host = await _getVariable('host', localStorageHostKey, '');
+    let host = await _getVariable('host', '');
 
     if (host) {
       try {
@@ -228,20 +146,11 @@ export class SiteInfo {
         case DomainKind.Ic0:
           // TODO: think if we want to have this hard coded here. We might.
           return `${protocol}//gw.dfinity.network`;
-        case DomainKind.Lvh:
         case DomainKind.Localhost:
           return `${protocol}//z.${this.domain}`;
         default:
           return host || '';
       }
     }
-  }
-
-  private async store(name: string, value: string): Promise<void> {
-    localStorage.setItem(name, value);
-  }
-
-  private async retrieve(name: string): Promise<string | undefined> {
-    return localStorage.getItem(name) || undefined;
   }
 }
