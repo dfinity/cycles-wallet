@@ -8,6 +8,8 @@ import "./css/main.css";
 
 ReactDOM.render(<App />, document.getElementById("app"));
 
+console.log("success");
+
 function _addStylesheet(url: string) {
   // Add the Roboto stylesheet.
   const linkEl = document.createElement("link");

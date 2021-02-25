@@ -27,7 +27,7 @@ import {
 import { createMuiTheme, ThemeProvider } from "@material-ui/core/styles";
 
 // For document title setting
-import { Wallet } from '../canister';
+import { Wallet } from "../canister";
 
 // Routes
 import { Authorize } from "./routes/Authorize";
