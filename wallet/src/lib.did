@@ -52,6 +52,16 @@ type AddressEntry = record {
   role: Role;
 };
 
+type ResultCreate = variant {
+  Ok : record { canister_id: principal };
+  Err: text;
+}
+
+type ResultSend = variant {
+  Ok : ();
+  Err : text;
+};
+
 service : {
   // Wallet Name
   name: () -> (opt text) query;
@@ -69,14 +79,14 @@ service : {
 
   // Cycle Management
   wallet_balance: () -> (record { amount: nat64 }) query;
-  wallet_send: (record { canister: principal; amount: nat64 }) -> ();
+  wallet_send: (record { canister: principal; amount: nat64 }) -> ResultSend;
   wallet_receive: () -> (record { accepted: nat64 });  // Endpoint for receiving cycles.
 
   // Managing canister
   wallet_create_canister: (record {
     cycles: nat64;
     controller: opt principal;  // If omitted, set the controller to this wallet.
-  }) -> (record { canister_id: principal });
+  }) -> ResultCreate;
 
   // Call Forwarding
   wallet_call: (record {
