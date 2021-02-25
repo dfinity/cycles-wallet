@@ -349,7 +349,7 @@ mod wallet {
         };
     }
 
-    async fn install_wallet(canister_id: Principal, cycles: u64) {
+    async fn install_wallet(canister_id: Principal) {
         // Install Wasm
         #[derive(candid::CandidType, Deserialize)]
         enum InstallMode {
@@ -388,11 +388,10 @@ mod wallet {
             memory_allocation: None,
         };
 
-        let _ = match api::call::call_with_payment(
+        match api::call::call(
             Principal::management_canister(),
             "install_code",
             (install_config,),
-            cycles as i64,
         )
         .await
         {
@@ -406,13 +405,7 @@ mod wallet {
         };
 
         // Store wallet wasm
-        let _ = match api::call::call_with_payment(
-            canister_id,
-            "wallet_store_wallet_wasm",
-            (wasm_module,),
-            cycles as i64,
-        )
-        .await
+        match api::call::call(canister_id, "wallet_store_wallet_wasm", (wasm_module,)).await
         {
             Ok(x) => x,
             Err((code, msg)) => {
@@ -428,7 +421,7 @@ mod wallet {
     async fn create_wallet(args: CreateCanisterArgs) -> CreateResult {
         let create_result = create_canister_call(args.cycles).await;
 
-        install_wallet(create_result.canister_id.clone(), args.cycles).await;
+        install_wallet(create_result.canister_id.clone()).await;
 
         // Set controller
         if let Some(new_controller) = args.controller {
