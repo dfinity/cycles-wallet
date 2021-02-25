@@ -27,6 +27,7 @@ import { DialogContent } from "@material-ui/core";
 import DialogContentText from "@material-ui/core/DialogContentText";
 import DialogActions from "@material-ui/core/DialogActions";
 import Button from "@material-ui/core/Button";
+import { CreateWalletDialog } from "../panels/CreateWallet";
 
 const drawerWidth = 240;
 
@@ -93,7 +94,10 @@ const useStyles = makeStyles((theme) => ({
 
 export function Dashboard(props: { open: boolean; onOpenToggle: () => void }) {
   const [cyclesDialogOpen, setCyclesDialogOpen] = useState(false);
-  const [canisterCreateDialogOpen, setCanisterCreateDialogOpen] = useState(false);
+  const [canisterCreateDialogOpen, setCanisterCreateDialogOpen] = useState(
+    false
+  );
+  const [walletCreateDialogOpen, setWalletCreateDialogOpen] = useState(false);
   const [errorDialogContent, setErrorDialogContent] = useState<any | undefined>(
     undefined
   );
@@ -115,6 +119,14 @@ export function Dashboard(props: { open: boolean; onOpenToggle: () => void }) {
   }
   function handleCanisterCreateDialogOpen() {
     setCanisterCreateDialogOpen(true);
+  }
+
+  function handleWalletCreateDialogClose(maybeErr?: any) {
+    setWalletCreateDialogOpen(false);
+    setErrorDialogContent(maybeErr);
+  }
+  function handleWalletCreateDialogOpen() {
+    setWalletCreateDialogOpen(true);
   }
 
   return (
@@ -147,6 +159,12 @@ export function Dashboard(props: { open: boolean; onOpenToggle: () => void }) {
             </ListItemIcon>
             <ListItemText primary="Create a Canister" />
           </ListItem>
+          <ListItem button onClick={handleWalletCreateDialogOpen}>
+            <ListItemIcon>
+              <AddCircleOutlineIcon />
+            </ListItemIcon>
+            <ListItemText primary="Create a Wallet" />
+          </ListItem>
         </List>
       </Drawer>
 
@@ -158,6 +176,11 @@ export function Dashboard(props: { open: boolean; onOpenToggle: () => void }) {
       <CreateCanisterDialog
         open={canisterCreateDialogOpen}
         close={handleCanisterCreateDialogClose}
+      />
+
+      <CreateWalletDialog
+        open={walletCreateDialogOpen}
+        close={handleWalletCreateDialogClose}
       />
 
       <Dialog
