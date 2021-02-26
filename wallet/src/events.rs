@@ -60,6 +60,9 @@ pub enum EventKind {
         method_name: String,
         cycles: u64,
     },
+    WalletDeployed {
+        canister: Principal,
+    },
 }
 
 #[derive(CandidType, Clone, Deserialize)]
