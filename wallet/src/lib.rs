@@ -213,7 +213,7 @@ mod wallet {
     use ic_cdk::export::candid::CandidType;
     use ic_cdk::export::candid::parser::value::IDLValue;
     use ic_cdk::export::Principal;
-    use ic_cdk::{api, caller, storage};
+    use ic_cdk::{api, caller, id, storage};
     use ic_cdk_macros::*;
     use serde::Deserialize;
 
@@ -342,6 +342,32 @@ mod wallet {
     }
 
     async fn set_controller_call(canister_id: Principal, new_controller: Principal) {
+        match api::call::call(
+            canister_id.clone(),
+            "add_controller",
+            (new_controller.clone(),),
+        )
+        .await
+        {
+            Ok(x) => x,
+            Err((code, msg)) => {
+                ic_cdk::trap(&format!(
+                    "An error happened during the call: {}: {}",
+                    code as u8, msg
+                ));
+            }
+        };
+
+        match api::call::call(canister_id.clone(), "remove_controller", (id(),)).await {
+            Ok(x) => x,
+            Err((code, msg)) => {
+                ic_cdk::trap(&format!(
+                    "An error happened during the call: {}: {}",
+                    code as u8, msg
+                ));
+            }
+        };
+
         #[derive(candid::CandidType)]
         struct In {
             canister_id: Principal,
