@@ -217,6 +217,8 @@ mod wallet {
     use ic_cdk_macros::*;
     use serde::Deserialize;
 
+    const DEFAULT_MEM_ALLOCATION: u64 = 8000000000_u64; // 8gb
+
     /***************************************************************************************************
      * Cycle Management
      **************************************************************************************************/
@@ -309,10 +311,7 @@ mod wallet {
         if let Some(new_controller) = args.controller {
             set_controller_call(create_result.canister_id.clone(), new_controller).await;
         }
-        events::record(events::EventKind::CanisterCreated {
-            canister: create_result.canister_id.clone(),
-            cycles: args.cycles,
-        });
+
         super::update_chart();
         create_result
     }
@@ -334,6 +333,11 @@ mod wallet {
                 ));
             }
         };
+
+        events::record(events::EventKind::CanisterCreated {
+            canister: create_result.canister_id.clone(),
+            cycles,
+        });
         create_result
     }
 
@@ -355,7 +359,7 @@ mod wallet {
         };
     }
 
-    async fn install_wallet(canister_id: Principal) {
+    async fn install_wallet(canister_id: Principal, wasm_module: Vec<u8>) {
         // Install Wasm
         #[derive(candid::CandidType, Deserialize)]
         enum InstallMode {
@@ -366,14 +370,6 @@ mod wallet {
             #[serde(rename = "upgrade")]
             Upgrade,
         }
-
-        let wallet_bytes = storage::get::<super::WalletWASMBytes>();
-        let wasm_module = match &wallet_bytes.0 {
-            None => {
-                ic_cdk::trap("No wasm module stored.");
-            }
-            Some(o) => o,
-        };
 
         #[derive(candid::CandidType)]
         struct CanisterInstall {
@@ -391,7 +387,7 @@ mod wallet {
             wasm_module: wasm_module.clone(),
             arg: b" ".to_vec(),
             compute_allocation: None,
-            memory_allocation: None,
+            memory_allocation: Some(candid::Nat::from(DEFAULT_MEM_ALLOCATION)),
         };
 
         match api::call::call(
@@ -410,6 +406,10 @@ mod wallet {
             }
         };
 
+        events::record(events::EventKind::WalletDeployed {
+            canister: canister_id.clone(),
+        });
+
         // Store wallet wasm
         match api::call::call(canister_id, "wallet_store_wallet_wasm", (wasm_module,)).await {
             Ok(x) => x,
@@ -424,18 +424,22 @@ mod wallet {
 
     #[update(guard = "is_custodian", name = "wallet_create_wallet")]
     async fn create_wallet(args: CreateCanisterArgs) -> CreateResult {
+        let wallet_bytes = storage::get::<super::WalletWASMBytes>();
+        let wasm_module = match &wallet_bytes.0 {
+            None => {
+                ic_cdk::trap("No wasm module stored.");
+            }
+            Some(o) => o,
+        };
+
         let create_result = create_canister_call(args.cycles).await;
 
-        install_wallet(create_result.canister_id.clone()).await;
+        install_wallet(create_result.canister_id.clone(), wasm_module.to_vec()).await;
 
         // Set controller
         if let Some(new_controller) = args.controller {
             set_controller_call(create_result.canister_id.clone(), new_controller).await;
         }
-        events::record(events::EventKind::CanisterCreated {
-            canister: create_result.canister_id.clone(),
-            cycles: args.cycles,
-        });
         super::update_chart();
         create_result
     }
