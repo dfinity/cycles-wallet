@@ -1,5 +1,6 @@
 const TerserPlugin = require("terser-webpack-plugin");
 const path = require("path");
+const webpack = require("webpack");
 
 const dist = path.join(__dirname, "dist");
 
@@ -12,7 +13,7 @@ module.exports = {
   mode: "production",
   module: {
     rules: [
-      { test: /\.(jsx|tsx?)$/, loader: "ts-loader" },
+      { test: /\.tsx?$/, loader: "ts-loader" },
       {
         exclude: /node_modules/,
         test: /\.css$/,
@@ -51,8 +52,17 @@ module.exports = {
   resolve: {
     extensions: [".js", ".ts", ".jsx", ".tsx"],
     fallback: {
-      fs: false,
-      path: false,
+      "assert": require.resolve("assert/"),
+      "buffer": require.resolve("buffer/"),
+      "events": require.resolve("events/"),
+      "stream": require.resolve("stream-browserify/"),
+      "util": require.resolve("util/"),
     },
   },
+  plugins: [
+    new webpack.ProvidePlugin({
+      Buffer: [require.resolve('buffer/'), 'Buffer'],
+      process: require.resolve('process/browser'),
+    }),
+  ]
 };

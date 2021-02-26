@@ -11,13 +11,10 @@ import Switch from "@material-ui/core/Switch";
 import Toolbar from "@material-ui/core/Toolbar";
 import Typography from "@material-ui/core/Typography";
 
-import { makeStyles } from "@material-ui/core/styles";
+import makeStyles from "@material-ui/core/styles/makeStyles";
 import AccountCircle from "@material-ui/icons/AccountCircle";
 
 import { getWalletId, Principal } from "../canister";
-
-// Assets
-const logo = require("../img/logo.png").default;
 
 const drawerWidth = 240;
 
