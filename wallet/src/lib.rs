@@ -335,11 +335,22 @@ mod wallet {
         create_result
     }
 
-    async fn set_controller_call(canister_id: Principal, controller: Principal) {
+    async fn set_controller_call(canister_id: Principal, new_controller: Principal) {
+        #[derive(candid::CandidType)]
+        struct In {
+            canister_id: Principal,
+            new_controller: Principal,
+        }
+
+        let controller_cfg = In {
+            canister_id,
+            new_controller,
+        };
+
         match api::call::call(
             Principal::management_canister(),
             "set_controller",
-            (canister_id, controller),
+            (controller_cfg,),
         )
         .await
         {
