@@ -2,6 +2,7 @@ type EventKind = variant {
   CyclesSent: record {
     to: principal;
     amount: nat64;
+    refund: nat64;
   };
   CyclesReceived: record {
     from: principal;
@@ -55,17 +56,18 @@ type AddressEntry = record {
   role: Role;
 };
 
-type ResultCreate = variant {
-  Ok : record { canister_id: principal };
-  Err: text;
-};
-
-type ResultSend = variant {
-  Ok : null;
-  Err : text;
-};
-
 service : {
+
+  type ResultCreate = variant {
+    Ok : record { canister_id: principal };
+    Err: text;
+  };
+
+  type ResultSend = variant {
+    Ok : null;
+    Err : text;
+  };
+
   // Wallet Name
   name: () -> (opt text) query;
   set_name: (text) -> ();

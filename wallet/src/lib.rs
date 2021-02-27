@@ -242,7 +242,7 @@ mod wallet {
 
     /// Send cycles to another canister.
     #[update(guard = "is_custodian", name = "wallet_send")]
-    async fn send(args: SendCyclesArgs) {
+    async fn send(args: SendCyclesArgs) -> Result<(), String> {
         let (_,): (candid::parser::value::IDLValue,) = match api::call::call_with_payment(
             args.canister.clone(),
             "wallet_receive",
@@ -251,20 +251,46 @@ mod wallet {
         )
         .await
         {
-            Ok(x) => x,
+            Ok(x) => {
+                let refund = api::call::msg_cycles_refunded();
+                if refund == 0 {
+                    events::record(events::EventKind::CyclesSent {
+                        to: args.canister,
+                        amount: args.amount,
+                        refund: refund as u64,
+                    });
+                    x
+                } else {
+                    events::record(events::EventKind::CyclesSent {
+                        to: args.canister,
+                        amount: args.amount,
+                        refund: refund as u64,
+                    });
+                    super::update_chart();
+                    return Err(format!(
+                        "Cycles sent: {}\nCycles refunded: {}",
+                        args.amount, refund
+                    ))
+                }
+            }
             Err((code, msg)) => {
-                ic_cdk::trap(&format!(
-                    "An error happened during the call: {}: {}",
+                let refund = api::call::msg_cycles_refunded();
+                events::record(events::EventKind::CyclesSent {
+                    to: args.canister,
+                    amount: args.amount,
+                    refund: refund as u64,
+                });
+                super::update_chart();
+                return Err(format!(
+                    "Cycles sent: {}\nCycles refunded: {}\nAn error happened during the call: {}: {}",
+                    args.amount, refund,
                     code as u8, msg
-                ));
+                ))
             }
         };
 
-        events::record(events::EventKind::CyclesSent {
-            to: args.canister,
-            amount: args.amount,
-        });
         super::update_chart();
+        Ok(())
     }
 
     /// Receive cycles from another canister.
@@ -293,24 +319,25 @@ mod wallet {
         controller: Option<Principal>,
     }
 
-    #[derive(CandidType, Deserialize)]
+    #[derive(CandidType, Clone, Deserialize)]
     struct CreateResult {
         canister_id: Principal,
     }
 
     #[update(guard = "is_custodian", name = "wallet_create_canister")]
-    async fn create_canister(args: CreateCanisterArgs) -> CreateResult {
-        let create_result = create_canister_call(args.cycles).await;
+    async fn create_canister(args: CreateCanisterArgs) -> Result<CreateResult, String> {
+        let create_result = create_canister_call(args.cycles).await?;
+        let canister_id = create_result.clone().canister_id;
 
         if let Some(new_controller) = args.controller {
-            set_controller_call(create_result.canister_id.clone(), new_controller).await;
+            set_controller_call(canister_id.clone(), new_controller).await?;
         }
 
         super::update_chart();
-        create_result
+        Ok(create_result)
     }
 
-    async fn create_canister_call(cycles: u64) -> CreateResult {
+    async fn create_canister_call(cycles: u64) -> Result<CreateResult, String> {
         let (create_result,): (CreateResult,) = match api::call::call_with_payment(
             Principal::management_canister(),
             "create_canister",
@@ -321,10 +348,10 @@ mod wallet {
         {
             Ok(x) => x,
             Err((code, msg)) => {
-                ic_cdk::trap(&format!(
+                return Err(format!(
                     "An error happened during the call: {}: {}",
                     code as u8, msg
-                ));
+                ))
             }
         };
 
@@ -332,10 +359,13 @@ mod wallet {
             canister: create_result.canister_id.clone(),
             cycles,
         });
-        create_result
+        Ok(create_result)
     }
 
-    async fn set_controller_call(canister_id: Principal, new_controller: Principal) {
+    async fn set_controller_call(
+        canister_id: Principal,
+        new_controller: Principal,
+    ) -> Result<(), String> {
         match api::call::call(
             canister_id.clone(),
             "add_controller",
@@ -345,20 +375,20 @@ mod wallet {
         {
             Ok(x) => x,
             Err((code, msg)) => {
-                ic_cdk::trap(&format!(
+                return Err(format!(
                     "An error happened during the call: {}: {}",
                     code as u8, msg
-                ));
+                ))
             }
         };
 
         match api::call::call(canister_id.clone(), "remove_controller", (id(),)).await {
             Ok(x) => x,
             Err((code, msg)) => {
-                ic_cdk::trap(&format!(
+                return Err(format!(
                     "An error happened during the call: {}: {}",
                     code as u8, msg
-                ));
+                ))
             }
         };
 
@@ -382,15 +412,16 @@ mod wallet {
         {
             Ok(x) => x,
             Err((code, msg)) => {
-                ic_cdk::trap(&format!(
+                return Err(format!(
                     "An error happened during the call: {}: {}",
                     code as u8, msg
-                ));
+                ))
             }
         };
+        Ok(())
     }
 
-    async fn install_wallet(canister_id: Principal, wasm_module: Vec<u8>) {
+    async fn install_wallet(canister_id: Principal, wasm_module: Vec<u8>) -> Result<(), String> {
         // Install Wasm
         #[derive(candid::CandidType, Deserialize)]
         enum InstallMode {
@@ -430,10 +461,10 @@ mod wallet {
         {
             Ok(x) => x,
             Err((code, msg)) => {
-                ic_cdk::trap(&format!(
+                return Err(format!(
                     "An error happened during the call: {}: {}",
                     code as u8, msg
-                ));
+                ))
             }
         };
 
@@ -445,34 +476,34 @@ mod wallet {
         match api::call::call(canister_id, "wallet_store_wallet_wasm", (wasm_module,)).await {
             Ok(x) => x,
             Err((code, msg)) => {
-                ic_cdk::trap(&format!(
+                return Err(format!(
                     "An error happened during the call: {}: {}",
                     code as u8, msg
-                ));
+                ))
             }
         };
+        Ok(())
     }
 
     #[update(guard = "is_custodian", name = "wallet_create_wallet")]
-    async fn create_wallet(args: CreateCanisterArgs) -> CreateResult {
+    async fn create_wallet(args: CreateCanisterArgs) -> Result<CreateResult, String> {
         let wallet_bytes = storage::get::<super::WalletWASMBytes>();
         let wasm_module = match &wallet_bytes.0 {
-            None => {
-                ic_cdk::trap("No wasm module stored.");
-            }
+            None => return Err("No wasm module stored.".to_string()),
             Some(o) => o,
         };
 
-        let create_result = create_canister_call(args.cycles).await;
+        let create_result = create_canister_call(args.cycles).await?;
+        let canister_id = create_result.clone().canister_id;
 
-        install_wallet(create_result.canister_id.clone(), wasm_module.to_vec()).await;
+        install_wallet(canister_id.clone(), wasm_module.to_vec()).await?;
 
         // Set controller
         if let Some(new_controller) = args.controller {
-            set_controller_call(create_result.canister_id.clone(), new_controller).await;
+            set_controller_call(canister_id.clone(), new_controller).await?;
         }
         super::update_chart();
-        create_result
+        Ok(create_result)
     }
 
     #[update(guard = "is_custodian", name = "wallet_store_wallet_wasm")]
