@@ -11,13 +11,14 @@ mod events;
 use crate::address::{AddressBook, AddressEntry, Role};
 use crate::events::EventBuffer;
 use events::{record, Event, EventKind};
+use std::io::Read;
 
 /// The frontend bytes.
 struct FrontendBytes(pub Cow<'static, [u8]>);
 
 impl Default for FrontendBytes {
     fn default() -> Self {
-        FrontendBytes(Cow::Borrowed(include_bytes!("../../dist/index.js")))
+        FrontendBytes(Cow::Borrowed(include_bytes!("../../dist/index.js.gz")))
     }
 }
 
@@ -106,13 +107,17 @@ fn store(blob: Vec<u8>) {
 }
 
 #[query]
-fn retrieve(path: String) -> &'static [u8] {
+fn retrieve(path: String) -> Vec<u8> {
     let frontend_bytes = storage::get::<FrontendBytes>();
     if path == "index.js" {
-        match &frontend_bytes.0 {
+        let gz = match &frontend_bytes.0 {
             Cow::Owned(o) => o.as_slice(),
             Cow::Borrowed(b) => b,
-        }
+        };
+        let mut decoder = libflate::gzip::Decoder::new(gz).unwrap();
+        let mut decoded_data = Vec::new();
+        decoder.read_to_end(&mut decoded_data).unwrap();
+        decoded_data
     } else {
         trap(&format!(r#"Cannot find "{}" in the assets."#, path));
     }
