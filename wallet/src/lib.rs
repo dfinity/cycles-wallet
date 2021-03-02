@@ -531,7 +531,7 @@ mod wallet {
 
     /// Forward a call to another canister.
     #[update(guard = "is_custodian", name = "wallet_call")]
-    async fn call(args: CallCanisterArgs) -> CallResult {
+    async fn call(args: CallCanisterArgs) -> Result<CallResult, String> {
         match api::call::call_raw(
             args.canister.clone(),
             &args.method_name,
@@ -547,14 +547,12 @@ mod wallet {
                     cycles: args.cycles,
                 });
                 super::update_chart();
-                CallResult { r#return: x }
+                Ok(CallResult { r#return: x })
             }
-            Err((code, msg)) => {
-                ic_cdk::trap(&format!(
-                    "An error happened during the call: {}: {}",
-                    code as u8, msg
-                ));
-            }
+            Err((code, msg)) => Err(format!(
+                "An error happened during the call: {}: {}",
+                code as u8, msg
+            )),
         }
     }
 }

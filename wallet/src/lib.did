@@ -66,6 +66,12 @@ type ResultSend = variant {
   Err : text;
 };
 
+type ResultCall = variant {
+  Ok : record { return: blob };
+  Err : text;
+};
+
+
 service : {
   // Wallet Name
   name: () -> (opt text) query;
@@ -107,7 +113,7 @@ service : {
     method_name: text;
     args: blob;
     cycles: nat64;
-  }) -> (record { return: blob });
+  }) -> (ResultCall);
 
   // Address book
   add_address: (address: AddressEntry) -> ();
