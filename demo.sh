@@ -6,7 +6,7 @@
 
 set -e
 
- npm install
+npm install
 
 dfx start --background --clean
 
@@ -18,7 +18,7 @@ dfx --identity id_alice canister create alice
 dfx --identity id_bob canister create bob
 dfx --identity default canister create wallet
 
- dfx build
+dfx build
 
 dfx --identity id_alice canister install alice
 dfx --identity id_bob canister install bob
