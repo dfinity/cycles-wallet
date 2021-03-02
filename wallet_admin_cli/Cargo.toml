@@ -1,0 +1,68 @@
+[package]
+name = "wallet_admin_cli"
+version = "0.1.0"
+edition = "2018"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+anyhow = "1.0.34"
+async-std = { version = "1.6.2", features = ["tokio02", "attributes"] }
+candid = "0.6.12"
+delay = "0.3.0"
+ring = "0.16.11"
+serde = { version = "1.0.101", features = ["derive"] }
+serde_json = "1.0.40"
+#slog = { version = "2.5.2", features = ["nested-values", "max_level_trace", "release_max_level_debug"] }
+#slog-term = "2.6.0"
+structopt = "0.3"
+tempfile = "3.1.0"
+tokio = "0.2.22"
+
+[dependencies.ic-agent]
+version = "0.1.0"
+git = "https://github.com/dfinity/agent-rs.git"
+branch = "pshahi/wallet_create"
+rev = "811a10e4c5c6766fdef9f0e0236f7117147b251e"
+
+[dependencies.ic-identity-hsm]
+version = "0.1.0"
+git = "https://github.com/dfinity/agent-rs.git"
+branch = "pshahi/wallet_create"
+rev = "811a10e4c5c6766fdef9f0e0236f7117147b251e"
+
+[dependencies.ic-types]
+version = "0.1.2"
+git = "https://github.com/dfinity/agent-rs.git"
+branch = "pshahi/wallet_create"
+rev = "811a10e4c5c6766fdef9f0e0236f7117147b251e"
+
+[dependencies.ic-utils]
+version = "0.1.0"
+git = "https://github.com/dfinity/agent-rs.git"
+branch = "pshahi/wallet_create"
+rev = "811a10e4c5c6766fdef9f0e0236f7117147b251e"
+
+[patch.crates-io.ic-agent]
+version = "0.1.0"
+git = "https://github.com/dfinity/agent-rs.git"
+branch = "pshahi/wallet_create"
+rev = "811a10e4c5c6766fdef9f0e0236f7117147b251e"
+
+[patch.crates-io.ic-identity-hsm]
+version = "0.1.0"
+git = "https://github.com/dfinity/agent-rs.git"
+branch = "pshahi/wallet_create"
+rev = "811a10e4c5c6766fdef9f0e0236f7117147b251e"
+
+[patch.crates-io.ic-types]
+version = "0.1.2"
+git = "https://github.com/dfinity/agent-rs.git"
+branch = "pshahi/wallet_create"
+rev = "811a10e4c5c6766fdef9f0e0236f7117147b251e"
+
+[patch.crates-io.ic-utils]
+version = "0.1.0"
+git = "https://github.com/dfinity/agent-rs.git"
+branch = "pshahi/wallet_create"
+rev = "811a10e4c5c6766fdef9f0e0236f7117147b251e"

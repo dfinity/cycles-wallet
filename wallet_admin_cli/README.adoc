@@ -1,0 +1,115 @@
+= wallet_admin_cli
+
+wallet_admin_cli is a simple tool meant to help us create wallet canisters with free cycles on Alpha to onboard users or to recreate wallets after a network reset (i.e. when we do a breaking change).
+
+== Usage
+
+=== Prerequisites
+
+* Make sure you're on the Prituln VPN.
+
+If you want to use an HSM for authentication, make sure that you have `pkcs11-tool` installed on your system.
+* For Mac users:
+[source,shell]
+....
+brew install opensc
+....
+* For Linux users:
+[source,shell]
+....
+sudo apt-get install opensc
+....
+
+=== How to create wallets
+
+[source,shell]
+....
+$ cargo run -- create --user-ids-path <user_id> --cycles <cycles> --wasm-path <wasm_path> --endpoint <endpoint> --out <out_path> --batch-size <batch_size>
+....
+
+* `--user-ids-path <user_ids_path>`: A file containing the user ids to create wallets for. Default is `user_ids_example.txt`.
+* `--cycles <cycles>`: The number of cycles that are going to be granted to this wallet. Default is 100,000,000,000,000,000.
+* `--wasm-path <wasm_path>`: The path to the wallet canister's wasm code. Default is `wallet.wasm`.
+* `--endpoint <endpoint>`: The endpoint to use for creating the wallet. This is a `replica:port` pair but can also use the special "sodium" argument to run this on the Sodium network.
+* `--out`: The path of the output file where the wallet ids will be stored. Default is `out.txt`.
+* `--batch-size`: How many wallets to create in parallel to speed up the whole process. Default is 4.
+
+=== Example Workflow (uses the hardcoded keypair)
+First, copy and paste the principal ids from the google sheet ("Principal ID" column) to a file called `user_ids.txt` in `dfinity/rs/wallet`. This assumes that the principal ids is cleaned from obviously wrong entries (like 123 or Alex_767). Then run:
+
+[source,shell]
+....
+cargo run -- create --user-ids-path user_ids.txt --endpoint sodium
+....
+
+This will create the wallets and store their ids in `out.txt`. If everything has gone well, then you should see one wallet id per line for each of the input user ids. In this case copy and paste the wallet ids from out.txt back to the google sheet under the "Wallet Canister" column and you're done. If there are some lines that contain an error instead of a wallet id, please follow the section below to fix them (of course the correct ones can be copy pasted to the google sheet already).
+
+=== Example Workflow with HSM for authentication
+
+Same as above for preparing the `user_ids.txt` file. Then set the HSM environment variables and run:
+
+[source,shell]
+....
+export HSM_PKCS11_LIBRARY_PATH=/usr/local/lib/opensc-pkcs11.so
+export HSM_SLOT_INDEX=0
+export HSM_KEY_ID=01
+export HSM_PIN=<your-pin>
+cargo run -- create --user-ids-path user_ids.txt --endpoint sodium
+....
+
+The key id can be found out easily by running:
+[source,shell]
+....
+pkcs11-tool --list-objects
+....
+and inspecting the ID field of the output.
+
+The pin is the one that you set up when you received your HSM.
+
+The wallet ids will get printed in `out.txt` as well in this case. Follow the instructions above based on the context of the file.
+
+=== How to top up wallets
+
+[source,shell]
+....
+$ cargo run -- top-up --wallet-id <wallet_id> --cycles <cycles> --endpoint <endpoint>
+....
+
+* `--wallet-id <wallet_id>`: The canister id of the wallet.
+* `--cycles <cycles>`: The cycles to add to the canister's balance.
+* `--endpoint <endpoint>`: The endpoint to use for topping up the wallet. This is a `replica:port` pair but can also use the special "sodium" argument to run this on the Sodium network.
+
+If you want to use an HSM for authentication, set the environment variables described in the section above.
+
+=== How to handle errors
+
+Creating a wallet consists of 3 distinct steps:
+
+1. Creating the canister with some cycles.
+2. Installing the wallet code.
+3. Setting the controller of the wallet to the user id.
+
+First, you should triage what the error was and consider whether it's a transient error and a retry would simply resolve it or if it's something deeper. If you need help ping Dimitris.
+
+Assuming you've classified the error as transient (or you've resolved whatever the issue was), you can do the following to attempt to fix things depending on when the failure happened:
+
+* If the error happens when creating the wallet, you can simply attempt to re-run the tool after you've updated the input file to include the user ids you need.
+
+* If the error happens when installing the wallet, you can run:
+
+[source,shell]
+....
+cargo run -- install --wallet-id <wallet_id> --endpoint sodium
+cargo run -- set-controller --wallet-id <wallet_id> --user-id <user_id> --endpoint sodium
+....
+
+* If the error happens when setting the controller for the wallet, you can run:
+
+[source,shell]
+....
+cargo run -- set-controller --wallet-id <wallet_id> --user-id <user_id> --endpoint sodium
+....
+
+=== How to update the wallet wasm
+
+The wallet WASM to use is co-located in this same repository. Run the `build.sh` script to re-compile the WASM.
