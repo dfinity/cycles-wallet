@@ -256,36 +256,36 @@ mod wallet {
                 if refund == 0 {
                     events::record(events::EventKind::CyclesSent {
                         to: args.canister,
-                        amount: args.amount,
-                        refund: refund as u64,
+                        amount: Some(args.amount),
+                        refund: None,
                     });
                     x
                 } else {
                     events::record(events::EventKind::CyclesSent {
                         to: args.canister,
-                        amount: args.amount,
-                        refund: refund as u64,
+                        amount: Some(args.amount),
+                        refund: Some(refund as u64),
                     });
                     super::update_chart();
                     return Err(format!(
                         "Cycles sent: {}\nCycles refunded: {}",
                         args.amount, refund
-                    ))
+                    ));
                 }
             }
             Err((code, msg)) => {
                 let refund = api::call::msg_cycles_refunded();
                 events::record(events::EventKind::CyclesSent {
                     to: args.canister,
-                    amount: args.amount,
-                    refund: refund as u64,
+                    amount: Some(args.amount),
+                    refund: Some(refund as u64),
                 });
                 super::update_chart();
                 return Err(format!(
                     "Cycles sent: {}\nCycles refunded: {}\nAn error happened during the call: {}: {}",
                     args.amount, refund,
                     code as u8, msg
-                ))
+                ));
             }
         };
 
