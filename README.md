@@ -4,7 +4,6 @@
 
 The basic wallet canister implementation in Rust
 
-
 ## Demo
 
 - Install dependencies: `npm install`
@@ -12,6 +11,5 @@ The basic wallet canister implementation in Rust
 - Deploy to replica locally: `dfx deploy`
 - Get canister ID: `dfx canister id wallet`
 - Open wallet UI at `http://localhost:8000/?canisterId=<wallet_canister_id_here>`
-
 
 **NB**: To Update the wallet UI without `dfx deploy`, run `npm run sideload-ui`. In order to do this, you will need to grant access to `Anonymous` for the wallet canister. To do so, run `dfx canister call $(dfx canister id wallet) add_controller '(principal "2vxsx-fae")'`.

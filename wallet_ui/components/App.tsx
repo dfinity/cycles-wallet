@@ -10,14 +10,18 @@ import {
   deepPurple,
   deepOrange,
 } from "@material-ui/core/colors";
-import { HashRouter as Router, Switch as RouterSwitch, Route } from "react-router-dom";
+import {
+  HashRouter as Router,
+  Switch as RouterSwitch,
+  Route,
+} from "react-router-dom";
 
 // For Switch Theming
 import createMuiTheme from "@material-ui/core/styles/createMuiTheme";
 import ThemeProvider from "@material-ui/styles/ThemeProvider";
 
 // For document title setting
-import { handleAuthRedirect, Wallet } from '../canister';
+import { handleAuthRedirect, Wallet } from "../canister";
 
 // Routes
 import { Authorize } from "./routes/Authorize";
@@ -126,8 +130,8 @@ export default function App() {
   const [open, setOpen] = useLocalStorage("app-menu-open", false);
   const [darkState, setDarkState] = useDarkState();
   const palletType = darkState ? "dark" : "light";
-  const mainPrimaryColor = darkState ? orange[500] : lightBlue[500];
-  const mainSecondaryColor = darkState ? deepOrange[900] : deepPurple[500];
+  const mainPrimaryColor = darkState ? orange[500] : "#292A2E"[500];
+  const mainSecondaryColor = darkState ? deepOrange[900] : "#EFEFEF"[500];
 
   useEffect(() => {
     Wallet.name().then((name) => {

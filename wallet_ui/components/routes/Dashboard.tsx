@@ -132,6 +132,7 @@ export function Dashboard(props: { open: boolean; onOpenToggle: () => void }) {
   return (
     <>
       <Drawer
+        style={{ display: "none" }}
         variant="permanent"
         classes={{
           paper: clsx(classes.drawerPaper, !open && classes.drawerPaperClose),
@@ -211,6 +212,7 @@ export function Dashboard(props: { open: boolean; onOpenToggle: () => void }) {
 
       <main className={classes.content}>
         <div className={classes.appBarSpacer} />
+        <h1>Cycles Wallet</h1>
 
         <Container maxWidth="lg" className={classes.container}>
           <Grid container spacing={3}>
