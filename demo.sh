@@ -6,7 +6,7 @@
 
 set -e
 
-npm install
+ npm install
 
 dfx start --background --clean
 
@@ -18,7 +18,7 @@ dfx --identity id_alice canister create alice
 dfx --identity id_bob canister create bob
 dfx --identity default canister create wallet
 
-dfx build
+ dfx build
 
 dfx --identity id_alice canister install alice
 dfx --identity id_bob canister install bob
@@ -35,7 +35,9 @@ echo
 echo == Create a new canister with Alice as controller using 1000000000000 cycles.
 echo
 
-echo New canister id = $(dfx --identity id_alice canister call alice wallet_create_canister "(record { cycles = 1000000000000; controller = null })")
+CREATE_RES=$(dfx --identity id_alice canister call alice wallet_create_canister "(record { cycles = 1000000000000; controller = null })")
+
+echo New canister id = $(echo "${CREATE_RES}" | tr '\n' ' ' |  cut -d'"' -f 2)
 
 echo
 echo == Transfer 1000000000000 cycles from Alice to Bob.
