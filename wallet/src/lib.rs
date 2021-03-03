@@ -206,7 +206,8 @@ fn deauthorize(custodian: Principal) {
 
 mod wallet {
     use crate::{events, is_custodian};
-    use ic_cdk::export::candid::CandidType;
+    use ic_cdk::export::candid::parser::value::IDLValue;
+    use ic_cdk::export::candid::{CandidType, Nat};
     use ic_cdk::export::Principal;
     use ic_cdk::{api, caller, id, storage};
     use ic_cdk_macros::*;
@@ -244,7 +245,7 @@ mod wallet {
     /// Send cycles to another canister.
     #[update(guard = "is_custodian", name = "wallet_send")]
     async fn send(args: SendCyclesArgs) {
-        let (_,): (candid::parser::value::IDLValue,) = match api::call::call_with_payment(
+        let (_,): (IDLValue,) = match api::call::call_with_payment(
             args.canister.clone(),
             "wallet_receive",
             (),
@@ -363,7 +364,7 @@ mod wallet {
             }
         };
 
-        #[derive(candid::CandidType)]
+        #[derive(CandidType)]
         struct In {
             canister_id: Principal,
             new_controller: Principal,
@@ -393,7 +394,7 @@ mod wallet {
 
     async fn install_wallet(canister_id: Principal, wasm_module: Vec<u8>) {
         // Install Wasm
-        #[derive(candid::CandidType, Deserialize)]
+        #[derive(CandidType, Deserialize)]
         enum InstallMode {
             #[serde(rename = "install")]
             Install,
@@ -403,14 +404,14 @@ mod wallet {
             Upgrade,
         }
 
-        #[derive(candid::CandidType)]
+        #[derive(CandidType)]
         struct CanisterInstall {
             mode: InstallMode,
             canister_id: Principal,
             wasm_module: Vec<u8>,
             arg: Vec<u8>,
-            compute_allocation: Option<candid::Nat>,
-            memory_allocation: Option<candid::Nat>,
+            compute_allocation: Option<Nat>,
+            memory_allocation: Option<Nat>,
         }
 
         let install_config = CanisterInstall {
@@ -419,7 +420,7 @@ mod wallet {
             wasm_module: wasm_module.clone(),
             arg: b" ".to_vec(),
             compute_allocation: None,
-            memory_allocation: Some(candid::Nat::from(DEFAULT_MEM_ALLOCATION)),
+            memory_allocation: Some(Nat::from(DEFAULT_MEM_ALLOCATION)),
         };
 
         match api::call::call(
@@ -477,7 +478,7 @@ mod wallet {
         create_result
     }
 
-    #[derive(candid::CandidType, Deserialize)]
+    #[derive(CandidType, Deserialize)]
     struct WalletStoreWASMArgs {
         #[serde(with = "serde_bytes")]
         wasm_module: Vec<u8>,
