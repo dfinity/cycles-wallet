@@ -443,7 +443,8 @@ mod wallet {
         });
 
         // Store wallet wasm
-        match api::call::call(canister_id, "wallet_store_wallet_wasm", (wasm_module,)).await {
+        let store_args = WalletStoreWASMArgs { wasm_module };
+        match api::call::call(canister_id, "wallet_store_wallet_wasm", (store_args,)).await {
             Ok(x) => x,
             Err((code, msg)) => {
                 ic_cdk::trap(&format!(
@@ -476,10 +477,16 @@ mod wallet {
         create_result
     }
 
+    #[derive(candid::CandidType, Deserialize)]
+    struct WalletStoreWASMArgs {
+        #[serde(with = "serde_bytes")]
+        wasm_module: Vec<u8>,
+    }
+
     #[update(guard = "is_custodian", name = "wallet_store_wallet_wasm")]
-    async fn store_wallet_wasm(wasm_module: Vec<u8>) {
+    async fn store_wallet_wasm(args: WalletStoreWASMArgs) {
         let wallet_bytes = storage::get_mut::<super::WalletWASMBytes>();
-        wallet_bytes.0 = Some(wasm_module);
+        wallet_bytes.0 = Some(args.wasm_module);
         super::update_chart();
     }
 
