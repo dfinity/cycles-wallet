@@ -21,11 +21,15 @@ serde_bytes = "0.11"
 
 [dependencies.ic-cdk]
 version = "0.2.1"
-path = "/Users/prithvishahi/dev/cdk-rs/src/ic-cdk"
+git = "https://github.com/dfinity/cdk-rs.git"
+branch = "pshahi/blob-opt"
+rev = "ec5395ab677e4f87421b9b3737f08176632718a1"
 
 [dependencies.ic-cdk-macros]
 version = "0.2.1"
-path = "/Users/prithvishahi/dev/cdk-rs/src/ic-cdk-macros"
+git = "https://github.com/dfinity/cdk-rs.git"
+branch = "pshahi/blob-opt"
+rev = "ec5395ab677e4f87421b9b3737f08176632718a1"
 
 
 [dependencies.candid]
