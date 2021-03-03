@@ -199,6 +199,7 @@ fn deauthorize(custodian: Principal) {
 mod wallet {
     use crate::{events, is_custodian};
     use ic_cdk::export::candid::CandidType;
+    use ic_cdk::export::candid::parser::value::IDLValue;
     use ic_cdk::export::Principal;
     use ic_cdk::{api, caller};
     use ic_cdk_macros::*;
@@ -234,7 +235,7 @@ mod wallet {
     /// Send cycles to another canister.
     #[update(guard = "is_custodian", name = "wallet_send")]
     async fn send(args: SendCyclesArgs) {
-        let (_,): (candid::parser::value::IDLValue,) = match api::call::call_with_payment(
+        let (_,): (IDLValue,) = match api::call::call_with_payment(
             args.canister.clone(),
             "wallet_receive",
             (),
