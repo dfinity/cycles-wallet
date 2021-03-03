@@ -48,6 +48,7 @@ struct StableStorage {
     events: EventBuffer,
     name: Option<String>,
     chart: Vec<ChartTick>,
+    #[serde(with = "serde_bytes")]
     wasm_module: Option<Vec<u8>>,
 }
 

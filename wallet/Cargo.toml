@@ -13,9 +13,23 @@ crate-type = ["cdylib"]
 path = "src/lib.rs"
 
 [dependencies]
-candid = "0.6.12"
 ic-types = "0.1.2"
-ic-cdk = "0.2.1"
-ic-cdk-macros = "0.2.1"
+libflate = "1"
 num-traits = "0.2.14"
 serde = "1.0.116"
+serde_bytes = "0.11"
+
+[dependencies.ic-cdk]
+version = "0.2.1"
+path = "/Users/prithvishahi/dev/cdk-rs/src/ic-cdk"
+
+[dependencies.ic-cdk-macros]
+version = "0.2.1"
+path = "/Users/prithvishahi/dev/cdk-rs/src/ic-cdk-macros"
+
+
+[dependencies.candid]
+version = "0.6.12"
+git = "https://github.com/dfinity/candid.git"
+branch = "blob-opt"
+rev = "0101cc985c72d4f676d58fa9e01bc89b8c2ff970"
