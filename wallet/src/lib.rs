@@ -21,7 +21,7 @@ impl Default for FrontendBytes {
     }
 }
 
-struct WalletWASMBytes(Option<Vec<u8>>);
+struct WalletWASMBytes(Option<serde_bytes::ByteBuf>);
 
 impl Default for WalletWASMBytes {
     fn default() -> Self {
@@ -48,8 +48,7 @@ struct StableStorage {
     events: EventBuffer,
     name: Option<String>,
     chart: Vec<ChartTick>,
-    #[serde(with = "serde_bytes")]
-    wasm_module: Option<Vec<u8>>,
+    wasm_module: Option<serde_bytes::ByteBuf>,
 }
 
 #[pre_upgrade]
@@ -392,7 +391,12 @@ mod wallet {
         };
     }
 
-    async fn install_wallet(canister_id: Principal, wasm_module: Vec<u8>) {
+    async fn install_wallet(canister_id: Principal, wasm_module: serde_bytes::ByteBuf) {
+
+        // ic_cdk::trap(&format!(
+        //     "enter install_wallet",
+        // ));
+
         // Install Wasm
         #[derive(CandidType, Deserialize)]
         enum InstallMode {
@@ -408,7 +412,7 @@ mod wallet {
         struct CanisterInstall {
             mode: InstallMode,
             canister_id: Principal,
-            wasm_module: Vec<u8>,
+            wasm_module: serde_bytes::ByteBuf,
             arg: Vec<u8>,
             compute_allocation: Option<Nat>,
             memory_allocation: Option<Nat>,
@@ -422,6 +426,10 @@ mod wallet {
             compute_allocation: None,
             memory_allocation: Some(Nat::from(DEFAULT_MEM_ALLOCATION)),
         };
+
+        // ic_cdk::trap(&format!(
+        //     "calling install_code",
+        // ));
 
         match api::call::call(
             Principal::management_canister(),
@@ -438,6 +446,10 @@ mod wallet {
                 ));
             }
         };
+
+        // ic_cdk::trap(&format!(
+        //     "called install_code",
+        // ));
 
         events::record(events::EventKind::WalletDeployed {
             canister: canister_id.clone(),
@@ -468,7 +480,11 @@ mod wallet {
 
         let create_result = create_canister_call(args.cycles).await;
 
-        install_wallet(create_result.canister_id.clone(), wasm_module.to_vec()).await;
+        // ic_cdk::trap(&format!(
+        //     "calling install_wallet",
+        // ));
+
+        install_wallet(create_result.canister_id.clone(), wasm_module.clone()).await;
 
         // Set controller
         if let Some(new_controller) = args.controller {
@@ -480,8 +496,7 @@ mod wallet {
 
     #[derive(CandidType, Deserialize)]
     struct WalletStoreWASMArgs {
-        #[serde(with = "serde_bytes")]
-        wasm_module: Vec<u8>,
+        wasm_module: serde_bytes::ByteBuf,
     }
 
     #[update(guard = "is_custodian", name = "wallet_store_wallet_wasm")]

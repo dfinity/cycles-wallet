@@ -5,7 +5,6 @@ authors = ["DFINITY Stiftung <sdk@dfinity.org>"]
 edition = "2018"
 
 [profile.release]
-lto = true
 opt-level = 'z'
 
 [lib]
@@ -23,10 +22,8 @@ serde_bytes = "0.11"
 version = "0.2.1"
 git = "https://github.com/dfinity/cdk-rs.git"
 branch = "pshahi/blob-opt"
-rev = "e3c7bff01a4ff275f4e19273a2ff283b58ee4f81"
 
 [dependencies.ic-cdk-macros]
 version = "0.2.1"
 git = "https://github.com/dfinity/cdk-rs.git"
 branch = "pshahi/blob-opt"
-rev = "e3c7bff01a4ff275f4e19273a2ff283b58ee4f81"
