@@ -6,6 +6,7 @@ import Typography from "@material-ui/core/Typography";
 import Link from "@material-ui/core/Link";
 import {
   orange,
+  common,
   lightBlue,
   deepPurple,
   deepOrange,
@@ -130,8 +131,8 @@ export default function App() {
   const [open, setOpen] = useLocalStorage("app-menu-open", false);
   const [darkState, setDarkState] = useDarkState();
   const palletType = darkState ? "dark" : "light";
-  const mainPrimaryColor = darkState ? orange[500] : "#292A2E";
-  const mainSecondaryColor = darkState ? deepOrange[900] : deepPurple[500];
+  const mainPrimaryColor = darkState ? common.white : "#292A2E";
+  const mainSecondaryColor = darkState ? common.white : deepPurple[500];
 
   useEffect(() => {
     Wallet.name().then((name) => {

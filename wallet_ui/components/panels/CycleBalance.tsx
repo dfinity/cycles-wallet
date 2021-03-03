@@ -96,26 +96,6 @@ export function CycleBalance() {
           </h3>
         )}
       </Typography>
-      <Typography color="textSecondary" className={classes.depositContext}>
-        <Timeago date={timeStamp} />
-      </Typography>
-      <Typography>
-        <FormControl className={classes.formControl}>
-          <InputLabel id="autorefresh-label">Autorefresh</InputLabel>
-          <Select
-            labelId="autorefresh-label"
-            value={refreshRate}
-            onChange={({ target }) => {
-              if (typeof target.value == "number") setRefreshRate(target.value);
-            }}
-          >
-            <MenuItem value={0}>Never</MenuItem>
-            <MenuItem value={5}>Constantly</MenuItem>
-            <MenuItem value={30}>Few Seconds</MenuItem>
-            <MenuItem value={300}>Few Minutes</MenuItem>
-          </Select>
-        </FormControl>
-      </Typography>
     </React.Fragment>
   );
 }

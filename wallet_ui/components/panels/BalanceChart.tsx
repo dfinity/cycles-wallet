@@ -37,6 +37,11 @@ const useStyles = makeStyles((theme) => ({
   title: {
     marginBottom: "0.5em",
   },
+  chartContainer: {
+    aspectRatio: "1 / 1",
+    position: "relative",
+    left: "-20px",
+  },
 }));
 
 function CustomTooltip({ payload, active }: any) {
@@ -96,7 +101,7 @@ export function BalanceChart() {
     ];
 
   return (
-    <React.Fragment>
+    <>
       <Typography className={classes.formControlParagraph}>
         <FormControl hiddenLabel className={classes.formControl}>
           <Select
@@ -121,7 +126,7 @@ export function BalanceChart() {
       >
         Balance History
       </Typography>
-      <ResponsiveContainer>
+      <ResponsiveContainer className={classes.chartContainer}>
         <LineChart
           data={data}
           margin={{ top: 16, right: 16, bottom: 16, left: 16 }}
@@ -143,6 +148,6 @@ export function BalanceChart() {
           />
         </LineChart>
       </ResponsiveContainer>
-    </React.Fragment>
+    </>
   );
 }

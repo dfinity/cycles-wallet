@@ -94,9 +94,6 @@ const useStyles = makeStyles((theme) => ({
     overflow: "auto",
     flexDirection: "column",
   },
-  fixedHeight: {
-    height: 360,
-  },
 }));
 
 export function Dashboard(props: { open: boolean; onOpenToggle: () => void }) {
@@ -110,7 +107,6 @@ export function Dashboard(props: { open: boolean; onOpenToggle: () => void }) {
   );
   const { open, onOpenToggle } = props;
   const classes = useStyles();
-  const fixedHeightPaper = clsx(classes.paper, classes.fixedHeight);
 
   function handleCyclesDialogClose(maybeErr?: any) {
     setCyclesDialogOpen(false);
@@ -227,14 +223,14 @@ export function Dashboard(props: { open: boolean; onOpenToggle: () => void }) {
             </Grid>
             {/* Balance */}
             <Grid item xs={12} md={4} lg={3}>
-              <Paper className={fixedHeightPaper}>
+              <Paper className={classes.paper}>
                 <CycleBalance />
               </Paper>
             </Grid>
 
             {/* Chart */}
             <Grid item xs={12} md={8} lg={9}>
-              <Paper className={fixedHeightPaper}>
+              <Paper className={classes.paper}>
                 <BalanceChart />
               </Paper>
             </Grid>
