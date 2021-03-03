@@ -23,17 +23,17 @@ serde_bytes = "0.11"
 version = "0.2.1"
 git = "https://github.com/dfinity/cdk-rs.git"
 branch = "pshahi/blob-opt"
-rev = "ec5395ab677e4f87421b9b3737f08176632718a1"
+rev = "e3c7bff01a4ff275f4e19273a2ff283b58ee4f81"
 
 [dependencies.ic-cdk-macros]
 version = "0.2.1"
 git = "https://github.com/dfinity/cdk-rs.git"
 branch = "pshahi/blob-opt"
-rev = "ec5395ab677e4f87421b9b3737f08176632718a1"
+rev = "e3c7bff01a4ff275f4e19273a2ff283b58ee4f81"
 
 
 [dependencies.candid]
 version = "0.6.12"
 git = "https://github.com/dfinity/candid.git"
 branch = "blob-opt"
-rev = "0101cc985c72d4f676d58fa9e01bc89b8c2ff970"
+rev = "75eada49f31773aa87b067a52ba1fa5e99dd09d4"
