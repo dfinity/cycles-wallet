@@ -68,35 +68,33 @@ export function CycleBalance() {
   const suffix =
     SUFFIX_LIST[Math.min(6, Math.floor(Math.log10(5000000000000) / 3))];
   const ll = SUFFIX_LIST.indexOf(suffix);
-  const humanCycles = parseFloat((cycles / 10 ** (ll * 3)).toFixed(5));
+  const humanCycles = Math.floor(cycles / 10 ** (ll * 3));
+  console.log(cycles, humanCycles);
 
   return (
     <React.Fragment>
-      <Typography component="h2" variant="h6" color="primary" gutterBottom>
-        Balance (cycles)
+      <Typography
+        component="h2"
+        variant="h5"
+        color="primary"
+        gutterBottom
+        style={{ fontWeight: "bold" }}
+      >
+        Balance
+      </Typography>
+      <Typography component="p" color="primary" gutterBottom>
+        Current cycles in this wallet
       </Typography>
 
       <Typography component="p" variant="h4">
-        {(() => {
-          if (cycles === undefined) {
-            return <></>;
-          }
-
-          return (
-            <ReactCountUp
-              end={humanCycles}
-              duration={
-                /* countup.js uses falsey checks, so we cannot use 0. Duration is in seconds. */
-                first ? 0.001 : undefined
-              }
-              decimals={6}
-              decimal="."
-              preserveValue
-              separator=","
-              suffix={" " + suffix}
-            />
-          );
-        })()}
+        {humanCycles && (
+          <h3>
+            <span style={{ fontSize: "48px", fontWeight: "bold" }}>
+              {humanCycles}
+            </span>
+            <Typography component="span"> TC</Typography>
+          </h3>
+        )}
       </Typography>
       <Typography color="textSecondary" className={classes.depositContext}>
         <Timeago date={timeStamp} />

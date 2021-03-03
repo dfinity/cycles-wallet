@@ -130,15 +130,15 @@ export default function App() {
   const [open, setOpen] = useLocalStorage("app-menu-open", false);
   const [darkState, setDarkState] = useDarkState();
   const palletType = darkState ? "dark" : "light";
-  const mainPrimaryColor = darkState ? orange[500] : "#292A2E"[500];
-  const mainSecondaryColor = darkState ? deepOrange[900] : "#EFEFEF"[500];
+  const mainPrimaryColor = darkState ? orange[500] : "#292A2E";
+  const mainSecondaryColor = darkState ? deepOrange[900] : deepPurple[500];
 
   useEffect(() => {
     Wallet.name().then((name) => {
       document.title = name;
     });
   }, []);
-  const darkTheme = createMuiTheme({
+  const theme = createMuiTheme({
     palette: {
       type: palletType,
       primary: {
@@ -159,7 +159,7 @@ export default function App() {
   }
 
   return (
-    <ThemeProvider theme={darkTheme}>
+    <ThemeProvider theme={theme}>
       <Router>
         <div className={classes.root}>
           <CssBaseline />

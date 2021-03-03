@@ -70,6 +70,13 @@ const useStyles = makeStyles((theme) => ({
   },
   title: {
     flexGrow: 1,
+    fontSize: "2rem",
+    lineHeight: "2.34rem",
+  },
+  title2: {
+    flexGrow: 1,
+    fontSize: "1.5rem",
+    lineHeight: "1.76rem",
   },
   appBarSpacer: theme.mixins.toolbar,
   content: {
@@ -212,10 +219,12 @@ export function Dashboard(props: { open: boolean; onOpenToggle: () => void }) {
 
       <main className={classes.content}>
         <div className={classes.appBarSpacer} />
-        <h1>Cycles Wallet</h1>
 
         <Container maxWidth="lg" className={classes.container}>
           <Grid container spacing={3}>
+            <Grid item xs={12}>
+              <h1 className={classes.title}>Cycles Wallet</h1>
+            </Grid>
             {/* Balance */}
             <Grid item xs={12} md={4} lg={3}>
               <Paper className={fixedHeightPaper}>
