@@ -30,10 +30,3 @@ version = "0.2.1"
 git = "https://github.com/dfinity/cdk-rs.git"
 branch = "pshahi/blob-opt"
 rev = "e3c7bff01a4ff275f4e19273a2ff283b58ee4f81"
-
-
-[dependencies.candid]
-version = "0.6.12"
-git = "https://github.com/dfinity/candid.git"
-branch = "blob-opt"
-rev = "75eada49f31773aa87b067a52ba1fa5e99dd09d4"
