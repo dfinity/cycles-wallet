@@ -408,10 +408,11 @@ mod wallet {
             Upgrade,
         }
 
-        #[derive(CandidType)]
+        #[derive(CandidType, Deserialize)]
         struct CanisterInstall {
             mode: InstallMode,
             canister_id: Principal,
+            #[serde(with = "serde_bytes")]
             wasm_module: Vec<u8>,
             arg: Vec<u8>,
             compute_allocation: Option<Nat>,
@@ -448,7 +449,8 @@ mod wallet {
         });
 
         // Store wallet wasm
-        match api::call::call(canister_id, "wallet_store_wallet_wasm", (wasm_module,)).await {
+        let store_args = WalletStoreWASMArgs { wasm_module };
+        match api::call::call(canister_id, "wallet_store_wallet_wasm", (store_args,)).await {
             Ok(x) => x,
             Err((code, msg)) => {
                 ic_cdk::trap(&format!(
@@ -481,10 +483,17 @@ mod wallet {
         create_result
     }
 
+    #[derive(CandidType, Deserialize)]
+    struct WalletStoreWASMArgs {
+        #[serde(with = "serde_bytes")]
+        wasm_module: Vec<u8>,
+    }
+
+
     #[update(guard = "is_custodian", name = "wallet_store_wallet_wasm")]
-    async fn store_wallet_wasm(wasm_module: Vec<u8>) {
+    async fn store_wallet_wasm(args: WalletStoreWASMArgs) {
         let wallet_bytes = storage::get_mut::<super::WalletWASMBytes>();
-        wallet_bytes.0 = Some(wasm_module);
+        wallet_bytes.0 = Some(args.wasm_module);
         super::update_chart();
     }
 
@@ -495,12 +504,14 @@ mod wallet {
     struct CallCanisterArgs {
         canister: Principal,
         method_name: String,
+        #[serde(with = "serde_bytes")]
         args: Vec<u8>,
         cycles: u64,
     }
 
-    #[derive(CandidType)]
+    #[derive(CandidType, Deserialize)]
     struct CallResult {
+        #[serde(with = "serde_bytes")]
         r#return: Vec<u8>,
     }
 
