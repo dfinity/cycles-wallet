@@ -210,7 +210,7 @@ fn deauthorize(custodian: Principal) {
 
 mod wallet {
     use crate::{events, is_custodian};
-    use ic_cdk::export::candid::CandidType;
+    use ic_cdk::export::candid::{CandidType, Nat};
     use ic_cdk::export::candid::parser::value::IDLValue;
     use ic_cdk::export::Principal;
     use ic_cdk::{api, caller, id, storage};
@@ -368,7 +368,7 @@ mod wallet {
             }
         };
 
-        #[derive(candid::CandidType)]
+        #[derive(CandidType)]
         struct In {
             canister_id: Principal,
             new_controller: Principal,
@@ -398,7 +398,7 @@ mod wallet {
 
     async fn install_wallet(canister_id: Principal, wasm_module: Vec<u8>) {
         // Install Wasm
-        #[derive(candid::CandidType, Deserialize)]
+        #[derive(CandidType, Deserialize)]
         enum InstallMode {
             #[serde(rename = "install")]
             Install,
@@ -408,14 +408,14 @@ mod wallet {
             Upgrade,
         }
 
-        #[derive(candid::CandidType)]
+        #[derive(CandidType)]
         struct CanisterInstall {
             mode: InstallMode,
             canister_id: Principal,
             wasm_module: Vec<u8>,
             arg: Vec<u8>,
-            compute_allocation: Option<candid::Nat>,
-            memory_allocation: Option<candid::Nat>,
+            compute_allocation: Option<Nat>,
+            memory_allocation: Option<Nat>,
         }
 
         let install_config = CanisterInstall {
@@ -424,7 +424,7 @@ mod wallet {
             wasm_module: wasm_module.clone(),
             arg: b" ".to_vec(),
             compute_allocation: None,
-            memory_allocation: Some(candid::Nat::from(DEFAULT_MEM_ALLOCATION)),
+            memory_allocation: Some(Nat::from(DEFAULT_MEM_ALLOCATION)),
         };
 
         match api::call::call(

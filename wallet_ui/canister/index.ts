@@ -172,7 +172,7 @@ export const Wallet = {
     controller?: Principal;
     cycles: number;
   }): Promise<Principal> {
-    const result = await WalletCanister.wallet_create_wallet({
+    const result = await (await getWalletCanister()).wallet_create_wallet({
       controller: p.controller ? [p.controller] : [],
       cycles: p.cycles,
     });
