@@ -9,7 +9,6 @@ import Grid from "@material-ui/core/Grid";
 import Paper from "@material-ui/core/Paper";
 import ChevronLeftIcon from "@material-ui/icons/ChevronLeft";
 import { CycleBalance } from "../panels/CycleBalance";
-import Events from "../panels/Events";
 import Drawer from "@material-ui/core/Drawer";
 import { Copyright } from "../App";
 import ListItemText from "@material-ui/core/ListItemText";
@@ -28,6 +27,10 @@ import DialogContentText from "@material-ui/core/DialogContentText";
 import DialogActions from "@material-ui/core/DialogActions";
 import Button from "@material-ui/core/Button";
 import { CreateWalletDialog } from "../panels/CreateWallet";
+import { Wallet } from "../../canister";
+import type { Event } from "../../canister/declaration";
+import type BigNumber from "bignumber.js";
+import Canisters from "../panels/Canisters";
 
 const drawerWidth = 240;
 
@@ -96,10 +99,21 @@ const useStyles = makeStyles((theme) => ({
   },
 }));
 
+interface FormattedEvent {
+  id: number;
+  timestamp: BigNumber;
+  kind: string;
+  body: any;
+}
+export type EventList = {
+  canisters: FormattedEvent[];
+  transactions: FormattedEvent[];
+};
+
 export function Dashboard(props: { open: boolean; onOpenToggle: () => void }) {
   const [cyclesDialogOpen, setCyclesDialogOpen] = useState(false);
   const [canisterCreateDialogOpen, setCanisterCreateDialogOpen] = useState(
-    false
+    true
   );
   const [walletCreateDialogOpen, setWalletCreateDialogOpen] = useState(false);
   const [errorDialogContent, setErrorDialogContent] = useState<any | undefined>(
@@ -108,21 +122,44 @@ export function Dashboard(props: { open: boolean; onOpenToggle: () => void }) {
   const { open, onOpenToggle } = props;
   const classes = useStyles();
 
-  function handleCyclesDialogClose(maybeErr?: any) {
-    setCyclesDialogOpen(false);
-    setErrorDialogContent(maybeErr);
-  }
-  function handleCyclesDialogOpen() {
-    setCyclesDialogOpen(true);
-  }
+  const [events, setEvents] = useState<EventList>();
 
-  function handleCanisterCreateDialogClose(maybeErr?: any) {
-    setCanisterCreateDialogOpen(false);
-    setErrorDialogContent(maybeErr);
-  }
-  function handleCanisterCreateDialogOpen() {
-    setCanisterCreateDialogOpen(true);
-  }
+  React.useEffect(() => {
+    Wallet.events()
+      .then((events) => {
+        return events
+          .sort((a, b) => {
+            // Reverse sort on timestamp.
+            return +b.timestamp - +a.timestamp;
+          })
+          .reduce((start, next) => {
+            const [kindField] = Object.entries(next.kind);
+            const [key, body] = Object.entries(kindField);
+            const kind = key[1];
+
+            const formattedEvent = {
+              id: next.id,
+              timestamp: next.timestamp,
+              kind,
+              body,
+            };
+            if (kind === "CanisterCreated") {
+              start.canisters.push(formattedEvent);
+            } else {
+              start.transactions.push(formattedEvent);
+            }
+
+            return start;
+          }, reduceStart);
+      })
+      .then(setEvents);
+  }, []);
+
+  const reduceStart: EventList = {
+    canisters: [],
+    transactions: [],
+  };
+  console.log(events);
 
   function handleWalletCreateDialogClose(maybeErr?: any) {
     setWalletCreateDialogOpen(false);
@@ -151,13 +188,13 @@ export function Dashboard(props: { open: boolean; onOpenToggle: () => void }) {
 
         <Divider />
         <List>
-          <ListItem button onClick={handleCyclesDialogOpen}>
+          <ListItem button onClick={() => setCyclesDialogOpen(true)}>
             <ListItemIcon>
               <SendIcon />
             </ListItemIcon>
             <ListItemText primary="Send Cycles" />
           </ListItem>
-          <ListItem button onClick={handleCanisterCreateDialogOpen}>
+          <ListItem button onClick={() => setCanisterCreateDialogOpen(true)}>
             <ListItemIcon>
               <AddCircleOutlineIcon />
             </ListItemIcon>
@@ -174,12 +211,12 @@ export function Dashboard(props: { open: boolean; onOpenToggle: () => void }) {
 
       <SendCyclesDialog
         open={cyclesDialogOpen}
-        close={handleCyclesDialogClose}
+        close={() => setCyclesDialogOpen(false)}
       />
 
       <CreateCanisterDialog
         open={canisterCreateDialogOpen}
-        close={handleCanisterCreateDialogClose}
+        close={() => setCanisterCreateDialogOpen(false)}
       />
 
       <CreateWalletDialog
@@ -235,10 +272,10 @@ export function Dashboard(props: { open: boolean; onOpenToggle: () => void }) {
               </Paper>
             </Grid>
 
-            {/* Recent Events */}
+            {/* Canisters */}
             <Grid item xs={12}>
               <Paper className={classes.paper}>
-                <Events />
+                {<Canisters canisters={events?.canisters} />}
               </Paper>
             </Grid>
           </Grid>
