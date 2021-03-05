@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import clsx from "clsx";
-import { makeStyles, ThemeProvider } from "@material-ui/core/styles";
+import makeStyles from "@material-ui/core/styles/makeStyles";
 import Box from "@material-ui/core/Box";
 import Divider from "@material-ui/core/Divider";
 import IconButton from "@material-ui/core/IconButton";
@@ -18,7 +18,6 @@ import ListItem from "@material-ui/core/ListItem";
 import SendIcon from "@material-ui/icons/Send";
 import List from "@material-ui/core/List";
 import AddCircleOutlineIcon from "@material-ui/icons/AddCircleOutline";
-import ContactsIcon from "@material-ui/icons/Contacts";
 import { SendCyclesDialog } from "../panels/SendCycles";
 import { BalanceChart } from "../panels/BalanceChart";
 import { CreateCanisterDialog } from "../panels/CreateCanister";

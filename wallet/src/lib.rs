@@ -11,13 +11,14 @@ mod events;
 use crate::address::{AddressBook, AddressEntry, Role};
 use crate::events::EventBuffer;
 use events::{record, Event, EventKind};
+use std::io::Read;
 
 /// The frontend bytes.
 struct FrontendBytes(pub Cow<'static, [u8]>);
 
 impl Default for FrontendBytes {
     fn default() -> Self {
-        FrontendBytes(Cow::Borrowed(include_bytes!("../../dist/index.js")))
+        FrontendBytes(Cow::Borrowed(include_bytes!("../../dist/index.js.gz")))
     }
 }
 
@@ -118,13 +119,17 @@ fn store(blob: Vec<u8>) {
 }
 
 #[query]
-fn retrieve(path: String) -> &'static [u8] {
+fn retrieve(path: String) -> Vec<u8> {
     let frontend_bytes = storage::get::<FrontendBytes>();
     if path == "index.js" {
-        match &frontend_bytes.0 {
+        let gz = match &frontend_bytes.0 {
             Cow::Owned(o) => o.as_slice(),
             Cow::Borrowed(b) => b,
-        }
+        };
+        let mut decoder = libflate::gzip::Decoder::new(gz).unwrap();
+        let mut decoded_data = Vec::new();
+        decoder.read_to_end(&mut decoded_data).unwrap();
+        decoded_data
     } else {
         trap(&format!(r#"Cannot find "{}" in the assets."#, path));
     }
@@ -205,13 +210,14 @@ fn deauthorize(custodian: Principal) {
 
 mod wallet {
     use crate::{events, is_custodian};
-    use ic_cdk::export::candid::CandidType;
+    use ic_cdk::export::candid::parser::value::IDLValue;
+    use ic_cdk::export::candid::{CandidType, Nat};
     use ic_cdk::export::Principal;
     use ic_cdk::{api, caller, id, storage};
     use ic_cdk_macros::*;
     use serde::Deserialize;
 
-    const DEFAULT_MEM_ALLOCATION: u64 = 8000000000_u64; // 8gb
+    const DEFAULT_MEM_ALLOCATION: u64 = 40000000_u64; // 40 MB
 
     /***************************************************************************************************
      * Cycle Management
@@ -243,7 +249,7 @@ mod wallet {
     /// Send cycles to another canister.
     #[update(guard = "is_custodian", name = "wallet_send")]
     async fn send(args: SendCyclesArgs) -> Result<(), String> {
-        let (_,): (candid::parser::value::IDLValue,) = match api::call::call_with_payment(
+        let (_,): (IDLValue,) = match api::call::call_with_payment(
             args.canister.clone(),
             "wallet_receive",
             (),
@@ -392,7 +398,7 @@ mod wallet {
             }
         };
 
-        #[derive(candid::CandidType)]
+        #[derive(CandidType)]
         struct In {
             canister_id: Principal,
             new_controller: Principal,
@@ -423,7 +429,7 @@ mod wallet {
 
     async fn install_wallet(canister_id: Principal, wasm_module: Vec<u8>) -> Result<(), String> {
         // Install Wasm
-        #[derive(candid::CandidType, Deserialize)]
+        #[derive(CandidType, Deserialize)]
         enum InstallMode {
             #[serde(rename = "install")]
             Install,
@@ -433,14 +439,15 @@ mod wallet {
             Upgrade,
         }
 
-        #[derive(candid::CandidType)]
+        #[derive(CandidType, Deserialize)]
         struct CanisterInstall {
             mode: InstallMode,
             canister_id: Principal,
+            #[serde(with = "serde_bytes")]
             wasm_module: Vec<u8>,
             arg: Vec<u8>,
-            compute_allocation: Option<candid::Nat>,
-            memory_allocation: Option<candid::Nat>,
+            compute_allocation: Option<Nat>,
+            memory_allocation: Option<Nat>,
         }
 
         let install_config = CanisterInstall {
@@ -449,7 +456,7 @@ mod wallet {
             wasm_module: wasm_module.clone(),
             arg: b" ".to_vec(),
             compute_allocation: None,
-            memory_allocation: Some(candid::Nat::from(DEFAULT_MEM_ALLOCATION)),
+            memory_allocation: Some(Nat::from(DEFAULT_MEM_ALLOCATION)),
         };
 
         match api::call::call(
@@ -473,7 +480,8 @@ mod wallet {
         });
 
         // Store wallet wasm
-        match api::call::call(canister_id, "wallet_store_wallet_wasm", (wasm_module,)).await {
+        let store_args = WalletStoreWASMArgs { wasm_module };
+        match api::call::call(canister_id, "wallet_store_wallet_wasm", (store_args,)).await {
             Ok(x) => x,
             Err((code, msg)) => {
                 return Err(format!(
@@ -489,7 +497,9 @@ mod wallet {
     async fn create_wallet(args: CreateCanisterArgs) -> Result<CreateResult, String> {
         let wallet_bytes = storage::get::<super::WalletWASMBytes>();
         let wasm_module = match &wallet_bytes.0 {
-            None => return Err("No wasm module stored.".to_string()),
+            None => {
+                ic_cdk::trap("No wasm module stored.");
+            }
             Some(o) => o,
         };
 
@@ -506,10 +516,16 @@ mod wallet {
         Ok(create_result)
     }
 
+    #[derive(CandidType, Deserialize)]
+    struct WalletStoreWASMArgs {
+        #[serde(with = "serde_bytes")]
+        wasm_module: Vec<u8>,
+    }
+
     #[update(guard = "is_custodian", name = "wallet_store_wallet_wasm")]
-    async fn store_wallet_wasm(wasm_module: Vec<u8>) {
+    async fn store_wallet_wasm(args: WalletStoreWASMArgs) {
         let wallet_bytes = storage::get_mut::<super::WalletWASMBytes>();
-        wallet_bytes.0 = Some(wasm_module);
+        wallet_bytes.0 = Some(args.wasm_module);
         super::update_chart();
     }
 
@@ -520,12 +536,14 @@ mod wallet {
     struct CallCanisterArgs {
         canister: Principal,
         method_name: String,
+        #[serde(with = "serde_bytes")]
         args: Vec<u8>,
         cycles: u64,
     }
 
-    #[derive(CandidType)]
+    #[derive(CandidType, Deserialize)]
     struct CallResult {
+        #[serde(with = "serde_bytes")]
         r#return: Vec<u8>,
     }
 

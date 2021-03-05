@@ -6,36 +6,33 @@
  * . We use the same canister ID as the frontend as backend. In this case this means
  *   we cannot just create a new wallet canister actor using the DID.js, as it doesn't
  *   exist when the UI is compiled.
- * . We use many types from the Agent, but in order to save on space, we should not
- *   import directly from `@dfinity/agent`. Instead we import types and stub the runtime
- *   implementation of those types to the ones in `window.ic`. This tricks the compiler
- *   into using those classes at runtime, but still validating typescript using the
- *   correct types.
- *   This saves us about 150kb of frontend code already exists in bootstrap.
- * . We want to memoize values as much as possible (like charts and events). Although
- *   this is not yet implemented, this allows to have a single point of override when
- *   we want to do so.
  *
  * It is thus very important that the frontend only uses this file when communicating
  * with the wallet canister.
+ *
+ * It is also useful because that puts all the code in one place, including the
+ * authentication logic. We do not use `window.ic` anywhere in this.
  */
 import { convertIdlEventMap, Event, factory } from "./wallet.did";
-import type * as agent from "@dfinity/agent";
+import { HttpAgent, Actor, Principal, ActorSubclass } from "@dfinity/agent";
+import { AuthenticationClient } from "../utils/authClient";
+import { SiteInfo } from "./site";
 
+// Need to export the enumaration from wallet.did
 export * from "./wallet.did";
+export { Principal } from "@dfinity/agent";
 
-declare const window: agent.GlobalInternetComputer;
+const authClient = new AuthenticationClient();
+const site = SiteInfo.fromWindow();
 
-export const canister = window.ic.canister;
-
-// Reuse the types from window, as they don't take any space (coming from bootstrap)
-export const Actor = window.ic.canister!.constructor! as typeof agent.Actor;
-export const Principal = Actor.canisterIdOf(window.ic.canister!)
-  .constructor as typeof agent.Principal;
-export type Principal = agent.Principal;
-
-export async function getAgentPrincipal(): Promise<Principal | null> {
-  return window.ic.agent.getPrincipal();
+export async function getAgentPrincipal(): Promise<Principal> {
+  return authClient.getIdentity().getPrincipal();
+}
+export function getCanisterId(): Principal {
+  if (!site.principal) {
+    throw new Error("Could not find the canister ID.");
+  }
+  return site.principal;
 }
 
 interface BigNumber {
@@ -60,18 +57,48 @@ interface ActorInterface {
   ): Promise<[BigNumber, BigNumber][]>;
 }
 
-export const WalletCanister: agent.ActorSubclass<ActorInterface> = (() => {
+let walletCanisterCache: ActorSubclass<ActorInterface>;
+
+export async function login() {
+  const redirectUri = `${location.origin}/${location.search}`;
+  await authClient.loginWithRedirect({
+    redirectUri,
+    scope: [getWalletId()],
+  });
+}
+
+export async function handleAuthRedirect() {
+  // Check if we need to parse the authentication.
+  if (authClient.shouldParseResult(location)) {
+    await authClient.handleRedirectCallback(location);
+  }
+}
+
+async function getWalletCanister(): Promise<ActorSubclass<ActorInterface>> {
+  if (walletCanisterCache) {
+    return walletCanisterCache;
+  }
+
+  await handleAuthRedirect();
+
   let walletId: Principal | null = null;
   walletId = getWalletId(walletId);
+
+  const agent = new HttpAgent({
+    host: await site.getHost(),
+    identity: authClient.getIdentity(),
+  });
 
   if (!walletId) {
     throw new Error("Need to have a wallet ID.");
   } else {
-    return (Actor as any).createActor(factory as any, {
+    walletCanisterCache = (Actor as any).createActor(factory as any, {
+      agent,
       canisterId: walletId,
-    }) as agent.ActorSubclass<ActorInterface>;
+    }) as ActorSubclass<ActorInterface>;
+    return walletCanisterCache;
   }
-})();
+}
 
 export enum ChartPrecision {
   Minutes,
@@ -81,16 +108,13 @@ export enum ChartPrecision {
   Monthly,
 }
 
-export function getWalletId(walletId: agent.Principal | null) {
+export function getWalletId(walletId: Principal | null = null) {
   const params = new URLSearchParams(location.search);
   const maybeWalletId = params.get("wallet");
   if (maybeWalletId) {
     walletId = Principal.fromText(maybeWalletId);
   } else {
-    const maybeCanister = window.ic.canister;
-    if (maybeCanister) {
-      walletId = Actor.canisterIdOf(maybeCanister);
-    }
+    walletId = getCanisterId();
   }
   return walletId;
 }
@@ -109,23 +133,27 @@ function precisionToNanoseconds(precision: ChartPrecision) {
 
 export const Wallet = {
   async name(): Promise<string> {
-    return (await WalletCanister.name())[0] || "";
+    return (await (await getWalletCanister()).name())[0] || "";
   },
   async init(): Promise<void> {
     await this.balance();
   },
   async balance(): Promise<number> {
-    return (await WalletCanister.wallet_balance()).amount.toNumber();
+    return (
+      await (await getWalletCanister()).wallet_balance()
+    ).amount.toNumber();
   },
   async events(from?: number, to?: number): Promise<Event[]> {
     return (
-      await WalletCanister.get_events(from ? [{ from: [from], to: [to] }] : [])
+      await (await getWalletCanister()).get_events(
+        from ? [{ from: [from], to: [to] }] : []
+      )
     ).map(convertIdlEventMap);
   },
   async chart(p: ChartPrecision, count?: number): Promise<[Date, number][]> {
     const precision = precisionToNanoseconds(p);
     return (
-      await WalletCanister.get_chart([
+      await (await getWalletCanister()).get_chart([
         { count: [count], precision: [precision] },
       ])
     ).map(([a, b]) => [new Date(a.toNumber() / 1000000), b.toNumber()]);
@@ -134,7 +162,7 @@ export const Wallet = {
     controller?: Principal;
     cycles: number;
   }): Promise<Principal> {
-    const result = await WalletCanister.wallet_create_canister({
+    const result = await (await getWalletCanister()).wallet_create_canister({
       controller: p.controller ? [p.controller] : [],
       cycles: p.cycles,
     });
@@ -144,13 +172,13 @@ export const Wallet = {
     controller?: Principal;
     cycles: number;
   }): Promise<Principal> {
-    const result = await WalletCanister.wallet_create_wallet({
+    const result = await (await getWalletCanister()).wallet_create_wallet({
       controller: p.controller ? [p.controller] : [],
       cycles: p.cycles,
     });
     return result.canister_id;
   },
   async send(p: { canister: Principal; amount: number }): Promise<void> {
-    await WalletCanister.wallet_send(p);
+    await (await getWalletCanister()).wallet_send(p);
   },
 };
