@@ -94,6 +94,16 @@ export const factory: IDL.InterfaceFactory = ({ IDL }) => {
       [IDL.Record({ canister_id: IDL.Principal })],
       []
     ),
+    wallet_create_wallet: IDL.Func(
+      [
+        IDL.Record({
+          controller: IDL.Opt(IDL.Principal),
+          cycles: IDL.Nat64,
+        }),
+      ],
+      [IDL.Record({ canister_id: IDL.Principal })],
+      []
+    ),
     get_controller: IDL.Func([], [IDL.Principal], ["query"]),
     set_controller: IDL.Func([IDL.Principal], [], []),
     wallet_call: IDL.Func(
