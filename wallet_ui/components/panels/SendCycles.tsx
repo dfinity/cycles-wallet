@@ -13,7 +13,6 @@ import Typography from "@material-ui/core/Typography";
 import FormControl from "@material-ui/core/FormControl";
 import TextField from "@material-ui/core/TextField";
 import { Principal, Wallet } from "../../canister";
-import BigNumber from "bignumber.js";
 
 const useStyles = makeStyles((theme) => ({
   wrapper: {
@@ -91,7 +90,7 @@ export function SendCyclesDialog(props: {
 
     Wallet.send({
       canister: Principal.fromText(principal),
-      amount: new BigNumber(cycles),
+      amount: cycles,
     }).then(
       () => {
         setLoading(false);

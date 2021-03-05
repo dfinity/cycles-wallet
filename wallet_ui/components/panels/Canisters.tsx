@@ -1,4 +1,10 @@
-import { CircularProgress, Grid } from "@material-ui/core";
+import {
+  CircularProgress,
+  Grid,
+  List,
+  ListItem,
+  Typography,
+} from "@material-ui/core";
 import * as React from "react";
 import { EventList } from "../routes/Dashboard";
 
@@ -10,9 +16,25 @@ function Canisters(props: Props) {
   const { canisters } = props;
 
   return (
-    <Grid>
+    <Grid className="canisters-list">
+      <Typography
+        component="h2"
+        variant="h5"
+        color="primary"
+        gutterBottom
+        style={{ fontWeight: "bold" }}
+      >
+        Canisters
+      </Typography>
+      <Typography component="p" color="primary" gutterBottom>
+        Canisters you've created
+      </Typography>
       <React.Suspense fallback={<CircularProgress />}>
-        {JSON.stringify(canisters)}
+        <List>
+          {canisters?.map(() => {
+            return <ListItem></ListItem>;
+          })}
+        </List>
       </React.Suspense>
       ;
     </Grid>
