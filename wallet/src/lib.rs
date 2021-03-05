@@ -210,8 +210,8 @@ fn deauthorize(custodian: Principal) {
 
 mod wallet {
     use crate::{events, is_custodian};
-    use ic_cdk::export::candid::{CandidType, Nat};
     use ic_cdk::export::candid::parser::value::IDLValue;
+    use ic_cdk::export::candid::{CandidType, Nat};
     use ic_cdk::export::Principal;
     use ic_cdk::{api, caller, id, storage};
     use ic_cdk_macros::*;
@@ -488,7 +488,6 @@ mod wallet {
         #[serde(with = "serde_bytes")]
         wasm_module: Vec<u8>,
     }
-
 
     #[update(guard = "is_custodian", name = "wallet_store_wallet_wasm")]
     async fn store_wallet_wasm(args: WalletStoreWASMArgs) {
