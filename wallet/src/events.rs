@@ -1,7 +1,7 @@
 use crate::address::Role;
 use ic_cdk::export::candid::CandidType;
-use ic_cdk::{api, storage};
 use ic_cdk::export::Principal;
+use ic_cdk::{api, storage};
 use serde::Deserialize;
 use std::cmp::min;
 
