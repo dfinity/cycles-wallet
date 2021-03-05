@@ -314,9 +314,9 @@ checksum = "631ae5198c9be5e753e5cc215e1bd73c2b466a3565173db433f52bb9d3e66dba"
 
 [[package]]
 name = "candid"
-version = "0.6.16"
+version = "0.6.17"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9669668454dd04c144d6f6674b4266b6e8fd0ef75f0240f0d08ec60869f654aa"
+checksum = "7f9b7a91e4c220c5daeafaebfc775e06afcab733e4068075ea2eb7ab81ff5b84"
 dependencies = [
  "byteorder",
  "candid_derive",
@@ -333,14 +333,15 @@ dependencies = [
  "paste",
  "pretty",
  "serde",
+ "serde_bytes",
  "thiserror",
 ]
 
 [[package]]
 name = "candid_derive"
-version = "0.4.2"
+version = "0.4.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5603430e22543ff48a72020277340132dea6653e6c91b47c9e1f90f91ae82c54"
+checksum = "e3c7113fdbc587057808a551cfdf56ddcfcd4d2c68dd27599f102d03e1ed1712"
 dependencies = [
  "lazy_static",
  "proc-macro2",
@@ -877,7 +878,7 @@ dependencies = [
 [[package]]
 name = "ic-agent"
 version = "0.1.0"
-source = "git+https://github.com/dfinity/agent-rs.git?branch=pshahi/wallet_create#811a10e4c5c6766fdef9f0e0236f7117147b251e"
+source = "git+https://github.com/dfinity/agent-rs.git?branch=pshahi/wallet_create#0286c085f38ecee853e5138ca73a63692a1d477b"
 dependencies = [
  "async-trait",
  "base32",
@@ -907,7 +908,7 @@ dependencies = [
 [[package]]
 name = "ic-identity-hsm"
 version = "0.1.0"
-source = "git+https://github.com/dfinity/agent-rs.git?branch=pshahi/wallet_create#811a10e4c5c6766fdef9f0e0236f7117147b251e"
+source = "git+https://github.com/dfinity/agent-rs.git?branch=pshahi/wallet_create#0286c085f38ecee853e5138ca73a63692a1d477b"
 dependencies = [
  "hex",
  "ic-agent",
@@ -922,7 +923,7 @@ dependencies = [
 [[package]]
 name = "ic-types"
 version = "0.1.2"
-source = "git+https://github.com/dfinity/agent-rs.git?branch=pshahi/wallet_create#811a10e4c5c6766fdef9f0e0236f7117147b251e"
+source = "git+https://github.com/dfinity/agent-rs.git?branch=pshahi/wallet_create#0286c085f38ecee853e5138ca73a63692a1d477b"
 dependencies = [
  "base32",
  "crc32fast",
@@ -934,7 +935,7 @@ dependencies = [
 [[package]]
 name = "ic-utils"
 version = "0.1.0"
-source = "git+https://github.com/dfinity/agent-rs.git?branch=pshahi/wallet_create#811a10e4c5c6766fdef9f0e0236f7117147b251e"
+source = "git+https://github.com/dfinity/agent-rs.git?branch=pshahi/wallet_create#0286c085f38ecee853e5138ca73a63692a1d477b"
 dependencies = [
  "async-trait",
  "candid",
@@ -942,6 +943,7 @@ dependencies = [
  "ic-agent",
  "ic-types",
  "serde",
+ "serde_bytes",
  "thiserror",
 ]
 
@@ -2315,7 +2317,6 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "async-std",
- "candid",
  "delay",
  "ic-agent",
  "ic-identity-hsm",

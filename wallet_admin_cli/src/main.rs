@@ -35,11 +35,11 @@ const BASIC_IDENTITY_PEM_PATH: &str = "BASIC_IDENTITY_PEM_PATH";
 const HSM_SLOT_INDEX: &str = "HSM_SLOT_INDEX";
 const HSM_KEY_ID: &str = "HSM_KEY_ID";
 const HSM_PIN: &str = "HSM_PIN";
+const DEFAULT_MEM_ALLOCATION: u64 = 40000000_u64; // 40 MB
 
 pub fn create_waiter() -> Delay {
     Delay::builder()
-        .throttle(std::time::Duration::from_millis(5))
-        .timeout(std::time::Duration::from_secs(60 * 5))
+        .throttle(std::time::Duration::from_secs(1))
         .build()
 }
 
@@ -462,11 +462,13 @@ async fn install_wallet(
 ) -> WalletResult<()> {
     ic00.install_code(canister_id, &wasm)
         .with_mode(InstallMode::Install)
-        .with_memory_allocation(MemoryAllocation::try_from(8000000000_u64)
+        .with_memory_allocation(MemoryAllocation::try_from(DEFAULT_MEM_ALLOCATION)
             .expect("Memory allocation must be between 0 and 2^48 (i.e 256TB), inclusively."))
         .call_and_wait(create_waiter())
         .await
         .map_err(|err| anyhow!("Could not install wallet canister: {}", err.to_string()))?;
+
+    println!("wallet installed. now storing wasm into it.");
 
     wallet
         .wallet_store_wallet_wasm(wasm)
