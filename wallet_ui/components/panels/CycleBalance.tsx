@@ -69,7 +69,6 @@ export function CycleBalance() {
     SUFFIX_LIST[Math.min(6, Math.floor(Math.log10(5000000000000) / 3))];
   const ll = SUFFIX_LIST.indexOf(suffix);
   const humanCycles = Math.floor(cycles / 10 ** (ll * 3));
-  console.log(cycles, humanCycles);
 
   return (
     <React.Fragment>

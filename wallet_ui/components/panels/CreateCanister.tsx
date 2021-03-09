@@ -93,7 +93,7 @@ export function CreateCanisterDialog(props: {
       controller: controller ? Principal.fromText(controller) : undefined,
       cycles,
     }).then(
-      canisterId => {
+      (canisterId) => {
         setLoading(false);
         setCanisterId(canisterId);
       },
@@ -116,11 +116,11 @@ export function CreateCanisterDialog(props: {
         {"Create a new Canister"}
       </DialogTitle>
       <DialogContent>
-        <DialogContentText>
-          <Typography>
-            Create a canister. If the controller field is left empty, the controller will be
-            this wallet canister.
-          </Typography>
+        <div>
+          <DialogContentText>
+            Create a canister. If the controller field is left empty, the
+            controller will be this wallet canister.
+          </DialogContentText>
           <FormControl className={classes.formControl}>
             <TextField
               label="Controller"
@@ -144,7 +144,7 @@ export function CreateCanisterDialog(props: {
               }}
             />
           </FormControl>
-        </DialogContentText>
+        </div>
       </DialogContent>
       <DialogActions>
         <Button onClick={handleClose} color="primary" disabled={loading}>
@@ -171,24 +171,18 @@ export function CreateCanisterDialog(props: {
           aria-labelledby="alert-dialog-title"
           aria-describedby="alert-dialog-description"
         >
-          <DialogTitle id="alert-dialog-title">
-            New Canister ID
-          </DialogTitle>
+          <DialogTitle id="alert-dialog-title">New Canister ID</DialogTitle>
           <DialogContent>
             <DialogContentText id="alert-dialog-description">
               Canister ID: {canisterId?.toString()}
             </DialogContentText>
           </DialogContent>
           <DialogActions>
-            <Button
-              onClick={() => close(undefined)}
-              color="primary"
-            >
+            <Button onClick={() => close(undefined)} color="primary">
               Okay
             </Button>
           </DialogActions>
         </Dialog>
-
       </DialogActions>
     </Dialog>
   );

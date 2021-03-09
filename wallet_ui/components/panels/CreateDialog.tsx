@@ -33,32 +33,12 @@ const useStyles = makeStyles((theme) => ({
   },
 }));
 
-function NumberFormatCustom(props: any) {
-  const { inputRef, onChange, ...other } = props;
-
-  return (
-    <NumberFormat
-      {...other}
-      getInputRef={inputRef}
-      onValueChange={(values) => {
-        onChange({
-          target: {
-            value: values.value,
-          },
-        });
-      }}
-      thousandSeparator
-      isNumericString
-      suffix=" cycles"
-    />
-  );
-}
-
-export function CreateWalletDialog(props: {
+export function CreateDialog(props: {
   open: boolean;
   close: (err?: any) => void;
+  children: React.ReactNode;
 }) {
-  const { open, close } = props;
+  const { open, close, children } = props;
 
   const [loading, setLoading] = useState(false);
   const [controller, setController] = useState("");
@@ -113,37 +93,7 @@ export function CreateWalletDialog(props: {
       aria-labelledby="alert-dialog-title"
     >
       <DialogTitle id="alert-dialog-title">{"Create a new Wallet"}</DialogTitle>
-      <DialogContent>
-        <div>
-          <DialogContentText>
-            Create a wallet. If the controller field is left empty, the
-            controller will be this wallet canister.
-          </DialogContentText>
-          <FormControl className={classes.formControl}>
-            <TextField
-              label="Controller"
-              value={controller}
-              style={{ margin: 8 }}
-              fullWidth
-              disabled={loading}
-              onChange={handleControllerChange}
-              error={error}
-              autoFocus
-            />
-            <TextField
-              label="Cycles"
-              value={cycles}
-              style={{ margin: 8 }}
-              fullWidth
-              disabled={loading}
-              onChange={handleCycleChange}
-              InputProps={{
-                inputComponent: NumberFormatCustom,
-              }}
-            />
-          </FormControl>
-        </div>
-      </DialogContent>
+      <DialogContent>{children}</DialogContent>
       <DialogActions>
         <Button onClick={handleClose} color="primary" disabled={loading}>
           Cancel
@@ -162,25 +112,6 @@ export function CreateWalletDialog(props: {
             <CircularProgress size={24} className={classes.buttonProgress} />
           )}
         </div>
-
-        <Dialog
-          open={canisterId !== undefined}
-          onClose={() => close(undefined)}
-          aria-labelledby="alert-dialog-title"
-          aria-describedby="alert-dialog-description"
-        >
-          <DialogTitle id="alert-dialog-title">New Canister ID</DialogTitle>
-          <DialogContent>
-            <DialogContentText id="alert-dialog-description">
-              Canister ID: {canisterId?.toString()}
-            </DialogContentText>
-          </DialogContent>
-          <DialogActions>
-            <Button onClick={() => close(undefined)} color="primary">
-              Okay
-            </Button>
-          </DialogActions>
-        </Dialog>
       </DialogActions>
     </Dialog>
   );

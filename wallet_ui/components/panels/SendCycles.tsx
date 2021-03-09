@@ -115,11 +115,11 @@ export function SendCyclesDialog(props: {
         {"Send Cycles to Another Canister"}
       </DialogTitle>
       <DialogContent>
-        <DialogContentText>
-          <Typography>
+        <div>
+          <DialogContentText>
             Send cycles to a canister. Do not send cycles to a user, the call
             will fail. This cannot be validated from the user interface.
-          </Typography>
+          </DialogContentText>
           <FormControl className={classes.formControl}>
             <TextField
               label="Principal"
@@ -143,7 +143,7 @@ export function SendCyclesDialog(props: {
               }}
             />
           </FormControl>
-        </DialogContentText>
+        </div>
       </DialogContent>
       <DialogActions>
         <Button onClick={handleClose} color="primary" disabled={loading}>

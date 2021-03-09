@@ -104,7 +104,7 @@ export function BalanceChart() {
 
   return (
     <>
-      <Typography className={classes.formControlParagraph}>
+      <Typography component="div" className={classes.formControlParagraph}>
         <FormControl hiddenLabel className={classes.formControl}>
           <Select
             value={precision}

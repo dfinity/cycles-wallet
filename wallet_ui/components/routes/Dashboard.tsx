@@ -105,6 +105,7 @@ interface FormattedEvent {
   timestamp: BigNumber;
   kind: string | unknown;
   body: any;
+  name?: string;
 }
 export type EventList = {
   canisters: FormattedEvent[];
@@ -144,7 +145,7 @@ export function Dashboard(props: { open: boolean; onOpenToggle: () => void }) {
               kind,
               body,
             };
-            if (kind === "CanisterCreated") {
+            if (kind === "CanisterCreated" || kind === "WalletCreated") {
               start.canisters.push(formattedEvent);
             } else {
               start.transactions.push(formattedEvent);
@@ -160,14 +161,10 @@ export function Dashboard(props: { open: boolean; onOpenToggle: () => void }) {
     canisters: [],
     transactions: [],
   };
-  console.log(events);
 
   function handleWalletCreateDialogClose(maybeErr?: any) {
     setWalletCreateDialogOpen(false);
     setErrorDialogContent(maybeErr);
-  }
-  function handleWalletCreateDialogOpen() {
-    setWalletCreateDialogOpen(true);
   }
 
   return (
@@ -188,41 +185,11 @@ export function Dashboard(props: { open: boolean; onOpenToggle: () => void }) {
         </div>
 
         <Divider />
-        <List>
-          <ListItem button onClick={() => setCyclesDialogOpen(true)}>
-            <ListItemIcon>
-              <SendIcon />
-            </ListItemIcon>
-            <ListItemText primary="Send Cycles" />
-          </ListItem>
-          <ListItem button onClick={() => setCanisterCreateDialogOpen(true)}>
-            <ListItemIcon>
-              <AddCircleOutlineIcon />
-            </ListItemIcon>
-            <ListItemText primary="Create a Canister" />
-          </ListItem>
-          <ListItem button onClick={handleWalletCreateDialogOpen}>
-            <ListItemIcon>
-              <AddCircleOutlineIcon />
-            </ListItemIcon>
-            <ListItemText primary="Create a Wallet" />
-          </ListItem>
-        </List>
       </Drawer>
 
       <SendCyclesDialog
         open={cyclesDialogOpen}
         close={() => setCyclesDialogOpen(false)}
-      />
-
-      <CreateCanisterDialog
-        open={canisterCreateDialogOpen}
-        close={() => setCanisterCreateDialogOpen(false)}
-      />
-
-      <CreateWalletDialog
-        open={walletCreateDialogOpen}
-        close={handleWalletCreateDialogClose}
       />
 
       <Dialog
@@ -264,7 +231,11 @@ export function Dashboard(props: { open: boolean; onOpenToggle: () => void }) {
             <Grid item xs={12} md={4} lg={3}>
               <Paper className={classes.paper}>
                 <CycleBalance />
-                <PrimaryButton color="secondary" type="button">
+                <PrimaryButton
+                  color="secondary"
+                  type="button"
+                  onClick={() => setCyclesDialogOpen(true)}
+                >
                   Send Cycles
                 </PrimaryButton>
               </Paper>
