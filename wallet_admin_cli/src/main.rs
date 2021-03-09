@@ -30,6 +30,8 @@ const BATCH_SIZE: &str = "8";
 const CYCLES_BALANCE: &str = "100000000000000";
 const SODIUM_STR: &str = "sodium";
 const SODIUM_ENDPOINT: &str = "https://gw.dfinity.network";
+const MERCURY_STR: &str = "mercury";
+const MERCURY_ENDPOINT: &str = "https://mercury.dfinity.network";
 const HSM_PKCS11_LIBRARY_PATH: &str = "HSM_PKCS11_LIBRARY_PATH";
 const BASIC_IDENTITY_PEM_PATH: &str = "BASIC_IDENTITY_PEM_PATH";
 const HSM_SLOT_INDEX: &str = "HSM_SLOT_INDEX";
@@ -102,6 +104,8 @@ async fn create_identity() -> WalletResult<Box<dyn Identity + Send + Sync>> {
 async fn construct_agent(endpoint: String) -> WalletResult<(Agent, Principal)> {
     let url_str = if endpoint == SODIUM_STR {
         SODIUM_ENDPOINT.to_string()
+    } else if endpoint == MERCURY_STR {
+        MERCURY_ENDPOINT.to_string()
     } else {
         format!("http://{}", endpoint)
     };
