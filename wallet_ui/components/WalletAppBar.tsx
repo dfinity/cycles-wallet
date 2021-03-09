@@ -13,7 +13,7 @@ import Typography from "@material-ui/core/Typography";
 
 import makeStyles from "@material-ui/core/styles/makeStyles";
 import AccountCircle from "@material-ui/icons/AccountCircle";
-
+import checkerSrc from "../img/avatars/checkers.png";
 import { getWalletId, Principal } from "../canister";
 
 const drawerWidth = 240;
@@ -30,6 +30,9 @@ const useStyles = makeStyles((theme) => ({
     borderBottom: `1px solid ${
       theme.palette.type === "dark" ? "#3F4043" : "#EFEFEF"
     }`,
+    display: "flex",
+    flexDirection: "row-reverse",
+    alignItems: "center",
   },
   appBarShift: {
     marginLeft: drawerWidth,
@@ -47,7 +50,6 @@ const useStyles = makeStyles((theme) => ({
     display: "none",
   },
   toolbar: {
-    paddingRight: 24, // keep right padding when drawer closed
     flexDirection: "row-reverse",
   },
   title: {
@@ -97,18 +99,16 @@ export function WalletAppBar(props: {
       color="inherit"
       className={clsx(classes.appBar, open && menu && classes.appBarShift)}
     >
-      <Toolbar className={classes.toolbar}>
-        <MenuItem onClick={handleProfileMenuOpen}>
-          <IconButton
-            aria-label="account of current user"
-            aria-controls="primary-search-account-menu"
-            aria-haspopup="true"
-            color="inherit"
-          >
-            <AccountCircle />
-          </IconButton>
-        </MenuItem>
-      </Toolbar>
+      <button
+        title="account of current user"
+        aria-controls="primary-search-account-menu"
+        aria-haspopup="true"
+        type="button"
+        style={{ padding: "13px" }}
+        onClick={handleProfileMenuOpen}
+      >
+        <img src={checkerSrc} />
+      </button>
       <Menu
         anchorEl={anchorEl}
         anchorOrigin={{ vertical: "top", horizontal: "right" }}

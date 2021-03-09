@@ -1,0 +1,12 @@
+main {
+  button.MuiButtonBase-root {
+    padding: 10px 64px;
+    font-size: 1rem;
+    border-radius: 4px;
+    margin-bottom: 24px;
+    &.primary-button {
+      background-color: #292a2e;
+      color: #fff;
+    }
+  }
+}

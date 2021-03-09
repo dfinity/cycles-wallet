@@ -28,6 +28,7 @@ import { handleAuthRedirect, Wallet } from "../canister";
 import { Authorize } from "./routes/Authorize";
 import { Dashboard } from "./routes/Dashboard";
 import { useLocalStorage } from "../utils/hooks";
+import generateTheme from "../utils/materialTheme";
 
 export function Copyright() {
   return (
@@ -130,26 +131,15 @@ export default function App() {
   const [ready, setReady] = useState(false);
   const [open, setOpen] = useLocalStorage("app-menu-open", false);
   const [darkState, setDarkState] = useDarkState();
-  const palletType = darkState ? "dark" : "light";
-  const mainPrimaryColor = darkState ? common.white : "#292A2E";
-  const mainSecondaryColor = darkState ? common.white : deepPurple[500];
 
   useEffect(() => {
     Wallet.name().then((name) => {
       document.title = name;
     });
   }, []);
-  const theme = createMuiTheme({
-    palette: {
-      type: palletType,
-      primary: {
-        main: mainPrimaryColor,
-      },
-      secondary: {
-        main: mainSecondaryColor,
-      },
-    },
-  });
+
+  const theme = generateTheme(darkState);
+
   const classes = useStyles();
 
   // Check if we need to parse the hash.

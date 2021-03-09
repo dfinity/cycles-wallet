@@ -86,14 +86,14 @@ export function CycleBalance() {
         Current cycles in this wallet
       </Typography>
 
-      <Typography component="p" variant="h4">
+      <Typography component="h3" variant="h4">
         {humanCycles && (
-          <h3>
+          <>
             <span style={{ fontSize: "48px", fontWeight: "bold" }}>
               {humanCycles}
             </span>
             <Typography component="span"> TC</Typography>
-          </h3>
+          </>
         )}
       </Typography>
     </React.Fragment>

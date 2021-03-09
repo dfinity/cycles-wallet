@@ -31,6 +31,7 @@ import { Wallet } from "../../canister";
 import type { Event } from "../../canister/declaration";
 import type BigNumber from "bignumber.js";
 import Canisters from "../panels/Canisters";
+import { PrimaryButton } from "../Buttons";
 
 const drawerWidth = 240;
 
@@ -100,9 +101,9 @@ const useStyles = makeStyles((theme) => ({
 }));
 
 interface FormattedEvent {
-  id: number;
+  id: any;
   timestamp: BigNumber;
-  kind: string;
+  kind: string | unknown;
   body: any;
 }
 export type EventList = {
@@ -244,6 +245,7 @@ export function Dashboard(props: { open: boolean; onOpenToggle: () => void }) {
           <Button
             onClick={() => setErrorDialogContent(undefined)}
             color="primary"
+            variant="contained"
           >
             Okay
           </Button>
@@ -262,6 +264,9 @@ export function Dashboard(props: { open: boolean; onOpenToggle: () => void }) {
             <Grid item xs={12} md={4} lg={3}>
               <Paper className={classes.paper}>
                 <CycleBalance />
+                <PrimaryButton color="secondary" type="button">
+                  Send Cycles
+                </PrimaryButton>
               </Paper>
             </Grid>
 

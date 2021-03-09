@@ -31,12 +31,13 @@ function Canisters(props: Props) {
       </Typography>
       <React.Suspense fallback={<CircularProgress />}>
         <List>
-          {canisters?.map(() => {
-            return <ListItem></ListItem>;
+          {canisters?.map((canister) => {
+            return (
+              <ListItem key={canister.id}>{JSON.stringify(canister)}</ListItem>
+            );
           })}
         </List>
       </React.Suspense>
-      ;
     </Grid>
   );
 }
