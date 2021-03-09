@@ -115,9 +115,7 @@ export function Authorize() {
                       </CopyToClipboard>
                     </Tooltip>
                   </div>
-                  <code>
-                    {canisterCallShCode}
-                  </code>
+                  <code>{canisterCallShCode}</code>
                 </Typography>
                 <Typography variant="body1" color="textPrimary">
                   After this step has been performed, you can refresh this page
@@ -145,9 +143,12 @@ export function Authorize() {
                   Anonymous Device
                 </Typography>
                 <Typography variant="body1" color="textPrimary">
-                  You are using an anonymous Principal. You need to authenticate.
+                  You are using an anonymous Principal. You need to
+                  authenticate.
                 </Typography>
-                <Button onClick={async () => await login()}>Authenticate</Button>
+                <Button onClick={async () => await login()}>
+                  Authenticate
+                </Button>
               </Paper>
             </Grid>
           </Grid>
