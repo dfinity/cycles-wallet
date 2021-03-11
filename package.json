@@ -6,7 +6,6 @@
     "build": "webpack",
     "start": "webpack serve --config webpack.dev.js",
     "generate_candid": "didc bind ./wallet/src/lib.did -t ts | cat > wallet_ui/types/declaration.d.ts",
-    "watch": "webpack --config webpack.dev.js",
     "presideload-ui": "npm run build",
     "sideload-ui": "node script/upload.js",
     "test": "jest --verbose"

@@ -256,7 +256,7 @@ export function Dashboard(props: { open: boolean; onOpenToggle: () => void }) {
         <Container maxWidth="lg" className={classes.container}>
           <Grid container spacing={3}>
             <Grid item xs={12}>
-              <h1 className={classes.title}>Cycles Wallet</h1>
+              <h1 className={classes.title}>Changed Title</h1>
             </Grid>
             {/* Balance */}
             <Grid item xs={12} md={4} lg={3}>
