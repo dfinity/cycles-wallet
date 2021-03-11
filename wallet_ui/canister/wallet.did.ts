@@ -2,46 +2,12 @@
 // It is essentially hand written.
 import type { IDL, Principal } from "@dfinity/agent";
 import BigNumber from "bignumber.js";
-
-export interface Role {
-  Contact?: null;
-  Custodian?: null;
-  Controller?: null;
-}
-export interface Kind {
-  Unknown?: null;
-  User?: null;
-  Canister?: null;
-}
-export interface AddressEntry {
-  id: Principal;
-  name: [string] | [];
-  kind: Kind;
-  role: Role;
-}
-export interface EventKind {
-  CyclesSent?: { to: Principal; amount: BigNumber };
-  CyclesReceived?: { from: Principal; amount: BigNumber };
-  AddressAdded?: AddressEntry;
-  AddressRemoved?: { id: Principal };
-  CanisterCreated?: { canister: Principal; cycles: BigNumber };
-  CanisterCalled?: {
-    method_name: string;
-    canister: Principal;
-    cycles: BigNumber;
-  };
-}
-
-export interface Event {
-  id: number;
-  kind: EventKind;
-  timestamp: Date;
-}
+import { Event } from "../types";
 
 export function convertIdlEventMap(idlEvent: any): Event {
   return {
     id: idlEvent.id,
-    timestamp: new Date(idlEvent.timestamp.div(1000000).toNumber()),
+    timestamp: new BigNumber(idlEvent.timestamp.div(1000000).toNumber()),
     kind: idlEvent.kind,
   };
 }

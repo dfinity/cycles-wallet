@@ -7,12 +7,13 @@ import TableHead from "@material-ui/core/TableHead";
 import Box from "@material-ui/core/Box";
 import TableRow from "@material-ui/core/TableRow";
 import Typography from "@material-ui/core/Typography";
-import { Event, EventKind, Wallet } from "../../canister";
+import { Wallet } from "../../canister";
 import ReactTimeago from "react-timeago";
 import Collapse from "@material-ui/core/Collapse";
 import IconButton from "@material-ui/core/IconButton";
 import KeyboardArrowDownIcon from "@material-ui/icons/KeyboardArrowDown";
 import KeyboardArrowUpIcon from "@material-ui/icons/KeyboardArrowUp";
+import { Event, EventKind } from "../../types";
 
 interface TransactionRowProps {
   event: Event;
@@ -42,7 +43,7 @@ function AddressAddedRow({ event }: TransactionRowProps) {
     <>
       <TableRow className={classes.root}>
         <TableCell component="th" scope="row">
-          <ReactTimeago date={event.timestamp} />
+          <ReactTimeago date={new Date(event.timestamp.toNumber())} />
         </TableCell>
         <TableCell>{role} Added</TableCell>
         <TableCell>
@@ -65,7 +66,7 @@ function CyclesSentRow({ event }: TransactionRowProps) {
     <>
       <TableRow className={classes.root}>
         <TableCell component="th" scope="row">
-          <ReactTimeago date={event.timestamp} />
+          <ReactTimeago date={new Date(event.timestamp.toNumber())} />
         </TableCell>
         <TableCell>Cycle Sent</TableCell>
         <TableCell>
@@ -86,7 +87,7 @@ function CyclesReceivedRow({ event }: TransactionRowProps) {
     <>
       <TableRow className={classes.root}>
         <TableCell component="th" scope="row">
-          <ReactTimeago date={event.timestamp} />
+          <ReactTimeago date={new Date(event.timestamp.toNumber())} />
         </TableCell>
         <TableCell>Cycle Received</TableCell>
         <TableCell>
@@ -106,7 +107,7 @@ function CanisterCreatedRow({ event }: TransactionRowProps) {
   return (
     <TableRow className={classes.root}>
       <TableCell component="th" scope="row">
-        <ReactTimeago date={event.timestamp} />
+        <ReactTimeago date={new Date(event.timestamp.toNumber())} />
       </TableCell>
       <TableCell>Canister Created</TableCell>
       <TableCell>
@@ -148,38 +149,6 @@ function TransactionRow({ event, expanded, setExpanded }: TransactionRowProps) {
         </TableRow>
       );
   }
-
-  return (
-    <>
-      <TableRow className={classes.root}>
-        <TableCell component="th" scope="row">
-          <ReactTimeago date={event.timestamp} />
-        </TableCell>
-        <TableCell>{type}</TableCell>
-        <TableCell align="right">Some details here</TableCell>
-        <TableCell>
-          <IconButton
-            aria-label="expand row"
-            size="small"
-            onClick={() => setExpanded(!expanded)}
-          >
-            {expanded ? <KeyboardArrowUpIcon /> : <KeyboardArrowDownIcon />}
-          </IconButton>
-        </TableCell>
-      </TableRow>
-      <TableRow>
-        <TableCell style={{ paddingBottom: 0, paddingTop: 0 }} colSpan={4}>
-          <Collapse in={expanded} timeout="auto" unmountOnExit>
-            <Box margin={1}>
-              <Typography variant="h6" gutterBottom component="div">
-                Details go here...
-              </Typography>
-            </Box>
-          </Collapse>
-        </TableCell>
-      </TableRow>
-    </>
-  );
 }
 
 export default function Events() {
