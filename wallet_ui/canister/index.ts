@@ -13,10 +13,12 @@
  * It is also useful because that puts all the code in one place, including the
  * authentication logic. We do not use `window.ic` anywhere in this.
  */
-import { convertIdlEventMap, Event, factory } from "./wallet.did";
+import { convertIdlEventMap, factory } from "./wallet.did";
 import { HttpAgent, Actor, Principal, ActorSubclass } from "@dfinity/agent";
 import { AuthenticationClient } from "../utils/authClient";
 import { SiteInfo } from "./site";
+import BigNumber from "bignumber.js";
+import _SERVICE, { Event } from "../types/declaration";
 
 // Need to export the enumaration from wallet.did
 export * from "./wallet.did";
@@ -35,29 +37,7 @@ export function getCanisterId(): Principal {
   return site.principal;
 }
 
-interface BigNumber {
-  toNumber(): number;
-}
-
-interface ActorInterface {
-  name(): Promise<[string] | []>;
-  wallet_balance(): Promise<{ amount: BigNumber }>;
-  wallet_create_canister(args: {
-    controller: [Principal?];
-    cycles: number;
-  }): Promise<{ canister_id: Principal }>;
-  wallet_create_wallet(args: {
-    controller: [Principal?];
-    cycles: number;
-  }): Promise<{ canister_id: Principal }>;
-  wallet_send(args: { canister: Principal; amount: number }): Promise<void>;
-  get_events(args: [{ from: [number?]; to: [number?] }?]): Promise<any[]>;
-  get_chart(
-    args: [{ count: [number?]; precision: [number?] }?]
-  ): Promise<[BigNumber, BigNumber][]>;
-}
-
-let walletCanisterCache: ActorSubclass<ActorInterface>;
+let walletCanisterCache: ActorSubclass<_SERVICE>;
 
 export async function login() {
   const redirectUri = `${location.origin}/${location.search}`;
@@ -74,7 +54,7 @@ export async function handleAuthRedirect() {
   }
 }
 
-async function getWalletCanister(): Promise<ActorSubclass<ActorInterface>> {
+async function getWalletCanister(): Promise<ActorSubclass<_SERVICE>> {
   if (walletCanisterCache) {
     return walletCanisterCache;
   }
@@ -95,7 +75,7 @@ async function getWalletCanister(): Promise<ActorSubclass<ActorInterface>> {
     walletCanisterCache = (Actor as any).createActor(factory as any, {
       agent,
       canisterId: walletId,
-    }) as ActorSubclass<ActorInterface>;
+    }) as ActorSubclass<_SERVICE>;
     return walletCanisterCache;
   }
 }
@@ -128,7 +108,7 @@ function precisionToNanoseconds(precision: ChartPrecision) {
   if (precision >= ChartPrecision.Hourly) result *= 60;
   if (precision >= ChartPrecision.Minutes) result *= 60;
 
-  return result;
+  return new BigNumber(result);
 }
 
 export const Wallet = {
@@ -145,16 +125,24 @@ export const Wallet = {
   },
   async events(from?: number, to?: number): Promise<Event[]> {
     return (
-      await (await getWalletCanister()).get_events(
-        from ? [{ from: [from], to: [to] }] : []
-      )
+      await (await getWalletCanister()).get_events([
+        {
+          to: to ? [to] : [],
+          from: from ? [from] : [],
+        },
+      ])
     ).map(convertIdlEventMap);
   },
   async chart(p: ChartPrecision, count?: number): Promise<[Date, number][]> {
     const precision = precisionToNanoseconds(p);
+    const optCount: [] | [number] = count ? [count] : [];
+    const optPrecision: [] | [BigNumber] = precision ? [precision] : [];
     return (
       await (await getWalletCanister()).get_chart([
-        { count: [count], precision: [precision] },
+        {
+          count: optCount,
+          precision: optPrecision,
+        },
       ])
     ).map(([a, b]) => [new Date(a.toNumber() / 1000000), b.toNumber()]);
   },
@@ -164,7 +152,7 @@ export const Wallet = {
   }): Promise<Principal> {
     const result = await (await getWalletCanister()).wallet_create_canister({
       controller: p.controller ? [p.controller] : [],
-      cycles: p.cycles,
+      cycles: new BigNumber(p.cycles),
     });
     return result.canister_id;
   },
@@ -174,11 +162,14 @@ export const Wallet = {
   }): Promise<Principal> {
     const result = await (await getWalletCanister()).wallet_create_wallet({
       controller: p.controller ? [p.controller] : [],
-      cycles: p.cycles,
+      cycles: new BigNumber(p.cycles),
     });
     return result.canister_id;
   },
   async send(p: { canister: Principal; amount: number }): Promise<void> {
-    await (await getWalletCanister()).wallet_send(p);
+    await (await getWalletCanister()).wallet_send({
+      canister: p.canister,
+      amount: new BigNumber(p.amount),
+    });
   },
 };
