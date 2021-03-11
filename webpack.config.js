@@ -1,3 +1,4 @@
+const HtmlWebpackPlugin = require("html-webpack-plugin");
 const TerserPlugin = require("terser-webpack-plugin");
 const path = require("path");
 const webpack = require("webpack");
@@ -5,9 +6,11 @@ const webpack = require("webpack");
 const dist = path.join(__dirname, "dist");
 
 module.exports = {
-  entry: path.join(__dirname, "wallet_ui/index.tsx"),
+  entry: {
+    index: path.join(__dirname, "wallet_ui/index.tsx"),
+  },
   output: {
-    filename: "index.js",
+    filename: "[name].js",
     path: dist,
   },
   mode: "production",
@@ -24,6 +27,17 @@ module.exports = {
           {
             loader: "css-loader",
           },
+        ],
+      },
+      {
+        test: /\.s[ac]ss$/i,
+        use: [
+          // Creates `style` nodes from JS strings
+          "style-loader",
+          // Translates CSS into CommonJS
+          "css-loader",
+          // Compiles Sass to CSS
+          "sass-loader",
         ],
       },
       {
@@ -48,21 +62,48 @@ module.exports = {
         },
       }),
     ],
+    splitChunks: {
+      chunks: "async",
+      minSize: 20000,
+      minRemainingSize: 0,
+      maxSize: 250000,
+      minChunks: 1,
+      maxAsyncRequests: 30,
+      maxInitialRequests: 30,
+      enforceSizeThreshold: 50000,
+      cacheGroups: {
+        defaultVendors: {
+          test: /[\\/]node_modules[\\/]/,
+          priority: -10,
+          reuseExistingChunk: true,
+        },
+        default: {
+          reuseExistingChunk: true,
+          minChunks: 2,
+          priority: -20,
+        },
+      },
+    },
   },
   resolve: {
     extensions: [".js", ".ts", ".jsx", ".tsx"],
     fallback: {
-      "assert": require.resolve("assert/"),
-      "buffer": require.resolve("buffer/"),
-      "events": require.resolve("events/"),
-      "stream": require.resolve("stream-browserify/"),
-      "util": require.resolve("util/"),
+      assert: require.resolve("assert/"),
+      buffer: require.resolve("buffer/"),
+      events: require.resolve("events/"),
+      stream: require.resolve("stream-browserify/"),
+      util: require.resolve("util/"),
     },
   },
   plugins: [
     new webpack.ProvidePlugin({
-      Buffer: [require.resolve('buffer/'), 'Buffer'],
-      process: require.resolve('process/browser'),
+      Buffer: [require.resolve("buffer/"), "Buffer"],
+      process: require.resolve("process/browser"),
     }),
-  ]
+    new HtmlWebpackPlugin({
+      template: "./wallet_ui/public/index.html",
+      filename: "index.html",
+      chunks: ["index"],
+    }),
+  ],
 };

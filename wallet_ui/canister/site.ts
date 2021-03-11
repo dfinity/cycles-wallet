@@ -42,7 +42,7 @@ const ic0AppHostRe = /(?:(?<subdomain>.*)\.)?(?<canisterId>[^.]*)\.(?<domain>ic0
 // A regex that matches `SUBDOMAIN.CANISTER_ID.sdk-test.dfinity.network` (the staging URL).
 const sdkTestHostRe = /(?:(?<subdomain>.*)\.)?(?<canisterId>[^.]*)\.(?<domain>sdk-test\.dfinity\.network)$/;
 // Localhost (development environment).
-const localhostHostRe = /(?<subdomain>(.*))\.(?<domain>localhost)$/;
+const localhostHostRe = /(?:(?<subdomain>(.*))\.)?(?:(?<canisterId>[^.]*)\.)?(?<domain>localhost)$/;
 
 /**
  * Internal data structure for the location informations.
@@ -147,7 +147,7 @@ export class SiteInfo {
           // TODO: think if we want to have this hard coded here. We might.
           return `${protocol}//gw.dfinity.network`;
         case DomainKind.Localhost:
-          return `${protocol}//z.${this.domain}`;
+          return `${protocol}//${this.domain}`;
         default:
           return host || '';
       }
