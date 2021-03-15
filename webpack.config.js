@@ -1,7 +1,9 @@
 const HtmlWebpackPlugin = require("html-webpack-plugin");
+const CopyPlugin = require("copy-webpack-plugin");
 const TerserPlugin = require("terser-webpack-plugin");
 const path = require("path");
 const webpack = require("webpack");
+const public = path.join(__dirname, "wallet_ui", "public");
 
 const dist = path.join(__dirname, "dist");
 
@@ -38,14 +40,6 @@ module.exports = {
           "css-loader",
           // Compiles Sass to CSS
           "sass-loader",
-        ],
-      },
-      {
-        test: /\.(png|jpe?g|gif)$/i,
-        use: [
-          {
-            loader: "url-loader",
-          },
         ],
       },
     ],
@@ -104,6 +98,9 @@ module.exports = {
       template: "./wallet_ui/public/index.html",
       filename: "index.html",
       chunks: ["index"],
+    }),
+    new CopyPlugin({
+      patterns: [{ from: public, to: path.join(__dirname, "dist") }],
     }),
   ],
 };
