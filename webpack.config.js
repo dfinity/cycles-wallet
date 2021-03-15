@@ -94,13 +94,13 @@ module.exports = {
       Buffer: [require.resolve("buffer/"), "Buffer"],
       process: require.resolve("process/browser"),
     }),
+    new CopyPlugin({
+      patterns: [{ from: public, to: path.join(__dirname, "dist") }],
+    }),
     new HtmlWebpackPlugin({
       template: "./wallet_ui/public/index.html",
       filename: "index.html",
       chunks: ["index"],
-    }),
-    new CopyPlugin({
-      patterns: [{ from: public, to: path.join(__dirname, "dist") }],
     }),
   ],
 };

@@ -12,13 +12,7 @@ module.exports = {
   devtool: "source-map",
   module: {
     ...prodConfig.module,
-    rules: [
-      ...prodConfig.module.rules,
-      {
-        test: /\.html$/i,
-        loader: "html-loader",
-      },
-    ],
+    rules: [...prodConfig.module.rules],
   },
   plugins: [
     ...prodConfig.plugins,
