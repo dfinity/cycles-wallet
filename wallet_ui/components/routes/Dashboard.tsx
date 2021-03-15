@@ -31,6 +31,7 @@ import type { Event } from "../../canister/declaration";
 import type BigNumber from "bignumber.js";
 import Canisters from "../panels/Canisters";
 import { PrimaryButton } from "../Buttons";
+import Events from "../panels/Transactions";
 
 const drawerWidth = 240;
 
@@ -99,16 +100,9 @@ const useStyles = makeStyles((theme) => ({
   },
 }));
 
-interface FormattedEvent {
-  id: any;
-  timestamp: BigNumber;
-  kind: string | unknown;
-  body: any;
-  name?: string;
-}
 export type EventList = {
-  canisters: FormattedEvent[];
-  transactions: FormattedEvent[];
+  canisters: Event[];
+  transactions: Event[];
 };
 
 export function Dashboard(props: { open: boolean; onOpenToggle: () => void }) {
@@ -136,18 +130,13 @@ export function Dashboard(props: { open: boolean; onOpenToggle: () => void }) {
           .reduce((start, next) => {
             const [kindField] = Object.entries(next.kind);
             const [key, body] = Object.entries(kindField);
-            const kind = key[1];
-
-            const formattedEvent = {
-              id: next.id,
-              timestamp: next.timestamp,
-              kind,
-              body,
-            };
-            if (kind === "CanisterCreated" || kind === "WalletCreated") {
-              start.canisters.push(formattedEvent);
+            if (
+              "CanisterCreated" in next.kind ||
+              "WalletCreated" in next.kind
+            ) {
+              start.canisters.push(next);
             } else {
-              start.transactions.push(formattedEvent);
+              start.transactions.push(next);
             }
 
             return start;
@@ -251,6 +240,13 @@ export function Dashboard(props: { open: boolean; onOpenToggle: () => void }) {
             <Grid item xs={12}>
               <Paper className={classes.paper}>
                 {<Canisters canisters={events?.canisters} />}
+              </Paper>
+            </Grid>
+
+            {/* Transactions */}
+            <Grid item xs={12}>
+              <Paper className={classes.paper}>
+                {<Events transactions={events?.transactions} />}
               </Paper>
             </Grid>
           </Grid>

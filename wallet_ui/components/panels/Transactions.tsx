@@ -155,25 +155,21 @@ function TransactionRow({ event, expanded, setExpanded }: TransactionRowProps) {
   }
 }
 
-export default function Events() {
-  const [transactions, setTransactions] = useState<Event[]>([]);
+type Props = {
+  transactions?: Event[];
+};
+export default function Transactions(props: Props) {
+  const { transactions } = props;
   const [expanded, setExpanded] = useState(-1);
 
-  useEffect(() => {
-    Wallet.events()
-      .then((events) => {
-        return events.sort((a, b) => {
-          // Reverse sort on timestamp.
-          return +b.timestamp - +a.timestamp;
-        });
-      })
-      .then(setTransactions);
-  }, []);
+  if (!transactions) {
+    return null;
+  }
 
   return (
     <React.Fragment>
-      <Typography component="h2" variant="h6" color="primary" gutterBottom>
-        Recent Events
+      <Typography component="h2" variant="h6" gutterBottom>
+        Transaction History
       </Typography>
       <Table size="small">
         <TableHead>

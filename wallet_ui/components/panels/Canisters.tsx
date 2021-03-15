@@ -115,11 +115,18 @@ function Canisters(props: Props) {
       <React.Suspense fallback={<CircularProgress />}>
         <List className="events-list">
           {canisters?.map((canister) => {
-            const principal = canister.body[1].canister as Principal;
-            const value = canister.body[1].cycles.toString() + " TC";
+            if (!("CanisterCreated" in canister.kind)) {
+              return null;
+            }
+            canister.kind["CanisterCreated"].canister;
+
+            const principal = canister.kind["CanisterCreated"]
+              .canister as Principal;
+            const value =
+              canister.kind["CanisterCreated"].cycles.toString() + " TC";
             return (
               <ListItem key={canister.id} className="flex column">
-                <h4>{canister["name"] ?? "Anonymous Canister"}</h4>
+                <h4>{"Anonymous Canister"}</h4>
                 <div className="flex row wrap">
                   <p>{principal.toString()}</p>
                   <p>{value}</p>
