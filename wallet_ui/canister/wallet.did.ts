@@ -1,7 +1,6 @@
 // This file was generated using did-to-js tools, with some modifications.
 // It is essentially hand written.
 import type { IDL, Principal } from "@dfinity/agent";
-import type { Event } from "./declaration";
 import BigNumber from "bignumber.js";
 import { Event } from "../types";
 

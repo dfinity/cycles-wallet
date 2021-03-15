@@ -4,10 +4,12 @@ import {
   CircularProgress,
   Dialog,
   Grid,
+  Icon,
   List,
   ListItem,
   ListItemIcon,
   ListItemText,
+  SvgIcon,
   Typography,
 } from "@material-ui/core";
 import AddCircleOutlineIcon from "@material-ui/icons/AddCircleOutline";
@@ -73,19 +75,20 @@ function Canisters(props: Props) {
         type="button"
         style={{ marginLeft: "auto" }}
       >
-        <AddCircleOutlineIcon />
+        <Typography>
+          <AddCircleOutlineIcon />
+        </Typography>
       </button>
 
       <Typography
         component="h2"
         variant="h5"
-        color="primary"
         gutterBottom
         style={{ fontWeight: "bold" }}
       >
         Canisters
       </Typography>
-      <Typography component="p" color="primary" gutterBottom>
+      <Typography component="p" gutterBottom>
         Canisters you've created
       </Typography>
       <React.Suspense fallback={<CircularProgress />}>

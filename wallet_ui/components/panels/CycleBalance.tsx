@@ -75,13 +75,12 @@ export function CycleBalance() {
       <Typography
         component="h2"
         variant="h5"
-        color="primary"
         gutterBottom
         style={{ fontWeight: "bold" }}
       >
         Balance
       </Typography>
-      <Typography component="p" color="primary" gutterBottom>
+      <Typography component="p" gutterBottom>
         Current cycles in this wallet
       </Typography>
 

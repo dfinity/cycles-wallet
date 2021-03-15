@@ -8,15 +8,10 @@
     "lib": [
       "ES2020",
       "DOM"
-    ], /* Specify library files to be included in the compilation. */
-    "allowJs": true, /* Allow javascript files to be compiled. */
-    "jsx": "react", /* Specify JSX code generation: 'preserve', 'react-native', or 'react'. */
-    "typeRoots": [
-      "./src/@types",
-      "./wallet_ui/types",
-      "./node_modules/@types"
-    ],
-    "allowSyntheticDefaultImports": true,
-  },
-  "include": ["**/*"]
+    ] /* Specify library files to be included in the compilation. */,
+    "allowJs": true /* Allow javascript files to be compiled. */,
+    "jsx": "react" /* Specify JSX code generation: 'preserve', 'react-native', or 'react'. */,
+    "typeRoots": ["./src/@types", "./wallet_ui/types", "./node_modules/@types"],
+    "allowSyntheticDefaultImports": true
+  }
 }

@@ -13,7 +13,6 @@ import Typography from "@material-ui/core/Typography";
 
 import makeStyles from "@material-ui/core/styles/makeStyles";
 import AccountCircle from "@material-ui/icons/AccountCircle";
-import checkerSrc from "../img/avatars/checkers.png";
 import { getWalletId, Principal } from "../canister";
 
 const drawerWidth = 240;
@@ -107,7 +106,7 @@ export function WalletAppBar(props: {
         style={{ padding: "13px" }}
         onClick={handleProfileMenuOpen}
       >
-        <img src={checkerSrc} />
+        <img src="/checkers.png" alt="generic avatar background" />
       </button>
       <Menu
         anchorEl={anchorEl}

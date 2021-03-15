@@ -120,12 +120,7 @@ export function BalanceChart() {
           </Select>
         </FormControl>
       </Typography>
-      <Typography
-        component="h2"
-        variant="h6"
-        color="primary"
-        className={classes.title}
-      >
+      <Typography component="h2" variant="h6" className={classes.title}>
         Balance History
       </Typography>
       <ResponsiveContainer className={classes.chartContainer}>
