@@ -18,6 +18,7 @@ import useTheme from "@material-ui/core/styles/useTheme";
 import makeStyles from "@material-ui/core/styles/makeStyles";
 import { buildData, ChartData } from "../../utils/chart";
 import { Button } from "@material-ui/core";
+import { css } from "@emotion/css";
 
 const useStyles = makeStyles((theme) => ({
   depositContext: {
@@ -121,9 +122,13 @@ export function BalanceChart() {
         </FormControl>
       </Typography>
       <Typography component="h2" variant="h6" className={classes.title}>
-        Balance History
+        Cycles
       </Typography>
-      <ResponsiveContainer className={classes.chartContainer}>
+      <ResponsiveContainer
+        className={css`
+          min-height: 10px;
+        `}
+      >
         <LineChart
           data={data}
           margin={{ top: 16, right: 16, bottom: 16, left: 16 }}
