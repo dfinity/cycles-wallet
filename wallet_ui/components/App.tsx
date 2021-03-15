@@ -142,7 +142,7 @@ export default function App() {
   injectGlobal`
   :root {
 
-    --primaryColor: #292a2e;
+    --primaryColor: ${darkState ? "#292a2e" : "rgba(69, 70, 81, 0.75)"};
     --primaryContrast: "white";
     --textColor: ${darkState ? "white" : "black"};
   }

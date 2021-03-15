@@ -14,8 +14,8 @@ export const PrimaryButton = (props: ButtonBaseProps) => {
           border-radius: 4px;
           margin-bottom: 24px;
           &.primary-button {
-            background-color: #292a2e;
-            color: #fff;
+            background-color: var(--primaryColor);
+            color: var(--primaryContrast);
           }
         `
       }
