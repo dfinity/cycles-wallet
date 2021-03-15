@@ -98,7 +98,7 @@ module.exports = {
       patterns: [{ from: public, to: path.join(__dirname, "dist") }],
     }),
     new HtmlWebpackPlugin({
-      template: "./wallet_ui/public/index.html",
+      template: "./wallet_ui/index.html",
       filename: "index.html",
       chunks: ["index"],
     }),
