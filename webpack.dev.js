@@ -1,15 +1,10 @@
 const HtmlWebpackPlugin = require("html-webpack-plugin");
 const path = require("path");
 const { DefinePlugin } = require("webpack");
-const public = path.join(__dirname, "wallet_ui", "public");
 
 const prodConfig = require("./webpack.config");
 module.exports = {
   ...prodConfig,
-  output: {
-    filename: "index.js",
-    path: public,
-  },
   mode: "development",
   optimization: {
     minimize: false,
@@ -27,9 +22,6 @@ module.exports = {
   },
   plugins: [
     ...prodConfig.plugins,
-    new HtmlWebpackPlugin({
-      template: path.join(public, "index.html"),
-    }),
     new DefinePlugin({
       "process.browser": true,
       "process.env.NODE_DEBUG": false,
