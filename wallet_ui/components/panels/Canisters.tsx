@@ -1,6 +1,7 @@
 import * as React from "react";
 import type { Principal } from "@dfinity/agent";
 import {
+  Button,
   CircularProgress,
   Dialog,
   Grid,
@@ -18,6 +19,9 @@ import "../../css/Events.scss";
 import { CreateCanisterDialog } from "./CreateCanister";
 import { CreateWalletDialog } from "./CreateWallet";
 import { CreateDialog } from "./CreateDialog";
+import PlusIcon from "../icons/PlusIcon";
+import { css } from "@emotion/css";
+import { PlainButton, PrimaryButton } from "../Buttons";
 
 interface Props {
   canisters?: EventList["canisters"];
@@ -43,20 +47,26 @@ function Canisters(props: Props) {
         open={dialogDialogOpen}
         close={() => setDialogDialogOpen(false)}
       >
-        <List>
-          <ListItem button onClick={() => setCanisterCreateDialogOpen(true)}>
-            <ListItemIcon>
-              <AddCircleOutlineIcon />
-            </ListItemIcon>
-            <ListItemText primary="Create a Canister" />
-          </ListItem>
-          <ListItem button onClick={handleWalletCreateDialogOpen}>
-            <ListItemIcon>
-              <AddCircleOutlineIcon />
-            </ListItemIcon>
-            <ListItemText primary="Create a Wallet" />
-          </ListItem>
-        </List>
+        <div
+          className={css`
+            display: flex;
+            flex-direction: column;
+            button {
+              text-align: left;
+              padding-left: 4px;
+            }
+          `}
+        >
+          <PlainButton
+            type="button"
+            onClick={() => setCanisterCreateDialogOpen(true)}
+          >
+            Create a Canister
+          </PlainButton>
+          <PlainButton type="button" onClick={handleWalletCreateDialogOpen}>
+            Create a Wallet
+          </PlainButton>
+        </div>
       </CreateDialog>
 
       <CreateCanisterDialog
@@ -70,14 +80,19 @@ function Canisters(props: Props) {
       />
 
       <button
+        color="primary"
         id="canisters-trigger"
         onClick={() => setDialogDialogOpen(true)}
         type="button"
-        style={{ marginLeft: "auto" }}
+        className={css`
+          margin-left: auto;
+          padding: 0.5rem;
+          border-radius: 4px;
+          background: #292a2e;
+          color: var(--primaryContrast);
+        `}
       >
-        <ListItemIcon>
-          <AddCircleOutlineIcon />
-        </ListItemIcon>
+        <PlusIcon size="11px"></PlusIcon>
       </button>
 
       <Typography
@@ -88,9 +103,15 @@ function Canisters(props: Props) {
       >
         Canisters
       </Typography>
-      <Typography component="p" gutterBottom>
+      <p
+        className={css`
+          color: var(--textColor);
+          margin: initial;
+          margin-bottom: 32px;
+        `}
+      >
         Canisters you've created
-      </Typography>
+      </p>
       <React.Suspense fallback={<CircularProgress />}>
         <List className="events-list">
           {canisters?.map((canister) => {

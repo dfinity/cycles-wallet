@@ -89,24 +89,6 @@ export function CreateDialog(props: {
     >
       <DialogTitle id="alert-dialog-title">{"Create"}</DialogTitle>
       <DialogContent>{children}</DialogContent>
-      <DialogActions>
-        <Button onClick={handleClose} disabled={loading}>
-          Cancel
-        </Button>
-        <div className={classes.wrapper}>
-          <Button
-            variant="contained"
-            disabled={loading || error}
-            onClick={create}
-            autoFocus
-          >
-            Create
-          </Button>
-          {loading && (
-            <CircularProgress size={24} className={classes.buttonProgress} />
-          )}
-        </div>
-      </DialogActions>
     </Dialog>
   );
 }

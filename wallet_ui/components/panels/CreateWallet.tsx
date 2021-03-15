@@ -145,7 +145,12 @@ export function CreateWalletDialog(props: {
         </div>
       </DialogContent>
       <DialogActions>
-        <Button onClick={handleClose} color="primary" disabled={loading}>
+        <Button
+          onClick={handleClose}
+          color="primary"
+          disableRipple
+          disabled={loading}
+        >
           Cancel
         </Button>
         <div className={classes.wrapper}>
@@ -154,6 +159,7 @@ export function CreateWalletDialog(props: {
             disabled={loading || error}
             onClick={create}
             color="secondary"
+            disableRipple
             autoFocus
           >
             Create

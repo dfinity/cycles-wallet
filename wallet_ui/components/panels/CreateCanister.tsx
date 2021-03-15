@@ -13,6 +13,7 @@ import Typography from "@material-ui/core/Typography";
 import FormControl from "@material-ui/core/FormControl";
 import TextField from "@material-ui/core/TextField";
 import { Principal, Wallet } from "../../canister";
+import { PlainButton, PrimaryButton } from "../Buttons";
 
 const useStyles = makeStyles((theme) => ({
   wrapper: {
@@ -147,19 +148,24 @@ export function CreateCanisterDialog(props: {
         </div>
       </DialogContent>
       <DialogActions>
-        <Button onClick={handleClose} color="primary" disabled={loading}>
+        <PlainButton
+          onClick={handleClose}
+          disableRipple
+          color="primary"
+          disabled={loading}
+        >
           Cancel
-        </Button>
+        </PlainButton>
         <div className={classes.wrapper}>
-          <Button
-            variant="contained"
+          <PrimaryButton
             disabled={loading || error}
             onClick={create}
             color="secondary"
+            disableRipple
             autoFocus
           >
             Create
-          </Button>
+          </PrimaryButton>
           {loading && (
             <CircularProgress size={24} className={classes.buttonProgress} />
           )}

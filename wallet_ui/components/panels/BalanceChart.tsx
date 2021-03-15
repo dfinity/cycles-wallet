@@ -105,34 +105,17 @@ export function BalanceChart() {
 
   return (
     <>
-      <Typography component="div" className={classes.formControlParagraph}>
-        <FormControl hiddenLabel className={classes.formControl}>
-          <Select
-            value={precision}
-            onChange={({ target }) => {
-              if (typeof target.value == "number") setPrecision(target.value);
-            }}
-          >
-            <MenuItem value={0}>Minutes</MenuItem>
-            <MenuItem value={1}>Hours</MenuItem>
-            <MenuItem value={2}>Days</MenuItem>
-            <MenuItem value={3}>Weeks</MenuItem>
-            <MenuItem value={4}>Months</MenuItem>
-          </Select>
-        </FormControl>
-      </Typography>
       <Typography component="h2" variant="h6" className={classes.title}>
         Cycles
       </Typography>
       <ResponsiveContainer
         className={css`
-          min-height: 10px;
+          min-height: 150px;
         `}
       >
         <LineChart
           data={data}
           margin={{ top: 16, right: 16, bottom: 16, left: 16 }}
-          style={{ minHeight: "260px" }}
         >
           <XAxis dataKey="humanDate" stroke={theme.palette.text.secondary} />
           <YAxis

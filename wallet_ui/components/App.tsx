@@ -29,6 +29,7 @@ import { Authorize } from "./routes/Authorize";
 import { Dashboard } from "./routes/Dashboard";
 import { useLocalStorage } from "../utils/hooks";
 import generateTheme from "../utils/materialTheme";
+import { injectGlobal } from "@emotion/css";
 
 export function Copyright() {
   return (
@@ -137,6 +138,15 @@ export default function App() {
       document.title = name;
     });
   }, []);
+
+  injectGlobal`
+  :root {
+
+    --primaryColor: #292a2e;
+    --primaryContrast: "white";
+    --textColor: ${darkState ? "white" : "black"};
+  }
+  `;
 
   const theme = generateTheme(darkState);
 

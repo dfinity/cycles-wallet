@@ -1,14 +1,45 @@
 import * as React from "react";
-import ButtonBase from "@material-ui/core/ButtonBase";
 import type { ButtonBaseProps } from "@material-ui/core/ButtonBase";
-import { RestaurantMenuSharp } from "@material-ui/icons";
-import "../css/Buttons.scss";
+import { css } from "@emotion/css";
 
 export const PrimaryButton = (props: ButtonBaseProps) => {
   const { children, ...rest } = props;
   return (
-    <ButtonBase className="primary-button" {...rest}>
+    <button
+      className={
+        "primary-button " +
+        css`
+          padding: 10px 64px;
+          font-size: 1rem;
+          border-radius: 4px;
+          margin-bottom: 24px;
+          &.primary-button {
+            background-color: #292a2e;
+            color: #fff;
+          }
+        `
+      }
+      {...rest}
+    >
       {children}
-    </ButtonBase>
+    </button>
+  );
+};
+
+export const PlainButton = (props: ButtonBaseProps) => {
+  const { children, ...rest } = props;
+  return (
+    <button
+      className={css`
+        padding: 10px 64px;
+        font-size: 1rem;
+        border-radius: 4px;
+        margin-bottom: 24px;
+        color: var(--textColor);
+      `}
+      {...rest}
+    >
+      {children}
+    </button>
   );
 };
