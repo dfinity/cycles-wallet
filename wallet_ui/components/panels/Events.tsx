@@ -31,105 +31,106 @@ const useRowStyles = makeStyles((_theme) => ({
 
 function AddressAddedRow({ event }: TransactionRowProps) {
   const classes = useRowStyles();
-  if ("AddressAdded" in event.kind) {
-    const addressAdded = event.kind.AddressAdded!;
-    const role = Object.keys(addressAdded.role!)[0];
-
-    return (
-      <>
-        <TableRow className={classes.root}>
-          <TableCell component="th" scope="row">
-            <ReactTimeago date={new Date(event.timestamp.toNumber())} />
-          </TableCell>
-          <TableCell>{role} Added</TableCell>
-          <TableCell>
-            Principal "<code>{addressAdded.id?.toText()}</code>"
-            {addressAdded.name.length == 1
-              ? ` with name ${addressAdded.name[0]}`
-              : ""}
-          </TableCell>
-          <TableCell />
-        </TableRow>
-      </>
-    );
+  if (!("AddressAdded" in event.kind)) {
+    return null;
   }
-  return null;
-}
+  const addressAdded = event.kind.AddressAdded!;
+  const role = Object.keys(addressAdded.role!)[0];
 
-function CyclesSentRow({ event }: TransactionRowProps) {
-  const classes = useRowStyles();
-  if ("CyclesSent" in event.kind) {
-    const cyclesSent = event.kind.CyclesSent!;
-
-    return (
-      <>
-        <TableRow className={classes.root}>
-          <TableCell component="th" scope="row">
-            <ReactTimeago date={new Date(event.timestamp.toNumber())} />
-          </TableCell>
-          <TableCell>Cycle Sent</TableCell>
-          <TableCell>
-            Sent {cyclesSent.amount.toNumber().toLocaleString()} cycles to{" "}
-            <code>{cyclesSent.to.toText()}</code>
-          </TableCell>
-          <TableCell />
-        </TableRow>
-      </>
-    );
-  }
-  return null;
-}
-
-function CyclesReceivedRow({ event }: TransactionRowProps) {
-  const classes = useRowStyles();
-  if ("CyclesReceived" in event.kind) {
-    const cyclesReceived = event.kind.CyclesReceived!;
-
-    return (
-      <>
-        <TableRow className={classes.root}>
-          <TableCell component="th" scope="row">
-            <ReactTimeago date={new Date(event.timestamp.toNumber())} />
-          </TableCell>
-          <TableCell>Cycle Received</TableCell>
-          <TableCell>
-            Received {cyclesReceived.amount.toNumber().toLocaleString()} cycles
-            from <code>{cyclesReceived.from.toText()}</code>
-          </TableCell>
-          <TableCell />
-        </TableRow>
-      </>
-    );
-  }
-  return null;
-}
-
-function CanisterCreatedRow({ event }: TransactionRowProps) {
-  const classes = useRowStyles();
-  if ("CanisterCreated" in event.kind) {
-    const createdCanister = event.kind.CanisterCreated;
-
-    return (
+  return (
+    <>
       <TableRow className={classes.root}>
         <TableCell component="th" scope="row">
           <ReactTimeago date={new Date(event.timestamp.toNumber())} />
         </TableCell>
-        <TableCell>Canister Created</TableCell>
+        <TableCell>{role} Added</TableCell>
         <TableCell>
-          Created{" "}
-          <code>
-            {createdCanister.canister.toText()} (used{" "}
-            {createdCanister.cycles.toNumber().toLocaleString()} cycles)
-          </code>
+          Principal "<code>{addressAdded.id?.toText()}</code>"
+          {addressAdded.name.length == 1
+            ? ` with name ${addressAdded.name[0]}`
+            : ""}
         </TableCell>
         <TableCell />
       </TableRow>
-    );
+    </>
+  );
+}
+
+function CyclesSentRow({ event }: TransactionRowProps) {
+  const classes = useRowStyles();
+  if (!("CyclesSent" in event.kind)) {
+    return null;
   }
-  return null;
+  const cyclesSent = event.kind.CyclesSent!;
+
+  return (
+    <>
+      <TableRow className={classes.root}>
+        <TableCell component="th" scope="row">
+          <ReactTimeago date={new Date(event.timestamp.toNumber())} />
+        </TableCell>
+        <TableCell>Cycle Sent</TableCell>
+        <TableCell>
+          Sent {cyclesSent.amount.toNumber().toLocaleString()} cycles to{" "}
+          <code>{cyclesSent.to.toText()}</code>
+        </TableCell>
+        <TableCell />
+      </TableRow>
+    </>
+  );
+}
+
+function CyclesReceivedRow({ event }: TransactionRowProps) {
+  const classes = useRowStyles();
+  if (!("CyclesReceived" in event.kind)) {
+    return null;
+  }
+  const cyclesReceived = event.kind.CyclesReceived!;
+
+  return (
+    <>
+      <TableRow className={classes.root}>
+        <TableCell component="th" scope="row">
+          <ReactTimeago date={new Date(event.timestamp.toNumber())} />
+        </TableCell>
+        <TableCell>Cycle Received</TableCell>
+        <TableCell>
+          Received {cyclesReceived.amount.toNumber().toLocaleString()} cycles
+          from <code>{cyclesReceived.from.toText()}</code>
+        </TableCell>
+        <TableCell />
+      </TableRow>
+    </>
+  );
+}
+
+function CanisterCreatedRow({ event }: TransactionRowProps) {
+  const classes = useRowStyles();
+  if (!("CanisterCreated" in event.kind)) {
+    return null;
+  }
+  const createdCanister = event.kind.CanisterCreated!;
+
+  return (
+    <TableRow className={classes.root}>
+      <TableCell component="th" scope="row">
+        <ReactTimeago date={new Date(event.timestamp.toNumber())} />
+      </TableCell>
+      <TableCell>Canister Created</TableCell>
+      <TableCell>
+        Created{" "}
+        <code>
+          {createdCanister.canister.toText()} (used{" "}
+          {createdCanister.cycles.toNumber().toLocaleString()} cycles)
+        </code>
+      </TableCell>
+      <TableCell />
+    </TableRow>
+  );
 }
 
 function TransactionRow({ event, expanded, setExpanded }: TransactionRowProps) {
+  console.log(event.timestamp.toNumber(), new Date(event.timestamp.toNumber()));
   const classes = useRowStyles();
 
   const eventKind = Object.keys(event.kind)[0] as keyof EventKind;
