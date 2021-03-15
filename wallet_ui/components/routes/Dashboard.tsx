@@ -19,7 +19,6 @@ import List from "@material-ui/core/List";
 import AddCircleOutlineIcon from "@material-ui/icons/AddCircleOutline";
 import { SendCyclesDialog } from "../panels/SendCycles";
 import { BalanceChart } from "../panels/BalanceChart";
-import { CreateCanisterDialog } from "../panels/CreateCanister";
 import Dialog from "@material-ui/core/Dialog";
 import DialogTitle from "@material-ui/core/DialogTitle";
 import { DialogContent } from "@material-ui/core";

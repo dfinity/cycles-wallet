@@ -39,9 +39,9 @@ const useStyles = makeStyles((theme) => ({
     marginBottom: "0.5em",
   },
   chartContainer: {
-    aspectRatio: "1 / 1",
     position: "relative",
     left: "-20px",
+    height: "100%",
   },
 }));
 
@@ -127,6 +127,7 @@ export function BalanceChart() {
         <LineChart
           data={data}
           margin={{ top: 16, right: 16, bottom: 16, left: 16 }}
+          style={{ minHeight: "260px" }}
         >
           <XAxis dataKey="humanDate" stroke={theme.palette.text.secondary} />
           <YAxis

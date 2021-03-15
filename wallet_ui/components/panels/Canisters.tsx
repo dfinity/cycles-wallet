@@ -75,9 +75,9 @@ function Canisters(props: Props) {
         type="button"
         style={{ marginLeft: "auto" }}
       >
-        <Typography>
+        <ListItemIcon>
           <AddCircleOutlineIcon />
-        </Typography>
+        </ListItemIcon>
       </button>
 
       <Typography

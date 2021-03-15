@@ -130,10 +130,7 @@ function CanisterCreatedRow({ event }: TransactionRowProps) {
 }
 
 function TransactionRow({ event, expanded, setExpanded }: TransactionRowProps) {
-  const classes = useRowStyles();
-
   const eventKind = Object.keys(event.kind)[0] as keyof EventKind;
-  let type;
 
   switch (eventKind) {
     case "CyclesSent":

@@ -1,17 +1,12 @@
-import NumberFormat from "react-number-format";
 import React, { ChangeEvent, useState } from "react";
 import DialogTitle from "@material-ui/core/DialogTitle";
 import Dialog from "@material-ui/core/Dialog";
 import DialogContent from "@material-ui/core/DialogContent";
 import DialogActions from "@material-ui/core/DialogActions";
-import DialogContentText from "@material-ui/core/DialogContentText";
 import Button from "@material-ui/core/Button";
 import { CircularProgress } from "@material-ui/core";
 import makeStyles from "@material-ui/core/styles/makeStyles";
 import green from "@material-ui/core/colors/green";
-import Typography from "@material-ui/core/Typography";
-import FormControl from "@material-ui/core/FormControl";
-import TextField from "@material-ui/core/TextField";
 import { Principal, Wallet } from "../../canister";
 
 const useStyles = makeStyles((theme) => ({
@@ -92,10 +87,10 @@ export function CreateDialog(props: {
       disableBackdropClick={loading}
       aria-labelledby="alert-dialog-title"
     >
-      <DialogTitle id="alert-dialog-title">{"Create a new Wallet"}</DialogTitle>
+      <DialogTitle id="alert-dialog-title">{"Create"}</DialogTitle>
       <DialogContent>{children}</DialogContent>
       <DialogActions>
-        <Button onClick={handleClose} color="primary" disabled={loading}>
+        <Button onClick={handleClose} disabled={loading}>
           Cancel
         </Button>
         <div className={classes.wrapper}>
@@ -103,7 +98,6 @@ export function CreateDialog(props: {
             variant="contained"
             disabled={loading || error}
             onClick={create}
-            color="secondary"
             autoFocus
           >
             Create
