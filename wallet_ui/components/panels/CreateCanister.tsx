@@ -148,12 +148,7 @@ export function CreateCanisterDialog(props: {
         </div>
       </DialogContent>
       <DialogActions>
-        <PlainButton
-          onClick={handleClose}
-          disableRipple
-          color="primary"
-          disabled={loading}
-        >
+        <PlainButton onClick={handleClose} color="primary" disabled={loading}>
           Cancel
         </PlainButton>
         <div className={classes.wrapper}>
@@ -161,7 +156,6 @@ export function CreateCanisterDialog(props: {
             disabled={loading || error}
             onClick={create}
             color="secondary"
-            disableRipple
             autoFocus
           >
             Create

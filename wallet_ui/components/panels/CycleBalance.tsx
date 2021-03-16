@@ -11,6 +11,7 @@ import Typography from "@material-ui/core/Typography";
 import makeStyles from "@material-ui/core/styles/makeStyles";
 import Timeago from "react-timeago";
 import { useLocalStorage } from "../../utils/hooks";
+import { Box } from "@material-ui/core";
 
 const useStyles = makeStyles((theme) => ({
   depositContext: {
@@ -71,7 +72,7 @@ export function CycleBalance() {
   const humanCycles = Math.floor(cycles / 10 ** (ll * 3));
 
   return (
-    <React.Fragment>
+    <Box mb={2}>
       <Typography
         component="h2"
         variant="h5"
@@ -94,6 +95,6 @@ export function CycleBalance() {
           </>
         )}
       </Typography>
-    </React.Fragment>
+    </Box>
   );
 }

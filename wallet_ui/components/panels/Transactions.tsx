@@ -185,6 +185,7 @@ export default function Transactions(props: Props) {
             <TransactionRow
               event={event}
               expanded={event.id === expanded}
+              key={event.id}
               setExpanded={(isExpanded) =>
                 setExpanded(isExpanded ? event.id : -1)
               }
