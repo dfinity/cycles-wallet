@@ -3,11 +3,12 @@ import type { ButtonBaseProps } from "@material-ui/core/ButtonBase";
 import { css } from "@emotion/css";
 
 export const PrimaryButton = (props: ButtonBaseProps) => {
-  const { children, ...rest } = props;
+  const { children, className, ...rest } = props;
   return (
     <button
       className={
-        "primary-button " +
+        className +
+        " primary-button " +
         css`
           padding: 10px 64px;
           font-size: 1rem;

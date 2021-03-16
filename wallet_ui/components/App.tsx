@@ -5,20 +5,12 @@ import { WalletAppBar } from "./WalletAppBar";
 import Typography from "@material-ui/core/Typography";
 import Link from "@material-ui/core/Link";
 import {
-  orange,
-  common,
-  lightBlue,
-  deepPurple,
-  deepOrange,
-} from "@material-ui/core/colors";
-import {
   HashRouter as Router,
   Switch as RouterSwitch,
   Route,
 } from "react-router-dom";
 
 // For Switch Theming
-import createMuiTheme from "@material-ui/core/styles/createMuiTheme";
 import ThemeProvider from "@material-ui/styles/ThemeProvider";
 
 // For document title setting
@@ -29,11 +21,15 @@ import { Authorize } from "./routes/Authorize";
 import { Dashboard } from "./routes/Dashboard";
 import { useLocalStorage } from "../utils/hooks";
 import generateTheme from "../utils/materialTheme";
-import { injectGlobal } from "@emotion/css";
 
 export function Copyright() {
   return (
-    <Typography variant="body2" color="textSecondary" align="center">
+    <Typography
+      variant="body2"
+      color="textSecondary"
+      align="center"
+      style={{ marginBottom: "32px" }}
+    >
       {"Copyright © "}
       <Link color="inherit" href="https://dfinity.org/">
         DFINITY Stiftung. All rights reserved.
@@ -139,15 +135,6 @@ export default function App() {
     });
   }, []);
 
-  injectGlobal`
-  :root {
-
-    --primaryColor: ${darkState ? "#292a2e" : "rgba(69, 70, 81, 0.75)"};
-    --primaryContrast: "white";
-    --textColor: ${darkState ? "white" : "black"};
-  }
-  `;
-
   const theme = generateTheme(darkState);
 
   const classes = useStyles();
@@ -161,6 +148,15 @@ export default function App() {
 
   return (
     <ThemeProvider theme={theme}>
+      <style key={`darkState-${darkState}`}>
+        {`
+        :root {
+          --primaryColor: ${darkState ? "rgba(69, 70, 81, 0.75)" : "#292a2e"};
+          --primaryContrast: white;
+          --textColor: ${darkState ? "white" : "black"};
+        }
+      `}
+      </style>
       <Router>
         <div className={classes.root}>
           <CssBaseline />

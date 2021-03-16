@@ -88,7 +88,7 @@ function Canisters(props: Props) {
           margin-left: auto;
           padding: 0.5rem;
           border-radius: 4px;
-          background: #292a2e;
+          background: var(--primaryColor);
           color: var(--primaryContrast);
         `}
       >
