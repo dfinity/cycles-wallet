@@ -14,8 +14,8 @@ path = "src/lib.rs"
 
 [dependencies]
 ic-types = "0.1.2"
-ic-cdk = "0.2.2"
-ic-cdk-macros = "0.2.2"
+ic-cdk = "0.2.3"
+ic-cdk-macros = "0.2.3"
 libflate = "1"
 num-traits = "0.2.14"
 serde = "1.0.116"
