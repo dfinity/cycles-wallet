@@ -217,6 +217,8 @@ mod wallet {
     use ic_cdk_macros::*;
     use serde::Deserialize;
 
+    const DEFAULT_MEM_ALLOCATION: u64 = 40000000_u64; // 40 MB
+
     /***************************************************************************************************
      * Cycle Management
      **************************************************************************************************/
@@ -429,7 +431,7 @@ mod wallet {
             wasm_module: wasm_module.clone(),
             arg: b" ".to_vec(),
             compute_allocation: None,
-            memory_allocation: None,
+            memory_allocation: Some(Nat::from(DEFAULT_MEM_ALLOCATION)),
         };
 
         match api::call::call(
