@@ -325,12 +325,14 @@ mod wallet {
     struct CallCanisterArgs {
         canister: Principal,
         method_name: String,
+        #[serde(with = "serde_bytes")]
         args: Vec<u8>,
         cycles: u64,
     }
 
-    #[derive(CandidType)]
+    #[derive(CandidType, Deserialize)]
     struct CallResult {
+        #[serde(with = "serde_bytes")]
         r#return: Vec<u8>,
     }
 
