@@ -217,7 +217,7 @@ mod wallet {
     use ic_cdk_macros::*;
     use serde::Deserialize;
 
-    const DEFAULT_MEM_ALLOCATION: u64 = 40000000_u64; // 40 MB
+    const DEFAULT_MEM_ALLOCATION: u64 = 15000000_u64; // 15 MB
 
     /***************************************************************************************************
      * Cycle Management
