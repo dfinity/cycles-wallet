@@ -6,13 +6,14 @@ import DialogContent from "@material-ui/core/DialogContent";
 import DialogActions from "@material-ui/core/DialogActions";
 import DialogContentText from "@material-ui/core/DialogContentText";
 import Button from "@material-ui/core/Button";
-import { CircularProgress } from "@material-ui/core";
+import { Box, CircularProgress } from "@material-ui/core";
 import makeStyles from "@material-ui/core/styles/makeStyles";
 import green from "@material-ui/core/colors/green";
 import Typography from "@material-ui/core/Typography";
 import FormControl from "@material-ui/core/FormControl";
 import TextField from "@material-ui/core/TextField";
 import { Principal, Wallet } from "../../canister";
+import CycleSlider from "../CycleSlider";
 
 const useStyles = makeStyles((theme) => ({
   wrapper: {
@@ -105,24 +106,24 @@ export function SendCyclesDialog(props: {
 
   return (
     <Dialog
-      open={open}
+      open={true}
+      // open={open}
       onClose={handleClose}
       disableEscapeKeyDown={loading}
       disableBackdropClick={loading}
       aria-labelledby="alert-dialog-title"
     >
-      <DialogTitle id="alert-dialog-title">
-        {"Send Cycles to Another Canister"}
-      </DialogTitle>
+      <Box p={3}>
+        <Typography id="alert-dialog-title" variant="h4" component="h2">
+          Send Cycles
+        </Typography>
+        <Typography>Send to an existing or new canister.</Typography>
+      </Box>
       <DialogContent>
         <div>
-          <DialogContentText>
-            Send cycles to a canister. Do not send cycles to a user, the call
-            will fail. This cannot be validated from the user interface.
-          </DialogContentText>
           <FormControl className={classes.formControl}>
             <TextField
-              label="Principal"
+              label="Enter Canister Principal"
               value={principal}
               style={{ margin: 8 }}
               fullWidth
@@ -130,7 +131,9 @@ export function SendCyclesDialog(props: {
               onChange={handlePrincipalChange}
               error={error}
               autoFocus
+              InputLabelProps={{ shrink: true }}
             />
+            <CycleSlider />
             <TextField
               label="Cycles"
               value={cycles}

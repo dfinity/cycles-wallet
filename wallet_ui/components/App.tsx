@@ -154,6 +154,7 @@ export default function App() {
           --primaryColor: ${darkState ? "rgba(69, 70, 81, 0.75)" : "#292a2e"};
           --primaryContrast: white;
           --textColor: ${darkState ? "white" : "black"};
+          --backgroundColor: ${darkState ? "#3030" : "white"};
         }
       `}
       </style>
