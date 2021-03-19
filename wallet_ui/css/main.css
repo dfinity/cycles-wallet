@@ -22,3 +22,11 @@ button {
 .alignCenter {
   align-content: center;
 }
+
+body :is(.MuiFormLabel-root.Mui-focused, .MuiInput-underline:after) {
+  color: var(--textColor);
+}
+
+body .MuiInput-underline:after {
+  border-bottom-color: var(--textColor);
+}
