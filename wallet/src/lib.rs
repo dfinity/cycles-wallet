@@ -309,7 +309,7 @@ mod wallet {
         let create_result = create_canister_call(args.cycles).await;
 
         if let Some(new_controller) = args.controller {
-            set_controller_call(create_result.canister_id.clone(), new_controller).await;
+            set_controller_call(create_result.canister_id.clone(), new_controller, false).await;
         }
 
         super::update_chart();
@@ -341,32 +341,38 @@ mod wallet {
         create_result
     }
 
-    async fn set_controller_call(canister_id: Principal, new_controller: Principal) {
-        match api::call::call(
-            canister_id.clone(),
-            "add_controller",
-            (new_controller.clone(),),
-        )
-        .await
-        {
-            Ok(x) => x,
-            Err((code, msg)) => {
-                ic_cdk::trap(&format!(
-                    "An error happened during the call: {}: {}",
-                    code as u8, msg
-                ));
-            }
-        };
+    async fn set_controller_call(
+        canister_id: Principal,
+        new_controller: Principal,
+        update_acl: bool,
+    ) {
+        if update_acl {
+            match api::call::call(
+                canister_id.clone(),
+                "add_controller",
+                (new_controller.clone(),),
+            )
+            .await
+            {
+                Ok(x) => x,
+                Err((code, msg)) => {
+                    ic_cdk::trap(&format!(
+                        "An error happened during the call: {}: {}",
+                        code as u8, msg
+                    ));
+                }
+            };
 
-        match api::call::call(canister_id.clone(), "remove_controller", (id(),)).await {
-            Ok(x) => x,
-            Err((code, msg)) => {
-                ic_cdk::trap(&format!(
-                    "An error happened during the call: {}: {}",
-                    code as u8, msg
-                ));
-            }
-        };
+            match api::call::call(canister_id.clone(), "remove_controller", (id(),)).await {
+                Ok(x) => x,
+                Err((code, msg)) => {
+                    ic_cdk::trap(&format!(
+                        "An error happened during the call: {}: {}",
+                        code as u8, msg
+                    ));
+                }
+            };
+        }
 
         #[derive(CandidType)]
         struct In {
@@ -477,7 +483,7 @@ mod wallet {
 
         // Set controller
         if let Some(new_controller) = args.controller {
-            set_controller_call(create_result.canister_id.clone(), new_controller).await;
+            set_controller_call(create_result.canister_id.clone(), new_controller, true).await;
         }
         super::update_chart();
         create_result
