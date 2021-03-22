@@ -1,5 +1,5 @@
 import NumberFormat from "react-number-format";
-import React, { ChangeEvent, useState } from "react";
+import React, { ChangeEvent, useEffect, useState } from "react";
 import DialogTitle from "@material-ui/core/DialogTitle";
 import Dialog from "@material-ui/core/Dialog";
 import DialogContent from "@material-ui/core/DialogContent";
@@ -31,6 +31,7 @@ const useStyles = makeStyles((theme) => ({
   formControl: {
     display: "flex",
     flexWrap: "wrap",
+    marginBottom: "24px",
   },
 }));
 
@@ -63,9 +64,16 @@ export function SendCyclesDialog(props: {
 
   const [loading, setLoading] = useState(false);
   const [principal, setPrincipal] = useState("");
+  const [balance, setBalance] = useState(0);
   const [cycles, setCycles] = useState(0);
   const [error, setError] = useState(false);
   const classes = useStyles();
+
+  useEffect(() => {
+    Wallet.balance().then((amount) => {
+      setBalance(amount);
+    });
+  }, []);
 
   function handleClose() {
     close();
@@ -106,8 +114,7 @@ export function SendCyclesDialog(props: {
 
   return (
     <Dialog
-      open={true}
-      // open={open}
+      open={open}
       onClose={handleClose}
       disableEscapeKeyDown={loading}
       disableBackdropClick={loading}
@@ -125,7 +132,6 @@ export function SendCyclesDialog(props: {
             <TextField
               label="Enter Canister Principal"
               value={principal}
-              style={{ margin: 8 }}
               fullWidth
               disabled={loading}
               onChange={handlePrincipalChange}
@@ -133,19 +139,8 @@ export function SendCyclesDialog(props: {
               autoFocus
               InputLabelProps={{ shrink: true }}
             />
-            <CycleSlider />
-            <TextField
-              label="Cycles"
-              value={cycles}
-              style={{ margin: 8 }}
-              fullWidth
-              disabled={loading}
-              onChange={handleCycleChange}
-              InputProps={{
-                inputComponent: NumberFormatCustom,
-              }}
-            />
           </FormControl>
+          <CycleSlider balance={balance} />
         </div>
       </DialogContent>
       <DialogActions>

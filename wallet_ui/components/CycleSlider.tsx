@@ -1,11 +1,7 @@
 import * as React from "react";
 import type BigNumber from "bignumber.js";
-import { InputLabel } from "@material-ui/core";
+import { Box, InputLabel, Typography } from "@material-ui/core";
 import { css } from "@emotion/css";
-
-interface Props {
-  cycleBalance?: BigNumber;
-}
 
 const thumb = css`
   border: transparent;
@@ -22,7 +18,7 @@ const thumb = css`
   cursor: pointer;
   -webkit-appearance: none;
   margin-top: -10px;
-  box-shadow: 280px 0 0 280px #424242;
+  /* box-shadow: 280px 0 0 280px #424242; */
 `;
 
 const track = css`
@@ -36,6 +32,17 @@ const track = css`
 `;
 
 const styles = css`
+  position: relative;
+  border: 1px solid var(--primaryContrast);
+
+  .input-container {
+    overflow: hidden;
+    position: absolute;
+    bottom: -11px;
+    width: 100%;
+    z-index: 0;
+  }
+
   .MuiInputLabel-formControl {
     position: static;
     margin-bottom: 24px;
@@ -43,11 +50,11 @@ const styles = css`
 
   input[type="range"] {
     -webkit-appearance: none;
-    margin: 18px 0;
+    margin: 10px 0;
     width: 100%;
     height: 2px;
 
-    &:focus {
+    &:focus:not(:focus-visible) {
       outline: none;
     }
 
@@ -101,23 +108,101 @@ const styles = css`
       }
     }
   }
-  @media screen and (-webkit-min-device-pixel-ratio: 0) {
-    input[type="range"] {
-      overflow-x: clip;
-    }
-  }
 `;
 
-function CycleSlider(props: Props) {
-  const [cycles, setCycles] = React.useState(0);
+interface Props {
+  balance?: number;
+  startingNumber?: number;
+}
 
-  const { cycleBalance } = props;
+function CycleSlider(props: Props) {
+  const { balance = 0, startingNumber } = props;
+  const [cycles, setCycles] = React.useState(BigInt(startingNumber ?? 0));
+
+  // TODO: Replace with dynamic value
+  const cyclesSdrRate = (Number(cycles) / 1000000000000) * 0.65;
+  const sdrUsdRate = 0.69977;
+
+  function handleSlide(e: any) {
+    console.log("slide", e.target.value);
+    if (balance && e.target?.value) {
+      const newValue = Math.floor((balance * e.target.value) / 1000);
+      setCycles(BigInt(newValue));
+    }
+  }
 
   return (
-    <div className={styles}>
-      <InputLabel>Add Cycles</InputLabel>
-      <input type="range" name="cycles" id="cycles-range" min={0} max={1000} />
-    </div>
+    <fieldset
+      className={css`
+        margin: 0 0 16px;
+        border: none;
+        padding: 0;
+        &:focus-within,
+        &:hover {
+          label {
+            color: var(--primaryContrast);
+          }
+        }
+      `}
+    >
+      <InputLabel
+        className={css`
+          transform: scale(0.75);
+          margin-bottom: 8px;
+        `}
+      >
+        Add Cycles
+      </InputLabel>
+      <div className={styles}>
+        <div>
+          <Box fontWeight="fontWeightBold" pt="10px" pl="12px" pr="12px">
+            <details>
+              <summary
+                title="cycles count (click to reveal manual number input)"
+                className={css`
+                  list-style: none;
+                  display: flex;
+                  flex-direction: row;
+                  justify-content: space-between;
+                  &::-webkit-details-marker {
+                    display: none;
+                  }
+                  &::after {
+                    content: "C";
+                  }
+                `}
+              >
+                {cycles.toLocaleString()}
+              </summary>
+              <input
+                type="number"
+                name="cycles"
+                id="cycles-number"
+                value={Number(cycles)}
+                onChange={(e) => {
+                  console.log("number", e.target.value);
+                  setCycles(BigInt(e.target.value));
+                }}
+              />
+            </details>
+          </Box>
+          <Box pl="12px" mb="12px">
+            ${(cyclesSdrRate * sdrUsdRate).toFixed(2)}
+          </Box>
+        </div>
+        <div className="input-container">
+          <input
+            type="range"
+            name="cycles"
+            id="cycles-range"
+            min={0}
+            max={1000}
+            onChange={handleSlide}
+            value={(Number(cycles) * 1000) / balance}
+          />
+        </div>
+      </div>
+    </fieldset>
   );
 }
 
