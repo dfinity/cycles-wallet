@@ -665,7 +665,8 @@ fn is_controller() -> Result<(), String> {
 
 /// Check if the caller is a custodian.
 fn is_custodian() -> Result<(), String> {
-    if storage::get::<AddressBook>().is_custodian(&caller()) {
+    let caller = &caller();
+    if storage::get::<AddressBook>().is_custodian(caller) || &api::id() == caller {
         Ok(())
     } else {
         Err("Only a custodian can call this method.".to_string())
