@@ -525,7 +525,7 @@ mod wallet {
     async fn call(args: CallCanisterArgs) -> CallResult {
         if api::id() == caller() {
             // TODO: Return Err as a part of https://github.com/dfinity/wallet-rs/issues/32
-            ic_cdk::trap("Attempted to call forward on self. This is not allowed. Call this method via an different custodian.");
+            ic_cdk::trap("Attempted to call forward on self. This is not allowed. Call this method via a different custodian.");
         }
 
         match api::call::call_raw(
