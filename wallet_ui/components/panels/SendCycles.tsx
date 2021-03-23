@@ -1,10 +1,7 @@
-import NumberFormat from "react-number-format";
 import React, { ChangeEvent, useEffect, useState } from "react";
-import DialogTitle from "@material-ui/core/DialogTitle";
 import Dialog from "@material-ui/core/Dialog";
 import DialogContent from "@material-ui/core/DialogContent";
 import DialogActions from "@material-ui/core/DialogActions";
-import DialogContentText from "@material-ui/core/DialogContentText";
 import Button from "@material-ui/core/Button";
 import { Box, CircularProgress } from "@material-ui/core";
 import makeStyles from "@material-ui/core/styles/makeStyles";
@@ -34,27 +31,6 @@ const useStyles = makeStyles((theme) => ({
     marginBottom: "24px",
   },
 }));
-
-function NumberFormatCustom(props: any) {
-  const { inputRef, onChange, ...other } = props;
-
-  return (
-    <NumberFormat
-      {...other}
-      getInputRef={inputRef}
-      onValueChange={(values) => {
-        onChange({
-          target: {
-            value: values.value,
-          },
-        });
-      }}
-      thousandSeparator
-      isNumericString
-      suffix=" cycles"
-    />
-  );
-}
 
 export function SendCyclesDialog(props: {
   open: boolean;
@@ -88,10 +64,6 @@ export function SendCyclesDialog(props: {
     } catch {
       setError(true);
     }
-  }
-  function handleCycleChange(ev: ChangeEvent<HTMLInputElement>) {
-    let c = +ev.target.value;
-    setCycles(c);
   }
 
   function send() {
@@ -140,7 +112,11 @@ export function SendCyclesDialog(props: {
               InputLabelProps={{ shrink: true }}
             />
           </FormControl>
-          <CycleSlider balance={balance} />
+          <CycleSlider
+            balance={balance}
+            cycles={cycles}
+            setCycles={setCycles}
+          />
         </div>
       </DialogContent>
       <DialogActions>

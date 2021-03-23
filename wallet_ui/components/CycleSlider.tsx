@@ -1,5 +1,4 @@
 import * as React from "react";
-import type BigNumber from "bignumber.js";
 import { Box, InputLabel, Typography } from "@material-ui/core";
 import { css } from "@emotion/css";
 
@@ -113,21 +112,22 @@ const styles = css`
 interface Props {
   balance?: number;
   startingNumber?: number;
+  cycles: number;
+  setCycles: (c: number) => void;
 }
 
 function CycleSlider(props: Props) {
-  const { balance = 0, startingNumber } = props;
-  const [cycles, setCycles] = React.useState(BigInt(startingNumber ?? 0));
+  const { balance = 0, cycles, setCycles } = props;
 
   // TODO: Replace with dynamic value
-  const cyclesSdrRate = (Number(cycles) / 1000000000000) * 0.65;
+  const cyclesSdrRate = (cycles / 1000000000000) * 0.65;
   const sdrUsdRate = 0.69977;
 
   function handleSlide(e: any) {
     console.log("slide", e.target.value);
     if (balance && e.target?.value) {
       const newValue = Math.floor((balance * e.target.value) / 1000);
-      setCycles(BigInt(newValue));
+      setCycles(newValue);
     }
   }
 
@@ -181,7 +181,7 @@ function CycleSlider(props: Props) {
                 value={Number(cycles)}
                 onChange={(e) => {
                   console.log("number", e.target.value);
-                  setCycles(BigInt(e.target.value));
+                  setCycles(Number(e.target.value));
                 }}
               />
             </details>
@@ -198,7 +198,7 @@ function CycleSlider(props: Props) {
             min={0}
             max={1000}
             onChange={handleSlide}
-            value={(Number(cycles) * 1000) / balance}
+            value={(cycles * 1000) / balance}
           />
         </div>
       </div>
