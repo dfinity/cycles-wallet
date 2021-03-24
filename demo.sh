@@ -32,7 +32,7 @@ echo Alice = $(dfx --identity id_alice canister call alice wallet_balance)
 echo Bob = $(dfx --identity id_bob canister call bob wallet_balance)
 
 echo
-echo == Create a new canister with Alice as controller using 1000000000000 cycles.
+echo == Create a new canister with Alice as controller using 1000000000001 cycles.
 echo
 
 echo New canister id = $(dfx --identity id_alice canister call alice wallet_create_canister "(record { cycles = 1000000000001; controller = null })")
@@ -66,7 +66,7 @@ echo
 eval dfx --identity id_charlie canister --no-wallet call alice wallet_send "'(record { canister = principal \"$(dfx canister id bob)\"; amount = 1000000000000 })'"
 
 echo Alice = $(dfx --identity id_alice canister call alice wallet_balance)
-echo Alice^ = $(dfx --identity id_charlie canister call alice wallet_balance)
+echo Alice^ = $(dfx --identity id_charlie canister --no-wallet call alice wallet_balance)
 echo Bob = $(dfx --identity id_bob canister call bob wallet_balance)
 
 dfx stop
