@@ -17,7 +17,7 @@ import { useLocalStorage } from "../../utils/hooks";
 import useTheme from "@material-ui/core/styles/useTheme";
 import makeStyles from "@material-ui/core/styles/makeStyles";
 import { buildData, ChartData } from "../../utils/chart";
-import { Button } from "@material-ui/core";
+import Button from "@material-ui/core/Button";
 import { css } from "@emotion/css";
 
 const useStyles = makeStyles((theme) => ({

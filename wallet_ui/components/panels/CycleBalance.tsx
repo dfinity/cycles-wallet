@@ -1,17 +1,11 @@
-import InputLabel from "@material-ui/core/InputLabel";
-import MenuItem from "@material-ui/core/MenuItem";
-import FormControl from "@material-ui/core/FormControl";
-import Select from "@material-ui/core/Select";
 import React, { useEffect, useState } from "react";
 import { useHistory } from "react-router";
-import ReactCountUp from "react-countup";
 import { Wallet } from "../../canister";
 import "../../css/CycleBalance.css";
 import Typography from "@material-ui/core/Typography";
 import makeStyles from "@material-ui/core/styles/makeStyles";
-import Timeago from "react-timeago";
 import { useLocalStorage } from "../../utils/hooks";
-import { Box } from "@material-ui/core";
+import Box from "@material-ui/core/Box";
 
 const useStyles = makeStyles((theme) => ({
   depositContext: {
