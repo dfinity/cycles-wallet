@@ -6,4 +6,12 @@ import App from "./components/App";
 
 import "./css/main.css";
 
-ReactDOM.render(<App />, document.getElementsByTagName("app")[0]);
+const render = () => {
+  ReactDOM.render(<App />, document.getElementById("app"));
+};
+render();
+
+// Hot Module Replacement API
+if (module.hot) {
+  module.hot.accept("./components/App", render);
+}
