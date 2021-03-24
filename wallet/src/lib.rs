@@ -333,10 +333,9 @@ mod wallet {
     #[update(guard = "is_custodian", name = "wallet_create_canister")]
     async fn create_canister(args: CreateCanisterArgs) -> Result<CreateResult, String> {
         let create_result = create_canister_call(args.cycles).await?;
-        let canister_id = create_result.clone().canister_id;
 
         if let Some(new_controller) = args.controller {
-            set_controller_call(canister_id.clone(), new_controller).await?;
+            set_controller_call(create_result.canister_id.clone(), new_controller, false).await?;
         }
 
         super::update_chart();
@@ -371,32 +370,35 @@ mod wallet {
     async fn set_controller_call(
         canister_id: Principal,
         new_controller: Principal,
+        update_acl: bool,
     ) -> Result<(), String> {
-        match api::call::call(
-            canister_id.clone(),
-            "add_controller",
-            (new_controller.clone(),),
-        )
-        .await
-        {
-            Ok(x) => x,
-            Err((code, msg)) => {
-                return Err(format!(
-                    "An error happened during the call: {}: {}",
-                    code as u8, msg
-                ))
-            }
-        };
+        if update_acl {
+            match api::call::call(
+                canister_id.clone(),
+                "add_controller",
+                (new_controller.clone(),),
+            )
+            .await
+            {
+                Ok(x) => x,
+                Err((code, msg)) => {
+                    return Err(format!(
+                        "An error happened during the call: {}: {}",
+                        code as u8, msg
+                    ))
+                }
+            };
 
-        match api::call::call(canister_id.clone(), "remove_controller", (id(),)).await {
-            Ok(x) => x,
-            Err((code, msg)) => {
-                return Err(format!(
-                    "An error happened during the call: {}: {}",
-                    code as u8, msg
-                ))
-            }
-        };
+            match api::call::call(canister_id.clone(), "remove_controller", (id(),)).await {
+                Ok(x) => x,
+                Err((code, msg)) => {
+                    return Err(format!(
+                        "An error happened during the call: {}: {}",
+                        code as u8, msg
+                    ))
+                }
+            };
+        }
 
         #[derive(CandidType)]
         struct In {
@@ -510,7 +512,7 @@ mod wallet {
 
         // Set controller
         if let Some(new_controller) = args.controller {
-            set_controller_call(canister_id.clone(), new_controller).await?;
+            set_controller_call(create_result.canister_id.clone(), new_controller, true).await?;
         }
         super::update_chart();
         Ok(create_result)
@@ -550,6 +552,11 @@ mod wallet {
     /// Forward a call to another canister.
     #[update(guard = "is_custodian", name = "wallet_call")]
     async fn call(args: CallCanisterArgs) -> Result<CallResult, String> {
+        if api::id() == caller() {
+            // TODO: Return Err as a part of https://github.com/dfinity/wallet-rs/issues/32
+            ic_cdk::trap("Attempted to call forward on self. This is not allowed. Call this method via a different custodian.");
+        }
+
         match api::call::call_raw(
             args.canister.clone(),
             &args.method_name,
@@ -690,7 +697,8 @@ fn is_controller() -> Result<(), String> {
 
 /// Check if the caller is a custodian.
 fn is_custodian() -> Result<(), String> {
-    if storage::get::<AddressBook>().is_custodian(&caller()) {
+    let caller = &caller();
+    if storage::get::<AddressBook>().is_custodian(caller) || &api::id() == caller {
         Ok(())
     } else {
         Err("Only a custodian can call this method.".to_string())
