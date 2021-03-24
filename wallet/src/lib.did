@@ -122,5 +122,5 @@ service : {
 
   // Events
   get_events: (opt record { from: opt nat32; to: opt nat32; }) -> (vec Event) query;
-  get_chart: (opt record { count: nat32; precision: nat64; } ) -> (vec record { nat64; nat64; }) query;
+  get_chart: (opt record { count: opt nat32; precision: opt nat64; } ) -> (vec record { nat64; nat64; }) query;
 }

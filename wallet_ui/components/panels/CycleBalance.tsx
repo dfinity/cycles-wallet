@@ -48,7 +48,7 @@ export function CycleBalance() {
         }
         setCycles(amount);
       },
-      () => history.push("/authorize")
+      () => history.push(`/authorize${location.search}`)
     );
   }
 
