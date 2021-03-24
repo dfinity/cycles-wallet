@@ -4,6 +4,7 @@
   "name": "wallet-ui",
   "scripts": {
     "build": "webpack",
+    "generate_candid": "didc bind ./wallet/src/lib.did -t ts > wallet_ui/types/declaration.d.ts",
     "presideload-ui": "npm run build",
     "sideload-ui": "node script/upload.js",
     "test": "jest --verbose"
@@ -59,7 +60,7 @@
     "text-encoding": "^0.7.0",
     "ts-jest": "^26.4.4",
     "ts-loader": "^8.0.4",
-    "typescript": "^4.0.3",
+    "typescript": "^4.2.3",
     "url-loader": "^4.1.0",
     "webpack-dev-server": "^3.11.0"
   }
