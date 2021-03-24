@@ -10,7 +10,7 @@ import {
   deepPurple,
   deepOrange,
 } from "@material-ui/core/colors";
-import { HashRouter as Router, Switch as RouterSwitch, Route } from "react-router-dom";
+import { BrowserRouter as Router, Switch as RouterSwitch, Route } from "react-router-dom";
 
 // For Switch Theming
 import createMuiTheme from "@material-ui/core/styles/createMuiTheme";

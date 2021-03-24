@@ -3,7 +3,6 @@ use ic_cdk::export::Principal;
 use ic_cdk::*;
 use ic_cdk_macros::*;
 use serde::Deserialize;
-use std::borrow::Cow;
 
 mod address;
 mod events;
@@ -11,16 +10,6 @@ mod events;
 use crate::address::{AddressBook, AddressEntry, Role};
 use crate::events::EventBuffer;
 use events::{record, Event, EventKind};
-use std::io::Read;
-
-/// The frontend bytes.
-struct FrontendBytes(pub Cow<'static, [u8]>);
-
-impl Default for FrontendBytes {
-    fn default() -> Self {
-        FrontendBytes(Cow::Borrowed(include_bytes!("../../dist/index.js.gz")))
-    }
-}
 
 struct WalletWASMBytes(Option<Vec<u8>>);
 
@@ -43,8 +32,6 @@ fn init() {
 /// Until the stable storage works better in the ic-cdk, this does the job just fine.
 #[derive(CandidType, Deserialize)]
 struct StableStorage {
-    /// This is None if it's still borrowed.
-    frontend: Option<Vec<u8>>,
     address_book: Vec<AddressEntry>,
     events: EventBuffer,
     name: Option<String>,
@@ -54,13 +41,8 @@ struct StableStorage {
 
 #[pre_upgrade]
 fn pre_upgrade() {
-    let frontend_bytes = storage::get::<FrontendBytes>();
     let address_book = storage::get::<AddressBook>();
     let stable = StableStorage {
-        frontend: match &frontend_bytes.0 {
-            Cow::Borrowed(_) => None,
-            Cow::Owned(o) => Some(o.to_vec()),
-        },
         address_book: address_book.iter().cloned().collect(),
         events: storage::get::<EventBuffer>().clone(),
         name: storage::get::<WalletName>().0.clone(),
@@ -84,12 +66,6 @@ fn post_upgrade() {
     if let Ok((storage,)) = storage::stable_restore::<(StableStorage,)>() {
         let event_buffer = storage::get_mut::<events::EventBuffer>();
         let address_book = storage::get_mut::<AddressBook>();
-        let frontend_bytes = storage::get_mut::<FrontendBytes>();
-
-        // Copy the frontend if there's one.
-        if let Some(blob) = storage.frontend {
-            frontend_bytes.0 = Cow::Owned(blob);
-        }
 
         event_buffer.clear();
         event_buffer.clone_from(&storage.events);
@@ -109,33 +85,6 @@ fn post_upgrade() {
 }
 
 /***************************************************************************************************
- * Frontend
- **************************************************************************************************/
-#[update(guard = "is_controller")]
-fn store(blob: Vec<u8>) {
-    let frontend_bytes = storage::get_mut::<FrontendBytes>();
-    frontend_bytes.0 = Cow::Owned(blob);
-    update_chart();
-}
-
-#[query]
-fn retrieve(path: String) -> Vec<u8> {
-    let frontend_bytes = storage::get::<FrontendBytes>();
-    if path == "index.js" {
-        let gz = match &frontend_bytes.0 {
-            Cow::Owned(o) => o.as_slice(),
-            Cow::Borrowed(b) => b,
-        };
-        let mut decoder = libflate::gzip::Decoder::new(gz).unwrap();
-        let mut decoded_data = Vec::new();
-        decoder.read_to_end(&mut decoded_data).unwrap();
-        decoded_data
-    } else {
-        trap(&format!(r#"Cannot find "{}" in the assets."#, path));
-    }
-}
-
-/***************************************************************************************************
  * Wallet Name
  **************************************************************************************************/
 #[query(guard = "is_custodian")]
@@ -148,6 +97,11 @@ fn set_name(name: String) {
     storage::get_mut::<WalletName>().0 = Some(name);
     update_chart();
 }
+
+/***************************************************************************************************
+ * Frontend
+ **************************************************************************************************/
+include!(concat!(env!("OUT_DIR"), "/http_request.rs"));
 
 /***************************************************************************************************
  * Controller Management
@@ -309,7 +263,7 @@ mod wallet {
         let create_result = create_canister_call(args.cycles).await;
 
         if let Some(new_controller) = args.controller {
-            set_controller_call(create_result.canister_id.clone(), new_controller).await;
+            set_controller_call(create_result.canister_id.clone(), new_controller, false).await;
         }
 
         super::update_chart();
@@ -341,32 +295,38 @@ mod wallet {
         create_result
     }
 
-    async fn set_controller_call(canister_id: Principal, new_controller: Principal) {
-        match api::call::call(
-            canister_id.clone(),
-            "add_controller",
-            (new_controller.clone(),),
-        )
-        .await
-        {
-            Ok(x) => x,
-            Err((code, msg)) => {
-                ic_cdk::trap(&format!(
-                    "An error happened during the call: {}: {}",
-                    code as u8, msg
-                ));
-            }
-        };
+    async fn set_controller_call(
+        canister_id: Principal,
+        new_controller: Principal,
+        update_acl: bool,
+    ) {
+        if update_acl {
+            match api::call::call(
+                canister_id.clone(),
+                "add_controller",
+                (new_controller.clone(),),
+            )
+            .await
+            {
+                Ok(x) => x,
+                Err((code, msg)) => {
+                    ic_cdk::trap(&format!(
+                        "An error happened during the call: {}: {}",
+                        code as u8, msg
+                    ));
+                }
+            };
 
-        match api::call::call(canister_id.clone(), "remove_controller", (id(),)).await {
-            Ok(x) => x,
-            Err((code, msg)) => {
-                ic_cdk::trap(&format!(
-                    "An error happened during the call: {}: {}",
-                    code as u8, msg
-                ));
-            }
-        };
+            match api::call::call(canister_id.clone(), "remove_controller", (id(),)).await {
+                Ok(x) => x,
+                Err((code, msg)) => {
+                    ic_cdk::trap(&format!(
+                        "An error happened during the call: {}: {}",
+                        code as u8, msg
+                    ));
+                }
+            };
+        }
 
         #[derive(CandidType)]
         struct In {
@@ -477,7 +437,7 @@ mod wallet {
 
         // Set controller
         if let Some(new_controller) = args.controller {
-            set_controller_call(create_result.canister_id.clone(), new_controller).await;
+            set_controller_call(create_result.canister_id.clone(), new_controller, true).await;
         }
         super::update_chart();
         create_result
@@ -517,6 +477,11 @@ mod wallet {
     /// Forward a call to another canister.
     #[update(guard = "is_custodian", name = "wallet_call")]
     async fn call(args: CallCanisterArgs) -> CallResult {
+        if api::id() == caller() {
+            // TODO: Return Err as a part of https://github.com/dfinity/wallet-rs/issues/32
+            ic_cdk::trap("Attempted to call forward on self. This is not allowed. Call this method via a different custodian.");
+        }
+
         match api::call::call_raw(
             args.canister.clone(),
             &args.method_name,
@@ -659,7 +624,8 @@ fn is_controller() -> Result<(), String> {
 
 /// Check if the caller is a custodian.
 fn is_custodian() -> Result<(), String> {
-    if storage::get::<AddressBook>().is_custodian(&caller()) {
+    let caller = &caller();
+    if storage::get::<AddressBook>().is_custodian(caller) || &api::id() == caller {
         Ok(())
     } else {
         Err("Only a custodian can call this method.".to_string())
