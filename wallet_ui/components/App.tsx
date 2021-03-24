@@ -5,10 +5,12 @@ import { WalletAppBar } from "./WalletAppBar";
 import Typography from "@material-ui/core/Typography";
 import Link from "@material-ui/core/Link";
 import {
-  HashRouter as Router,
-  Switch as RouterSwitch,
-  Route,
-} from "react-router-dom";
+  orange,
+  lightBlue,
+  deepPurple,
+  deepOrange,
+} from "@material-ui/core/colors";
+import { BrowserRouter as Router, Switch as RouterSwitch, Route } from "react-router-dom";
 
 // For Switch Theming
 import ThemeProvider from "@material-ui/styles/ThemeProvider";

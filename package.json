@@ -5,7 +5,7 @@
   "scripts": {
     "build": "webpack",
     "start": "webpack serve --config webpack.dev.js",
-    "generate_candid": "didc bind ./wallet/src/lib.did -t ts | cat > wallet_ui/types/declaration.d.ts",
+    "generate_candid": "didc bind ./wallet/src/lib.did -t ts > wallet_ui/types/declaration.d.ts",
     "presideload-ui": "npm run build",
     "sideload-ui": "node script/upload.js",
     "test": "jest --verbose"
@@ -30,6 +30,7 @@
     "css-loader": "4.3.0",
     "events": "^3.2.0",
     "hook-shell-script-webpack-plugin": "^0.1.3",
+    "html-webpack-plugin": "^5.2.0",
     "nan": "^2.14.1",
     "process": "^0.11.10",
     "react": "16.13.1",
