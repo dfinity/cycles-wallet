@@ -1,7 +1,7 @@
 use crate::address::Role;
-use candid::CandidType;
+use ic_cdk::export::candid::CandidType;
+use ic_cdk::export::Principal;
 use ic_cdk::{api, storage};
-use ic_types::Principal;
 use serde::Deserialize;
 use std::cmp::min;
 
@@ -59,6 +59,9 @@ pub enum EventKind {
         canister: Principal,
         method_name: String,
         cycles: u64,
+    },
+    WalletDeployed {
+        canister: Principal,
     },
 }
 
