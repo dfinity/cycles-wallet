@@ -32,9 +32,7 @@
   },
   "networks": {
     "ic": {
-      "providers": [
-        "https://gw.dfinity.network"
-      ],
+      "providers": ["https://gw.dfinity.network"],
       "type": "persistent"
     },
     "local": {
@@ -42,6 +40,6 @@
       "type": "ephemeral"
     }
   },
-  "dfx": "0.6.23",
+  "dfx": "0.7.0-beta.0",
   "version": 1
 }

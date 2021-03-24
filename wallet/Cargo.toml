@@ -19,6 +19,5 @@ ic-cdk-macros = "0.2.3"
 libflate = "1"
 num-traits = "0.2.14"
 serde = "1.0.116"
-
-[build-dependencies]
 serde_bytes = "0.11"
+
