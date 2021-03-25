@@ -37,7 +37,11 @@ impl EventBuffer {
 pub enum EventKind {
     CyclesSent {
         to: Principal,
-        amount: Option<u64>,
+        amount: u64,
+    },
+    CyclesRefunded {
+        to: Principal,
+        refund: u64,
     },
     CyclesReceived {
         from: Principal,

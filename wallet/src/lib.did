@@ -1,7 +1,11 @@
 type EventKind = variant {
   CyclesSent: record {
     to: principal;
-    amount: opt nat64;
+    amount: nat64;
+  };
+  CyclesRefunded: record {
+    to: principal;
+    refund: nat64;
   };
   CyclesReceived: record {
     from: principal;
