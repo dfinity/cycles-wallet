@@ -38,7 +38,6 @@ pub enum EventKind {
     CyclesSent {
         to: Principal,
         amount: Option<u64>,
-        refund: Option<u64>,
     },
     CyclesReceived {
         from: Principal,
