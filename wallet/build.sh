@@ -8,10 +8,10 @@ set -e
 }
 
 # Build frontend before wallet.
-# npm install
-# npm run build
-# gzip -f dist/*.js
-# gzip -f dist/*.html
+npm install
+npm run build
+gzip -f dist/*.js
+gzip -f dist/*.html
 
 WALLET_DIR="$(dirname "$0")"
 
