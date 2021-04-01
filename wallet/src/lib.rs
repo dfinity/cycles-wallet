@@ -194,83 +194,6 @@ mod wallet {
         }
     }
 
-    fn cycles_refunded() -> Result<u64, String> {
-        let refund = api::call::msg_cycles_refunded();
-        if refund == 0 || refund.is_positive() {
-            Ok(refund as u64)
-        } else {
-            Err(format!(
-                "Recieved a negative refund from system! Refund: {:?}",
-                refund
-            ))
-        }
-    }
-
-    fn handle_refund(
-        refund: u64,
-        args: SendCyclesArgs,
-        maybe_call_error: Option<String>,
-    ) -> Result<(), String> {
-        if refund == 0 {
-            match maybe_call_error {
-                Some(err) => {
-                    events::record(events::EventKind::CyclesSent {
-                        to: args.canister.clone(),
-                        amount: args.amount,
-                    });
-                    super::update_chart();
-                    Err(err)
-                }
-                None => {
-                    events::record(events::EventKind::CyclesSent {
-                        to: args.canister,
-                        amount: args.amount,
-                    });
-                    super::update_chart();
-                    Ok(())
-                }
-            }
-        } else if args.amount >= refund {
-            events::record(events::EventKind::CyclesSent {
-                to: args.canister.clone(),
-                amount: args.amount - refund,
-            });
-            events::record(events::EventKind::CyclesRefunded {
-                to: args.canister,
-                refund,
-            });
-            super::update_chart();
-            match maybe_call_error {
-                Some(err) => Err(err),
-                None => Err(format!(
-                    "Cycles sent: {}\nCycles refunded: {}",
-                    args.amount, refund
-                )),
-            }
-        } else {
-            events::record(events::EventKind::CyclesSent {
-                to: args.canister.clone(),
-                amount: args.amount,
-            });
-            events::record(events::EventKind::CyclesRefunded {
-                to: args.canister,
-                refund,
-            });
-            super::update_chart();
-            match maybe_call_error {
-                Some(err) => {
-                    Err(format!("Received greater refund than cycles sent. {:?}", err))
-                }
-                None => {
-                    Err(format!(
-                            "Received greater refund than cycles sent. Cycles sent: {}\nCycles refunded: {}",
-                            args.amount, refund
-                        ))
-                }
-            }
-        }
-    }
-
     /// Send cycles to another canister.
     #[update(guard = "is_custodian", name = "wallet_send")]
     async fn send(args: SendCyclesArgs) -> Result<(), String> {
@@ -282,34 +205,30 @@ mod wallet {
         )
         .await
         {
-            Ok(x) => match cycles_refunded() {
-                Ok(refund) => {
-                    handle_refund(refund, args, None)?;
-                    x
-                }
-                Err(e) => {
-                    events::record(events::EventKind::CyclesSent {
-                        to: args.canister.clone(),
-                        amount: args.amount,
-                    });
-                    return Err(e);
-                }
+            Ok(x) => {
+                let refund = api::call::msg_cycles_refunded();
+                events::record(events::EventKind::CyclesSent {
+                    to: args.canister,
+                    amount: args.amount,
+                    refund: refund as u64,
+                });
+                super::update_chart();
+                x
             },
             Err((code, msg)) => {
+                let refund = api::call::msg_cycles_refunded();
+                events::record(events::EventKind::CyclesSent {
+                    to: args.canister,
+                    amount: args.amount,
+                    refund: refund as u64,
+                });
                 let call_error =
                     format!("An error happened during the call: {}: {}", code as u8, msg);
-                match cycles_refunded() {
-                    Ok(refund) => {
-                        let error = format!(
-                            "Cycles sent: {}\nCycles refunded: {}\n{}",
-                            args.amount, refund, call_error
-                        );
-                        handle_refund(refund, args, Some(error))?;
-                    }
-                    Err(err) => {
-                        return Err(format!("{}\n{}", err, call_error));
-                    }
-                }
+                let error = format!(
+                    "Cycles sent: {}\nCycles refunded: {}\n{}",
+                    args.amount, refund, call_error
+                );
+                return Err(error);
             }
         };
 
@@ -318,7 +237,7 @@ mod wallet {
 
     /// Receive cycles from another canister.
     #[update(name = "wallet_receive")]
-    fn receive() -> Result<(), String> {
+    fn receive() {
         let from = caller();
         let amount = ic_cdk::api::call::msg_cycles_available();
         if amount > 0 {
@@ -328,12 +247,6 @@ mod wallet {
                 amount: amount_accepted as u64,
             });
             super::update_chart();
-            Ok(())
-        } else {
-            Err(format!(
-                "Cannot receive negative cycles: {}",
-                amount,
-            ))
         }
     }
 
