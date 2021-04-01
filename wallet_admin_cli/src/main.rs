@@ -8,14 +8,13 @@ use ic_agent::identity::BasicIdentity;
 use ic_agent::{Agent, Identity};
 use ic_identity_hsm::HardwareIdentity;
 use ic_utils::call::AsyncCall;
-use ic_utils::interfaces::management_canister::{InstallMode, MemoryAllocation};
+use ic_utils::interfaces::management_canister::InstallMode;
 use ic_utils::interfaces::{ManagementCanister, Wallet as WalletCanister};
 use ic_utils::Canister;
 
 use serde::{Deserialize, Serialize};
 // use slog::{error, info, Logger};
 use std::{
-    convert::TryFrom,
     fs::File,
     io,
     io::{Read, Write},
@@ -37,7 +36,6 @@ const BASIC_IDENTITY_PEM_PATH: &str = "BASIC_IDENTITY_PEM_PATH";
 const HSM_SLOT_INDEX: &str = "HSM_SLOT_INDEX";
 const HSM_KEY_ID: &str = "HSM_KEY_ID";
 const HSM_PIN: &str = "HSM_PIN";
-const DEFAULT_MEM_ALLOCATION: u64 = 40000000_u64; // 40 MB
 
 pub fn create_waiter() -> Delay {
     Delay::builder()
@@ -466,8 +464,6 @@ async fn install_wallet(
 ) -> WalletResult<()> {
     ic00.install_code(canister_id, &wasm)
         .with_mode(InstallMode::Install)
-        .with_memory_allocation(MemoryAllocation::try_from(DEFAULT_MEM_ALLOCATION)
-            .expect("Memory allocation must be between 0 and 2^48 (i.e 256TB), inclusively."))
         .call_and_wait(create_waiter())
         .await
         .map_err(|err| anyhow!("Could not install wallet canister: {}", err.to_string()))?;
