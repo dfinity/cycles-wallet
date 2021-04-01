@@ -186,11 +186,6 @@ mod wallet {
         amount: u64,
     }
 
-    #[derive(CandidType)]
-    struct ReceiveResult {
-        accepted: u64,
-    }
-
     /// Return the cycle balance of this canister.
     #[query(guard = "is_custodian", name = "wallet_balance")]
     fn balance() -> BalanceResult {
@@ -323,18 +318,22 @@ mod wallet {
 
     /// Receive cycles from another canister.
     #[update(name = "wallet_receive")]
-    fn receive() -> ReceiveResult {
+    fn receive() -> Result<(), String> {
         let from = caller();
         let amount = ic_cdk::api::call::msg_cycles_available();
         if amount > 0 {
+            let amount_accepted = ic_cdk::api::call::msg_cycles_accept(amount);
             events::record(events::EventKind::CyclesReceived {
                 from,
-                amount: amount as u64,
+                amount: amount_accepted as u64,
             });
-        }
-        super::update_chart();
-        ReceiveResult {
-            accepted: ic_cdk::api::call::msg_cycles_accept(amount) as u64,
+            super::update_chart();
+            Ok(())
+        } else {
+            Err(format!(
+                "Cannot receive negative cycles: {}",
+                amount,
+            ))
         }
     }
 

@@ -69,11 +69,12 @@ type ResultSend = variant {
   Err : text;
 };
 
+type ResultReceive = ResultSend;
+
 type ResultCall = variant {
   Ok : record { return: blob };
   Err : text;
 };
-
 
 service : {
   // Wallet Name
@@ -93,7 +94,7 @@ service : {
   // Cycle Management
   wallet_balance: () -> (record { amount: nat64 }) query;
   wallet_send: (record { canister: principal; amount: nat64 }) -> (ResultSend);
-  wallet_receive: () -> (record { accepted: nat64 });  // Endpoint for receiving cycles.
+  wallet_receive: () -> (ResultReceive);  // Endpoint for receiving cycles.
 
   // Managing canister
   wallet_create_canister: (record {
