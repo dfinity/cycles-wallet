@@ -14,9 +14,9 @@ dfx identity new id_alice || true
 dfx identity new id_bob || true
 dfx identity new id_charlie || true
 
-dfx --identity id_alice canister create alice
-dfx --identity id_bob canister create bob
-dfx --identity default canister create wallet
+dfx --identity id_alice canister create alice --with-cycles=5000000000000
+dfx --identity id_bob canister create bob --with-cycles=2000000000000
+dfx --identity default canister create wallet --with-cycles=3000000000000
 
 dfx build
 
@@ -32,10 +32,10 @@ echo Alice = $(dfx --identity id_alice canister call alice wallet_balance)
 echo Bob = $(dfx --identity id_bob canister call bob wallet_balance)
 
 echo
-echo == Create a new canister with Alice as controller using 1000000000000 cycles.
+echo == Create a new canister with Alice as controller using 1000000000001 cycles.
 echo
 
-echo New canister id = $(dfx --identity id_alice canister call alice wallet_create_canister "(record { cycles = 1000000000000; controller = null })")
+echo New canister id = $(dfx --identity id_alice canister call alice wallet_create_canister "(record { cycles = 1000000000001; controller = null })")
 
 echo
 echo == Transfer 1000000000000 cycles from Alice to Bob.
@@ -63,10 +63,10 @@ dfx --identity id_alice canister install alice --mode=upgrade
 echo
 echo == Using Charlie to send cycles...
 echo
-eval dfx --identity id_charlie canister call alice wallet_send "'(record { canister = principal \"$(dfx canister id bob)\"; amount = 1000000000000 })'"
+eval dfx --identity id_charlie canister --no-wallet call alice wallet_send "'(record { canister = principal \"$(dfx canister id bob)\"; amount = 1000000000000 })'"
 
 echo Alice = $(dfx --identity id_alice canister call alice wallet_balance)
-echo Alice^ = $(dfx --identity id_charlie canister call alice wallet_balance)
+echo Alice^ = $(dfx --identity id_charlie canister --no-wallet call alice wallet_balance)
 echo Bob = $(dfx --identity id_bob canister call bob wallet_balance)
 
 dfx stop

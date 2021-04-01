@@ -6,17 +6,12 @@ import App from "./components/App";
 
 import "./css/main.css";
 
-ReactDOM.render(<App />, document.getElementById("app"));
+const render = () => {
+  ReactDOM.render(<App />, document.getElementById("app"));
+};
+render();
 
-function _addStylesheet(url: string) {
-  // Add the Roboto stylesheet.
-  const linkEl = document.createElement("link");
-  linkEl.rel = "stylesheet";
-  linkEl.href = url;
-  document.head.append(linkEl);
+// Hot Module Replacement API
+if (module.hot) {
+  module.hot.accept("./components/App", render);
 }
-
-_addStylesheet(
-  "https://fonts.googleapis.com/css?family=Roboto:300,400,500,700&display=swap"
-);
-_addStylesheet("https://fonts.googleapis.com/icon?family=Material+Icons");
