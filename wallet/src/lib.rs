@@ -214,7 +214,7 @@ mod wallet {
                 });
                 super::update_chart();
                 x
-            },
+            }
             Err((code, msg)) => {
                 let refund = api::call::msg_cycles_refunded();
                 events::record(events::EventKind::CyclesSent {
@@ -363,7 +363,7 @@ mod wallet {
         Ok(())
     }
 
-    async fn install_wallet(canister_id: &Principal, wasm_module: &[u8]) -> Result<(), String> {
+    async fn install_wallet(canister_id: &Principal, wasm_module: Vec<u8>) -> Result<(), String> {
         // Install Wasm
         #[derive(CandidType, Deserialize)]
         enum InstallMode {
@@ -389,7 +389,7 @@ mod wallet {
         let install_config = CanisterInstall {
             mode: InstallMode::Install,
             canister_id: canister_id.clone(),
-            wasm_module: wasm_module.to_vec(),
+            wasm_module: wasm_module.clone(),
             arg: b" ".to_vec(),
             compute_allocation: None,
             memory_allocation: Some(Nat::from(DEFAULT_MEM_ALLOCATION)),
@@ -416,9 +416,7 @@ mod wallet {
         });
 
         // Store wallet wasm
-        let store_args = WalletStoreWASMArgs {
-            wasm_module: wasm_module.to_vec(),
-        };
+        let store_args = WalletStoreWASMArgs { wasm_module };
         match api::call::call(
             canister_id.clone(),
             "wallet_store_wallet_wasm",
@@ -449,7 +447,7 @@ mod wallet {
 
         let create_result = create_canister_call(args.cycles).await?;
 
-        install_wallet(&create_result.canister_id, &wasm_module.to_vec()).await?;
+        install_wallet(&create_result.canister_id, wasm_module.clone()).await?;
 
         // Set controller
         if let Some(new_controller) = args.controller {
