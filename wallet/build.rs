@@ -36,7 +36,7 @@ fn main() {
             pub body: Vec<u8>,
         }
 
-        fn file_name_bytes(path: &str) -> Option<&'static [u8]> {
+        fn file_name_bytes(path: &str) -> Option<(&'static [u8], &str)> {
     ",
     )
     .unwrap();
@@ -46,9 +46,13 @@ fn main() {
         let path = entry.path();
         let filename = path.file_name().unwrap().to_str().unwrap();
 
-        if !filename.ends_with(".js.gz") && !filename.ends_with(".html.gz") {
+        let file_type = if filename.ends_with(".js.gz") {
+            "text/javascript; charset=UTF-8"
+        } else if filename.ends_with(".html.gz") {
+            "text/html; charset=UTF-8"
+        } else {
             continue;
-        }
+        };
 
         let url_path = path.file_name().unwrap().to_str().unwrap();
         let url_path = &url_path[..url_path.len() - 3];
@@ -56,12 +60,13 @@ fn main() {
         f.write_fmt(format_args!(
             r#"
             if path == "/{0}" || path == "{0}" {{
-                return Some(include_bytes!("{1}/{2}"));
+                return Some((include_bytes!("{1}/{2}"), "{3}"));
             }}
             "#,
             url_path,
             getting_out_dir.to_str().unwrap(),
             path.to_str().unwrap(),
+            file_type,
         ))
         .unwrap();
     }
@@ -72,10 +77,11 @@ fn main() {
 
         #[query]
         fn http_request(request: HttpRequest) -> HttpResponse {
-            if let Some(bytes) = file_name_bytes(request.url.as_str()).or_else(|| file_name_bytes("/index.html")) {
+            if let Some((bytes, file_type)) = file_name_bytes(request.url.as_str()).or_else(|| file_name_bytes("/index.html")) {
                 HttpResponse {
                   status_code: 200,
                   headers: vec![
+                    HeaderField("Content-Type".to_string(), file_type.to_string()),
                     HeaderField("Content-Encoding".to_string(), "gzip".to_string()),
                     HeaderField("Content-Length".to_string(), format!("{}", bytes.len())),
                     HeaderField("Cache-Control".to_string(), format!("max-age={}", 600)),
