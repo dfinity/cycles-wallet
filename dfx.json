@@ -5,9 +5,6 @@
       "candid": "wallet/src/lib.did",
       "type": "custom",
       "wasm": "wallet/target/wasm32-unknown-unknown/release/wallet-opt.wasm",
-      "initialization_values": {
-        "memory_allocation": "2GB"
-      }
     },
     "alice": {
       "build": "true",
@@ -15,9 +12,6 @@
       "candid": "wallet/src/lib.did",
       "type": "custom",
       "wasm": "wallet/target/wasm32-unknown-unknown/release/wallet-opt.wasm",
-      "initialization_values": {
-        "memory_allocation": "2GB"
-      }
     },
     "bob": {
       "build": "true",
@@ -25,9 +19,6 @@
       "candid": "wallet/src/lib.did",
       "type": "custom",
       "wasm": "wallet/target/wasm32-unknown-unknown/release/wallet-opt.wasm",
-      "initialization_values": {
-        "memory_allocation": "2GB"
-      }
     }
   },
   "networks": {
