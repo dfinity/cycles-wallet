@@ -6,7 +6,7 @@ import DialogContent from "@material-ui/core/DialogContent";
 import DialogActions from "@material-ui/core/DialogActions";
 import DialogContentText from "@material-ui/core/DialogContentText";
 import Button from "@material-ui/core/Button";
-import { CircularProgress } from "@material-ui/core";
+import CircularProgress from "@material-ui/core/CircularProgress";
 import makeStyles from "@material-ui/core/styles/makeStyles";
 import green from "@material-ui/core/colors/green";
 import Typography from "@material-ui/core/Typography";
@@ -114,11 +114,11 @@ export function CreateWalletDialog(props: {
     >
       <DialogTitle id="alert-dialog-title">{"Create a new Wallet"}</DialogTitle>
       <DialogContent>
-        <DialogContentText>
-          <Typography>
+        <div>
+          <DialogContentText>
             Create a wallet. If the controller field is left empty, the
             controller will be this wallet canister.
-          </Typography>
+          </DialogContentText>
           <FormControl className={classes.formControl}>
             <TextField
               label="Controller"
@@ -142,10 +142,15 @@ export function CreateWalletDialog(props: {
               }}
             />
           </FormControl>
-        </DialogContentText>
+        </div>
       </DialogContent>
       <DialogActions>
-        <Button onClick={handleClose} color="primary" disabled={loading}>
+        <Button
+          onClick={handleClose}
+          color="primary"
+          disableRipple
+          disabled={loading}
+        >
           Cancel
         </Button>
         <div className={classes.wrapper}>
@@ -154,6 +159,7 @@ export function CreateWalletDialog(props: {
             disabled={loading || error}
             onClick={create}
             color="secondary"
+            disableRipple
             autoFocus
           >
             Create

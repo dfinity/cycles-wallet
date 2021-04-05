@@ -1,0 +1,32 @@
+button {
+  background: transparent;
+  border: none;
+}
+
+.flex {
+  display: flex;
+}
+.row {
+  flex-direction: row;
+  width: 100%;
+}
+.column {
+  flex-direction: column;
+}
+.wrap {
+  flex-flow: row wrap;
+}
+.justifyCenter {
+  justify-content: center;
+}
+.alignCenter {
+  align-content: center;
+}
+
+body :is(.MuiFormLabel-root.Mui-focused, .MuiInput-underline:after) {
+  color: var(--textColor);
+}
+
+body .MuiInput-underline:after {
+  border-bottom-color: var(--textColor);
+}

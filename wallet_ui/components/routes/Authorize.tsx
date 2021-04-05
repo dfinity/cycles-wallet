@@ -19,6 +19,8 @@ import { CopyToClipboard } from "react-copy-to-clipboard";
 import Box from "@material-ui/core/Box";
 import { Copyright } from "../App";
 import Button from "@material-ui/core/Button";
+import { PrimaryButton } from "../Buttons";
+import { css } from "@emotion/css";
 
 const CHECK_ACCESS_FREQUENCY_IN_SECONDS = 15;
 
@@ -43,6 +45,47 @@ const useStyles = makeStyles((theme) => ({
     overflow: "auto",
   },
 }));
+
+const CopyButton = (props: {
+  copyHandler: () => void;
+  copied: boolean;
+  canisterCallShCode: string;
+}) => {
+  const { copyHandler, copied, canisterCallShCode } = props;
+  return (
+    <PrimaryButton
+      className={css`
+        display: inline-block;
+        padding: 8px 16px;
+        margin: 8px 12px;
+      `}
+    >
+      <Tooltip
+        title="Copied!"
+        open={copied}
+        className={css`
+          display: flex;
+          flex-direction: row;
+          align-items: center;
+          gap: 8px;
+        `}
+      >
+        <CopyToClipboard text={canisterCallShCode} onCopy={copyHandler}>
+          <div>
+            {copied ? (
+              <DoneIcon />
+            ) : (
+              <>
+                <FileCopyIcon />
+                Copy
+              </>
+            )}
+          </div>
+        </CopyToClipboard>
+      </Tooltip>
+    </PrimaryButton>
+  );
+};
 
 export function Authorize() {
   const [agentPrincipal, setAgentPrincipal] = useState<Principal | null>(null);
@@ -89,36 +132,56 @@ export function Authorize() {
           <Grid container spacing={3}>
             <Grid item xs={12}>
               <Paper className={classes.paper}>
-                <Typography component="h1" variant="h4" color="primary">
-                  Register Device
-                </Typography>
-                <Typography variant="body1" color="textPrimary">
-                  This user do not have access to this wallet. If you have
-                  administrative control or know someone who does, add your
-                  principal as custodian. If you are using DFX, use the
-                  following command to register your principal as custodian:
-                  <div style={{ position: "relative" }}>
-                    <Tooltip title="Copied!" open={copied}>
-                      <CopyToClipboard
-                        text={canisterCallShCode}
-                        onCopy={copyHandler}
-                      >
-                        <div
-                          style={{
-                            position: "absolute",
-                            right: "1em",
-                            top: "1.1em",
-                          }}
-                        >
-                          {copied ? <DoneIcon /> : <FileCopyIcon />}
-                        </div>
-                      </CopyToClipboard>
-                    </Tooltip>
-                  </div>
-                  <code>
-                    {canisterCallShCode}
-                  </code>
-                </Typography>
+                <Box mb={2}>
+                  <Typography component="h1" variant="h4">
+                    Register Device
+                  </Typography>
+                </Box>
+                <Box mb={2}>
+                  <Typography variant="body1">
+                    This user do not have access to this wallet. If you have
+                    administrative control or know someone who does, add your
+                    principal as custodian.
+                  </Typography>
+                </Box>
+
+                <Box mb={2}>
+                  <Typography variant="body1">
+                    If you are using DFX, use the following command to register
+                    your principal as custodian:
+                  </Typography>
+                </Box>
+                <div
+                  className={css`
+                    background: rgba(0, 0, 0, 0.15);
+                    position: relative;
+                    display: flex;
+                    flex-direction: row;
+                    justify-content: space-between;
+                    align-items: center;
+                  `}
+                >
+                  <Box p={1}>
+                    <Typography variant="h6" component="h3">
+                      Code
+                    </Typography>
+                  </Box>
+                  <CopyButton
+                    copyHandler={copyHandler}
+                    copied={copied}
+                    canisterCallShCode={canisterCallShCode}
+                  />
+                </div>
+                <code
+                  className={css`
+                    font-size: 1.2rem;
+                    padding: 0.5rem;
+                    margin-bottom: 16px;
+                    background: rgba(0, 0, 0, 0.05);
+                  `}
+                >
+                  {canisterCallShCode}
+                </code>
                 <Typography variant="body1" color="textPrimary">
                   After this step has been performed, you can refresh this page
                   (or it will refresh automatically after a while).
@@ -141,13 +204,18 @@ export function Authorize() {
           <Grid container spacing={3}>
             <Grid item xs={12}>
               <Paper className={classes.paper}>
-                <Typography component="h1" variant="h4" color="primary">
+                <Typography component="h1" variant="h4">
                   Anonymous Device
                 </Typography>
-                <Typography variant="body1" color="textPrimary">
-                  You are using an anonymous Principal. You need to authenticate.
-                </Typography>
-                <Button onClick={async () => await login()}>Authenticate</Button>
+                <Box mb={4}>
+                  <Typography variant="body1" color="textPrimary">
+                    You are using an anonymous Principal. You need to
+                    authenticate.
+                  </Typography>
+                </Box>
+                <PrimaryButton onClick={async () => await login()}>
+                  Authenticate
+                </PrimaryButton>
               </Paper>
             </Grid>
           </Grid>

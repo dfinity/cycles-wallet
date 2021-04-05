@@ -6,10 +6,9 @@ import DialogContent from "@material-ui/core/DialogContent";
 import DialogActions from "@material-ui/core/DialogActions";
 import DialogContentText from "@material-ui/core/DialogContentText";
 import Button from "@material-ui/core/Button";
-import { CircularProgress } from "@material-ui/core";
+import CircularProgress from "@material-ui/core/CircularProgress";
 import makeStyles from "@material-ui/core/styles/makeStyles";
 import green from "@material-ui/core/colors/green";
-import Typography from "@material-ui/core/Typography";
 import FormControl from "@material-ui/core/FormControl";
 import TextField from "@material-ui/core/TextField";
 import { Principal, Wallet } from "../../canister";
@@ -115,11 +114,11 @@ export function SendCyclesDialog(props: {
         {"Send Cycles to Another Canister"}
       </DialogTitle>
       <DialogContent>
-        <DialogContentText>
-          <Typography>
+        <div>
+          <DialogContentText>
             Send cycles to a canister. Do not send cycles to a user, the call
             will fail. This cannot be validated from the user interface.
-          </Typography>
+          </DialogContentText>
           <FormControl className={classes.formControl}>
             <TextField
               label="Principal"
@@ -143,7 +142,7 @@ export function SendCyclesDialog(props: {
               }}
             />
           </FormControl>
-        </DialogContentText>
+        </div>
       </DialogContent>
       <DialogActions>
         <Button onClick={handleClose} color="primary" disabled={loading}>

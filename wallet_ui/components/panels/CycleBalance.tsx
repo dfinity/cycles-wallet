@@ -1,16 +1,11 @@
-import InputLabel from "@material-ui/core/InputLabel";
-import MenuItem from "@material-ui/core/MenuItem";
-import FormControl from "@material-ui/core/FormControl";
-import Select from "@material-ui/core/Select";
 import React, { useEffect, useState } from "react";
 import { useHistory } from "react-router";
-import ReactCountUp from "react-countup";
 import { Wallet } from "../../canister";
 import "../../css/CycleBalance.css";
 import Typography from "@material-ui/core/Typography";
 import makeStyles from "@material-ui/core/styles/makeStyles";
-import Timeago from "react-timeago";
 import { useLocalStorage } from "../../utils/hooks";
+import Box from "@material-ui/core/Box";
 
 const useStyles = makeStyles((theme) => ({
   depositContext: {
@@ -68,56 +63,32 @@ export function CycleBalance() {
   const suffix =
     SUFFIX_LIST[Math.min(6, Math.floor(Math.log10(5000000000000) / 3))];
   const ll = SUFFIX_LIST.indexOf(suffix);
-  const humanCycles = parseFloat((cycles / 10 ** (ll * 3)).toFixed(5));
+  const humanCycles = Math.floor(cycles / 10 ** (ll * 3));
 
   return (
-    <React.Fragment>
-      <Typography component="h2" variant="h6" color="primary" gutterBottom>
-        Balance (cycles)
+    <Box mb={2}>
+      <Typography
+        component="h2"
+        variant="h5"
+        gutterBottom
+        style={{ fontWeight: "bold" }}
+      >
+        Balance
+      </Typography>
+      <Typography component="p" gutterBottom>
+        Current cycles in this wallet
       </Typography>
 
-      <Typography component="p" variant="h4">
-        {(() => {
-          if (cycles === undefined) {
-            return <></>;
-          }
-
-          return (
-            <ReactCountUp
-              end={humanCycles}
-              duration={
-                /* countup.js uses falsey checks, so we cannot use 0. Duration is in seconds. */
-                first ? 0.001 : undefined
-              }
-              decimals={6}
-              decimal="."
-              preserveValue
-              separator=","
-              suffix={" " + suffix}
-            />
-          );
-        })()}
+      <Typography component="h3" variant="h4">
+        {humanCycles && (
+          <>
+            <span style={{ fontSize: "48px", fontWeight: "bold" }}>
+              {humanCycles}
+            </span>
+            <Typography component="span"> TC</Typography>
+          </>
+        )}
       </Typography>
-      <Typography color="textSecondary" className={classes.depositContext}>
-        <Timeago date={timeStamp} />
-      </Typography>
-      <Typography>
-        <FormControl className={classes.formControl}>
-          <InputLabel id="autorefresh-label">Autorefresh</InputLabel>
-          <Select
-            labelId="autorefresh-label"
-            value={refreshRate}
-            onChange={({ target }) => {
-              if (typeof target.value == "number") setRefreshRate(target.value);
-            }}
-          >
-            <MenuItem value={0}>Never</MenuItem>
-            <MenuItem value={5}>Constantly</MenuItem>
-            <MenuItem value={30}>Few Seconds</MenuItem>
-            <MenuItem value={300}>Few Minutes</MenuItem>
-          </Select>
-        </FormControl>
-      </Typography>
-    </React.Fragment>
+    </Box>
   );
 }

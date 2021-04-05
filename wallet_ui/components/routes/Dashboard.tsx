@@ -9,25 +9,21 @@ import Grid from "@material-ui/core/Grid";
 import Paper from "@material-ui/core/Paper";
 import ChevronLeftIcon from "@material-ui/icons/ChevronLeft";
 import { CycleBalance } from "../panels/CycleBalance";
-import Events from "../panels/Events";
 import Drawer from "@material-ui/core/Drawer";
 import { Copyright } from "../App";
-import ListItemText from "@material-ui/core/ListItemText";
-import ListItemIcon from "@material-ui/core/ListItemIcon";
-import ListItem from "@material-ui/core/ListItem";
-import SendIcon from "@material-ui/icons/Send";
-import List from "@material-ui/core/List";
-import AddCircleOutlineIcon from "@material-ui/icons/AddCircleOutline";
 import { SendCyclesDialog } from "../panels/SendCycles";
 import { BalanceChart } from "../panels/BalanceChart";
-import { CreateCanisterDialog } from "../panels/CreateCanister";
 import Dialog from "@material-ui/core/Dialog";
 import DialogTitle from "@material-ui/core/DialogTitle";
-import { DialogContent } from "@material-ui/core";
+import DialogContent from "@material-ui/core/DialogContent";
 import DialogContentText from "@material-ui/core/DialogContentText";
 import DialogActions from "@material-ui/core/DialogActions";
 import Button from "@material-ui/core/Button";
-import { CreateWalletDialog } from "../panels/CreateWallet";
+import { Wallet } from "../../canister";
+import type { Event } from "../../canister/declaration";
+import Canisters from "../panels/Canisters";
+import { PrimaryButton } from "../Buttons";
+import Events from "../panels/Transactions";
 
 const drawerWidth = 240;
 
@@ -70,6 +66,13 @@ const useStyles = makeStyles((theme) => ({
   },
   title: {
     flexGrow: 1,
+    fontSize: "2rem",
+    lineHeight: "2.34rem",
+  },
+  title2: {
+    flexGrow: 1,
+    fontSize: "1.5rem",
+    lineHeight: "1.76rem",
   },
   appBarSpacer: theme.mixins.toolbar,
   content: {
@@ -87,10 +90,12 @@ const useStyles = makeStyles((theme) => ({
     overflow: "auto",
     flexDirection: "column",
   },
-  fixedHeight: {
-    height: 360,
-  },
 }));
+
+export type EventList = {
+  canisters: Event[];
+  transactions: Event[];
+};
 
 export function Dashboard(props: { open: boolean; onOpenToggle: () => void }) {
   const [cyclesDialogOpen, setCyclesDialogOpen] = useState(false);
@@ -103,35 +108,49 @@ export function Dashboard(props: { open: boolean; onOpenToggle: () => void }) {
   );
   const { open, onOpenToggle } = props;
   const classes = useStyles();
-  const fixedHeightPaper = clsx(classes.paper, classes.fixedHeight);
 
-  function handleCyclesDialogClose(maybeErr?: any) {
-    setCyclesDialogOpen(false);
-    setErrorDialogContent(maybeErr);
-  }
-  function handleCyclesDialogOpen() {
-    setCyclesDialogOpen(true);
-  }
+  const [events, setEvents] = useState<EventList>();
 
-  function handleCanisterCreateDialogClose(maybeErr?: any) {
-    setCanisterCreateDialogOpen(false);
-    setErrorDialogContent(maybeErr);
-  }
-  function handleCanisterCreateDialogOpen() {
-    setCanisterCreateDialogOpen(true);
-  }
+  React.useEffect(() => {
+    Wallet.events()
+      .then((events) => {
+        return events
+          .sort((a, b) => {
+            // Reverse sort on timestamp.
+            return +b.timestamp - +a.timestamp;
+          })
+          .reduce((start, next) => {
+            const [kindField] = Object.entries(next.kind);
+            const [key, body] = Object.entries(kindField);
+            if (
+              "CanisterCreated" in next.kind ||
+              "WalletCreated" in next.kind
+            ) {
+              start.canisters.push(next);
+            } else {
+              start.transactions.push(next);
+            }
+
+            return start;
+          }, reduceStart);
+      })
+      .then(setEvents);
+  }, []);
+
+  const reduceStart: EventList = {
+    canisters: [],
+    transactions: [],
+  };
 
   function handleWalletCreateDialogClose(maybeErr?: any) {
     setWalletCreateDialogOpen(false);
     setErrorDialogContent(maybeErr);
   }
-  function handleWalletCreateDialogOpen() {
-    setWalletCreateDialogOpen(true);
-  }
 
   return (
     <>
       <Drawer
+        style={{ display: "none" }}
         variant="permanent"
         classes={{
           paper: clsx(classes.drawerPaper, !open && classes.drawerPaperClose),
@@ -146,41 +165,11 @@ export function Dashboard(props: { open: boolean; onOpenToggle: () => void }) {
         </div>
 
         <Divider />
-        <List>
-          <ListItem button onClick={handleCyclesDialogOpen}>
-            <ListItemIcon>
-              <SendIcon />
-            </ListItemIcon>
-            <ListItemText primary="Send Cycles" />
-          </ListItem>
-          <ListItem button onClick={handleCanisterCreateDialogOpen}>
-            <ListItemIcon>
-              <AddCircleOutlineIcon />
-            </ListItemIcon>
-            <ListItemText primary="Create a Canister" />
-          </ListItem>
-          <ListItem button onClick={handleWalletCreateDialogOpen}>
-            <ListItemIcon>
-              <AddCircleOutlineIcon />
-            </ListItemIcon>
-            <ListItemText primary="Create a Wallet" />
-          </ListItem>
-        </List>
       </Drawer>
 
       <SendCyclesDialog
         open={cyclesDialogOpen}
-        close={handleCyclesDialogClose}
-      />
-
-      <CreateCanisterDialog
-        open={canisterCreateDialogOpen}
-        close={handleCanisterCreateDialogClose}
-      />
-
-      <CreateWalletDialog
-        open={walletCreateDialogOpen}
-        close={handleWalletCreateDialogClose}
+        close={() => setCyclesDialogOpen(false)}
       />
 
       <Dialog
@@ -203,6 +192,7 @@ export function Dashboard(props: { open: boolean; onOpenToggle: () => void }) {
           <Button
             onClick={() => setErrorDialogContent(undefined)}
             color="primary"
+            variant="contained"
           >
             Okay
           </Button>
@@ -214,24 +204,41 @@ export function Dashboard(props: { open: boolean; onOpenToggle: () => void }) {
 
         <Container maxWidth="lg" className={classes.container}>
           <Grid container spacing={3}>
+            <Grid item xs={12}>
+              <h1 className={classes.title}>Cycles Wallet</h1>
+            </Grid>
             {/* Balance */}
             <Grid item xs={12} md={4} lg={3}>
-              <Paper className={fixedHeightPaper}>
+              <Paper className={classes.paper}>
                 <CycleBalance />
+                <PrimaryButton
+                  color="secondary"
+                  type="button"
+                  onClick={() => setCyclesDialogOpen(true)}
+                >
+                  Send Cycles
+                </PrimaryButton>
               </Paper>
             </Grid>
 
             {/* Chart */}
             <Grid item xs={12} md={8} lg={9}>
-              <Paper className={fixedHeightPaper}>
+              <Paper className={classes.paper}>
                 <BalanceChart />
               </Paper>
             </Grid>
 
-            {/* Recent Events */}
+            {/* Canisters */}
             <Grid item xs={12}>
               <Paper className={classes.paper}>
-                <Events />
+                {<Canisters canisters={events?.canisters} />}
+              </Paper>
+            </Grid>
+
+            {/* Transactions */}
+            <Grid item xs={12}>
+              <Paper className={classes.paper}>
+                {<Events transactions={events?.transactions} />}
               </Paper>
             </Grid>
           </Grid>

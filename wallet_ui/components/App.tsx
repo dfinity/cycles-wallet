@@ -13,20 +13,25 @@ import {
 import { BrowserRouter as Router, Switch as RouterSwitch, Route } from "react-router-dom";
 
 // For Switch Theming
-import createMuiTheme from "@material-ui/core/styles/createMuiTheme";
 import ThemeProvider from "@material-ui/styles/ThemeProvider";
 
 // For document title setting
-import { handleAuthRedirect, Wallet } from '../canister';
+import { handleAuthRedirect, Wallet } from "../canister";
 
 // Routes
 import { Authorize } from "./routes/Authorize";
 import { Dashboard } from "./routes/Dashboard";
 import { useLocalStorage } from "../utils/hooks";
+import generateTheme from "../utils/materialTheme";
 
 export function Copyright() {
   return (
-    <Typography variant="body2" color="textSecondary" align="center">
+    <Typography
+      variant="body2"
+      color="textSecondary"
+      align="center"
+      style={{ marginBottom: "32px" }}
+    >
       {"Copyright © "}
       <Link color="inherit" href="https://dfinity.org/">
         DFINITY Stiftung. All rights reserved.
@@ -125,26 +130,15 @@ export default function App() {
   const [ready, setReady] = useState(false);
   const [open, setOpen] = useLocalStorage("app-menu-open", false);
   const [darkState, setDarkState] = useDarkState();
-  const palletType = darkState ? "dark" : "light";
-  const mainPrimaryColor = darkState ? orange[500] : lightBlue[500];
-  const mainSecondaryColor = darkState ? deepOrange[900] : deepPurple[500];
 
   useEffect(() => {
     Wallet.name().then((name) => {
       document.title = name;
     });
   }, []);
-  const darkTheme = createMuiTheme({
-    palette: {
-      type: palletType,
-      primary: {
-        main: mainPrimaryColor,
-      },
-      secondary: {
-        main: mainSecondaryColor,
-      },
-    },
-  });
+
+  const theme = generateTheme(darkState);
+
   const classes = useStyles();
 
   // Check if we need to parse the hash.
@@ -155,7 +149,16 @@ export default function App() {
   }
 
   return (
-    <ThemeProvider theme={darkTheme}>
+    <ThemeProvider theme={theme}>
+      <style key={`darkState-${darkState}`}>
+        {`
+        :root {
+          --primaryColor: ${darkState ? "rgba(69, 70, 81, 0.75)" : "#292a2e"};
+          --primaryContrast: white;
+          --textColor: ${darkState ? "white" : "black"};
+        }
+      `}
+      </style>
       <Router>
         <div className={classes.root}>
           <CssBaseline />
