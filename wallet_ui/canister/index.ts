@@ -75,6 +75,9 @@ async function getWalletCanister(): Promise<ActorSubclass<_SERVICE>> {
     walletCanisterCache = (Actor as any).createActor(factory as any, {
       agent,
       canisterId: walletId,
+      // Override the defaults for polling.
+      maxAttempts: 201,
+      throttleDurationInMSecs: 1500,
     }) as ActorSubclass<_SERVICE>;
     return walletCanisterCache;
   }
