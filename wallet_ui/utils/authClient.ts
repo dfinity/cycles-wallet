@@ -67,7 +67,7 @@ export class AuthenticationClient {
           let valid = true;
           for (const { delegation } of chain.delegations) {
             // prettier-ignore
-            if (+new Date(delegation.expiration.toNumber() / 1000000) >= +Date.now()) {
+            if (+new Date(Number(delegation.expiration / BigInt(1000000))) <= +Date.now()) {
               valid = false;
             }
           }
@@ -117,7 +117,7 @@ export class AuthenticationClient {
     }
     const key = this._key;
     if (!key) {
-      throw new Error("Cannot find a key.");
+      return;
     }
 
     // Parse the token which is a JSON object serialized in Hex form.

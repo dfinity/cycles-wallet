@@ -117,7 +117,7 @@ export function Dashboard(props: { open: boolean; onOpenToggle: () => void }) {
         return events
           .sort((a, b) => {
             // Reverse sort on timestamp.
-            return +b.timestamp - +a.timestamp;
+            return Number(b.timestamp) - Number(a.timestamp);
           })
           .reduce((start, next) => {
             const [kindField] = Object.entries(next.kind);

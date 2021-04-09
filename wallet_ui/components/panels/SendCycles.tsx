@@ -61,7 +61,7 @@ export function SendCyclesDialog(props: {
 
   const [loading, setLoading] = useState(false);
   const [principal, setPrincipal] = useState("");
-  const [cycles, setCycles] = useState(0);
+  const [cycles, setCycles] = useState(BigInt(0));
   const [error, setError] = useState(false);
   const classes = useStyles();
 
@@ -80,8 +80,8 @@ export function SendCyclesDialog(props: {
     }
   }
   function handleCycleChange(ev: ChangeEvent<HTMLInputElement>) {
-    let c = +ev.target.value;
-    setCycles(c);
+    let c = ev.target.value;
+    setCycles(BigInt(c));
   }
 
   function send() {
@@ -89,7 +89,7 @@ export function SendCyclesDialog(props: {
 
     Wallet.send({
       canister: Principal.fromText(principal),
-      amount: cycles,
+      amount: BigInt(cycles),
     }).then(
       () => {
         setLoading(false);
@@ -132,7 +132,7 @@ export function SendCyclesDialog(props: {
             />
             <TextField
               label="Cycles"
-              value={cycles}
+              value={Number(cycles)}
               style={{ margin: 8 }}
               fullWidth
               disabled={loading}
