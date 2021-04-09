@@ -461,7 +461,7 @@ mod wallet {
         wasm_module: Vec<u8>,
     }
 
-    #[update(guard = "is_custodian", name = "wallet_store_wallet_wasm")]
+    #[update(guard = "is_controller", name = "wallet_store_wallet_wasm")]
     async fn store_wallet_wasm(args: WalletStoreWASMArgs) {
         let wallet_bytes = storage::get_mut::<super::WalletWASMBytes>();
         wallet_bytes.0 = Some(args.wasm_module);
@@ -523,7 +523,7 @@ mod wallet {
  **************************************************************************************************/
 
 // Address book
-#[update]
+#[update(guard = "is_controller")]
 fn add_address(address: AddressEntry) {
     storage::get_mut::<AddressBook>().insert(address.clone());
     record(EventKind::AddressAdded {
@@ -534,12 +534,12 @@ fn add_address(address: AddressEntry) {
     update_chart();
 }
 
-#[query]
+#[query(guard = "is_custodian")]
 fn list_addresses() -> Vec<&'static AddressEntry> {
     storage::get::<AddressBook>().iter().collect()
 }
 
-#[update]
+#[update(guard = "is_controller")]
 fn remove_address(address: Principal) {
     storage::get_mut::<AddressBook>().remove(&address);
     update_chart();
