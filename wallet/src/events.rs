@@ -93,7 +93,7 @@ pub fn get_events(from: Option<u32>, to: Option<u32>) -> &'static [Event] {
             buffer.len() - 20
         }
     }) as usize;
-    let to = min(buffer.len() - 1, to.unwrap_or(u32::MAX)) as usize;
+    let to = min(buffer.len(), to.unwrap_or(u32::MAX)) as usize;
 
     &buffer.as_slice()[from..to]
 }

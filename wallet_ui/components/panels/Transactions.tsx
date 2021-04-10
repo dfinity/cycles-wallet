@@ -39,7 +39,7 @@ function AddressAddedRow({ event }: TransactionRowProps) {
       <>
         <TableRow className={classes.root}>
           <TableCell component="th" scope="row">
-            <ReactTimeago date={new Date(event.timestamp.toNumber())} />
+            <ReactTimeago date={new Date(Number(event.timestamp))} />
           </TableCell>
           <TableCell>{role} Added</TableCell>
           <TableCell>
@@ -65,11 +65,11 @@ function CyclesSentRow({ event }: TransactionRowProps) {
       <>
         <TableRow className={classes.root}>
           <TableCell component="th" scope="row">
-            <ReactTimeago date={new Date(event.timestamp.toNumber())} />
+            <ReactTimeago date={new Date(Number(event.timestamp))} />
           </TableCell>
           <TableCell>Cycle Sent</TableCell>
           <TableCell>
-            Sent {cyclesSent.amount.toNumber().toLocaleString()} cycles to{" "}
+            Sent {cyclesSent.amount.toLocaleString()} cycles to{" "}
             <code>{cyclesSent.to.toText()}</code>
           </TableCell>
           <TableCell />
@@ -89,12 +89,12 @@ function CyclesReceivedRow({ event }: TransactionRowProps) {
       <>
         <TableRow className={classes.root}>
           <TableCell component="th" scope="row">
-            <ReactTimeago date={new Date(event.timestamp.toNumber())} />
+            <ReactTimeago date={new Date(Number(event.timestamp))} />
           </TableCell>
           <TableCell>Cycle Received</TableCell>
           <TableCell>
-            Received {cyclesReceived.amount.toNumber().toLocaleString()} cycles
-            from <code>{cyclesReceived.from.toText()}</code>
+            Received {cyclesReceived.amount.toLocaleString()} cycles from{" "}
+            <code>{cyclesReceived.from.toText()}</code>
           </TableCell>
           <TableCell />
         </TableRow>
@@ -112,14 +112,14 @@ function CanisterCreatedRow({ event }: TransactionRowProps) {
     return (
       <TableRow className={classes.root}>
         <TableCell component="th" scope="row">
-          <ReactTimeago date={new Date(event.timestamp.toNumber())} />
+          <ReactTimeago date={new Date(Number(event.timestamp))} />
         </TableCell>
         <TableCell>Canister Created</TableCell>
         <TableCell>
           Created{" "}
           <code>
             {createdCanister.canister.toText()} (used{" "}
-            {createdCanister.cycles.toNumber().toLocaleString()} cycles)
+            {createdCanister.cycles.toLocaleString()} cycles)
           </code>
         </TableCell>
         <TableCell />
