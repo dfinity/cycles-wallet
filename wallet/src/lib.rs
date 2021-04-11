@@ -468,6 +468,11 @@ mod wallet {
         super::update_chart();
     }
 
+    /// @todo Once https://github.com/dfinity/cdk-rs/issues/70 is fixed, use the proper guard above.
+    fn is_controller() -> Result<(), String> {
+        super::is_controller()
+    }
+
     /***************************************************************************************************
      * Call Forwarding
      **************************************************************************************************/
