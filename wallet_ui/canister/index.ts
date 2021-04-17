@@ -16,7 +16,6 @@
 import { convertIdlEventMap, factory } from "./wallet.did";
 import { HttpAgent, Actor, Principal, ActorSubclass } from "@dfinity/agent";
 import { AuthenticationClient } from "../utils/authClient";
-import { SiteInfo } from "./site";
 import _SERVICE, { Event } from "../types/declaration";
 
 // Need to export the enumaration from wallet.did
@@ -24,16 +23,24 @@ export * from "./wallet.did";
 export { Principal } from "@dfinity/agent";
 
 const authClient = new AuthenticationClient();
-const site = SiteInfo.fromWindow();
 
 export async function getAgentPrincipal(): Promise<Principal> {
   return authClient.getIdentity().getPrincipal();
 }
-export function getCanisterId(): Principal {
-  if (!site.principal) {
-    throw new Error("Could not find the canister ID.");
+
+function getCanisterId(): Principal {
+  // Return the first canister ID when resolving from the right hand side.
+  const domain = window.location.hostname.split(".").reverse();
+  for (const subdomain of domain) {
+    try {
+      if (subdomain.length >= 25) {
+        // The following throws if it can't decode or the checksum is invalid.
+        return Principal.fromText(subdomain);
+      }
+    } catch (_) {}
   }
-  return site.principal;
+
+  throw new Error("Could not find the canister ID.");
 }
 
 let walletCanisterCache: ActorSubclass<_SERVICE>;
