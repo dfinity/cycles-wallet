@@ -70,10 +70,7 @@ async function getWalletCanister(): Promise<ActorSubclass<_SERVICE>> {
   let walletId: Principal | null = null;
   walletId = getWalletId(walletId);
 
-  const agent = new HttpAgent({
-    host: await site.getHost(),
-    identity: authClient.getIdentity(),
-  });
+  const agent = new HttpAgent({ identity: authClient.getIdentity() });
 
   if (!walletId) {
     throw new Error("Need to have a wallet ID.");
