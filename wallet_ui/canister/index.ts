@@ -29,6 +29,14 @@ export async function getAgentPrincipal(): Promise<Principal> {
 }
 
 function getCanisterId(): Principal {
+  // Check the query params.
+  const maybeCanisterId = new URLSearchParams(window.location.search).get(
+    "canisterId"
+  );
+  if (maybeCanisterId) {
+    return Principal.fromText(maybeCanisterId);
+  }
+
   // Return the first canister ID when resolving from the right hand side.
   const domain = window.location.hostname.split(".").reverse();
   for (const subdomain of domain) {
