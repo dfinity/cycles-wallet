@@ -5,16 +5,17 @@ import {
   SignIdentity,
 } from "@dfinity/agent";
 import {
-  Authenticator,
   DelegationChain,
   DelegationIdentity,
   Ed25519KeyIdentity,
+} from "@dfinity/identity";
+import {
+  createAuthenticationRequestUrl,
+  isDelegationValid,
 } from "@dfinity/authentication";
 
-// TODO: move this into @dfinity/authentication
 const KEY_LOCALSTORAGE_KEY = "ic-identity";
 const KEY_LOCALSTORAGE_DELEGATION = "ic-delegation";
-const DEFAULT_IDP_URL = "https://auth.ic0.app/authorize";
 
 interface AuthenticationClientOptions {
   identityProvider?: string | URL;
@@ -22,22 +23,11 @@ interface AuthenticationClientOptions {
 }
 
 export class AuthenticationClient {
-  private _auth: Authenticator;
   private _identity: Identity;
   private _key: SignIdentity | null;
   private _chain: DelegationChain | null;
 
   constructor(options: AuthenticationClientOptions = {}) {
-    const idpUrl = new URL(
-      options.identityProvider?.toString() || DEFAULT_IDP_URL
-    );
-
-    this._auth = new Authenticator({
-      identityProvider: {
-        url: idpUrl,
-      },
-    });
-
     let key = null;
     if (options.identity) {
       key = options.identity;
@@ -62,16 +52,7 @@ export class AuthenticationClient {
         const chainStorage = localStorage.getItem(KEY_LOCALSTORAGE_DELEGATION);
         if (chainStorage) {
           const chain = DelegationChain.fromJSON(chainStorage);
-
-          // Verify that the delegation isn't expired.
-          let valid = true;
-          for (const { delegation } of chain.delegations) {
-            // prettier-ignore
-            if (+new Date(Number(delegation.expiration / BigInt(1000000))) <= +Date.now()) {
-              valid = false;
-            }
-          }
-          if (valid) {
+          if (isDelegationValid(chain)) {
             this._chain = chain;
             this._identity = DelegationIdentity.fromDelegation(key, chain);
           } else {
@@ -85,12 +66,6 @@ export class AuthenticationClient {
 
   getIdentity() {
     return this._identity;
-  }
-
-  isAuthenticated() {
-    return (
-      !this.getIdentity().getPrincipal().isAnonymous() && this._chain !== null
-    );
   }
 
   _getAccessToken(location: Location) {
@@ -141,7 +116,7 @@ export class AuthenticationClient {
     };
   }
 
-  async logout(options: { returnTo?: string } = {}) {
+  logout(options: { returnTo?: string } = {}) {
     localStorage.removeItem(KEY_LOCALSTORAGE_KEY);
     localStorage.removeItem(KEY_LOCALSTORAGE_DELEGATION);
     // Reset this auth client to a non-authenticated state.
@@ -169,14 +144,10 @@ export class AuthenticationClient {
       localStorage.setItem(KEY_LOCALSTORAGE_KEY, JSON.stringify(key));
     }
 
-    await this._auth.sendAuthenticationRequest({
-      session: {
-        identity: key,
-      },
-      redirectUri: new URL(options.redirectUri || window.location.href),
-      scope:
-        options.scope?.map((x) => ({ type: "CanisterScope", principal: x })) ??
-        [],
-    });
+    window.location.href = createAuthenticationRequestUrl({
+      redirectUri: options.redirectUri || window.location.origin,
+      scope: options.scope ?? [],
+      publicKey: key.getPublicKey(),
+    }).toString();
   }
 }
