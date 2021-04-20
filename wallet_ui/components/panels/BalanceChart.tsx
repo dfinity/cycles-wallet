@@ -17,6 +17,8 @@ import { useLocalStorage } from "../../utils/hooks";
 import useTheme from "@material-ui/core/styles/useTheme";
 import makeStyles from "@material-ui/core/styles/makeStyles";
 import { buildData, ChartData } from "../../utils/chart";
+import Button from "@material-ui/core/Button";
+import { css } from "@emotion/css";
 
 const useStyles = makeStyles((theme) => ({
   depositContext: {
@@ -36,6 +38,11 @@ const useStyles = makeStyles((theme) => ({
   },
   title: {
     marginBottom: "0.5em",
+  },
+  chartContainer: {
+    position: "relative",
+    left: "-20px",
+    height: "100%",
   },
 }));
 
@@ -69,6 +76,7 @@ export function BalanceChart() {
   const classes = useStyles();
 
   useEffect(() => {
+    if (!precision) setPrecision(ChartPrecision.Hourly);
     Wallet.chart(precision, 20).then((data) =>
       setData(buildData(data, precision))
     );
@@ -96,32 +104,15 @@ export function BalanceChart() {
     ];
 
   return (
-    <React.Fragment>
-      <Typography className={classes.formControlParagraph}>
-        <FormControl hiddenLabel className={classes.formControl}>
-          <Select
-            value={precision}
-            onChange={({ target }) => {
-              if (typeof target.value == "number") setPrecision(target.value);
-            }}
-          >
-            <MenuItem value={0}>Minutes</MenuItem>
-            <MenuItem value={1}>Hours</MenuItem>
-            <MenuItem value={2}>Days</MenuItem>
-            <MenuItem value={3}>Weeks</MenuItem>
-            <MenuItem value={4}>Months</MenuItem>
-          </Select>
-        </FormControl>
+    <>
+      <Typography component="h2" variant="h6" className={classes.title}>
+        Cycles
       </Typography>
-      <Typography
-        component="h2"
-        variant="h6"
-        color="primary"
-        className={classes.title}
+      <ResponsiveContainer
+        className={css`
+          min-height: 150px;
+        `}
       >
-        Balance History
-      </Typography>
-      <ResponsiveContainer>
         <LineChart
           data={data}
           margin={{ top: 16, right: 16, bottom: 16, left: 16 }}
@@ -143,6 +134,6 @@ export function BalanceChart() {
           />
         </LineChart>
       </ResponsiveContainer>
-    </React.Fragment>
+    </>
   );
 }

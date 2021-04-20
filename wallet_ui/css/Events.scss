@@ -1,0 +1,33 @@
+.events-list {
+  .column {
+    padding-left: 0;
+    justify-content: start;
+    align-items: flex-start;
+    width: 100%;
+    border-bottom: 1px solid #efefef;
+    .row {
+      justify-content: space-between;
+    }
+    h4,
+    p {
+      margin-top: 0;
+    }
+  }
+}
+
+.canisters {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  #canisters-trigger {
+    grid-row: 1;
+    grid-column: 2;
+  }
+  h2 {
+    grid-row: 1;
+  }
+  p,
+  ul {
+    grid-column-start: 1;
+    grid-column-end: span 2;
+  }
+}

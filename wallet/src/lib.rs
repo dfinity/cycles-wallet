@@ -164,14 +164,11 @@ fn deauthorize(custodian: Principal) {
 
 mod wallet {
     use crate::{events, is_custodian};
-    use ic_cdk::export::candid::parser::value::IDLValue;
     use ic_cdk::export::candid::{CandidType, Nat};
     use ic_cdk::export::Principal;
     use ic_cdk::{api, caller, id, storage};
     use ic_cdk_macros::*;
     use serde::Deserialize;
-
-    const DEFAULT_MEM_ALLOCATION: u64 = 40000000_u64; // 40 MB
 
     /***************************************************************************************************
      * Cycle Management
@@ -187,11 +184,6 @@ mod wallet {
         amount: u64,
     }
 
-    #[derive(CandidType)]
-    struct ReceiveResult {
-        accepted: u64,
-    }
-
     /// Return the cycle balance of this canister.
     #[query(guard = "is_custodian", name = "wallet_balance")]
     fn balance() -> BalanceResult {
@@ -202,8 +194,8 @@ mod wallet {
 
     /// Send cycles to another canister.
     #[update(guard = "is_custodian", name = "wallet_send")]
-    async fn send(args: SendCyclesArgs) {
-        let (_,): (IDLValue,) = match api::call::call_with_payment(
+    async fn send(args: SendCyclesArgs) -> Result<(), String> {
+        match api::call::call_with_payment(
             args.canister.clone(),
             "wallet_receive",
             (),
@@ -211,36 +203,48 @@ mod wallet {
         )
         .await
         {
-            Ok(x) => x,
+            Ok(x) => {
+                let refund = api::call::msg_cycles_refunded();
+                events::record(events::EventKind::CyclesSent {
+                    to: args.canister,
+                    amount: args.amount,
+                    refund: refund as u64,
+                });
+                super::update_chart();
+                x
+            }
             Err((code, msg)) => {
-                ic_cdk::trap(&format!(
-                    "An error happened during the call: {}: {}",
-                    code as u8, msg
-                ));
+                let refund = api::call::msg_cycles_refunded();
+                events::record(events::EventKind::CyclesSent {
+                    to: args.canister,
+                    amount: args.amount,
+                    refund: refund as u64,
+                });
+                let call_error =
+                    format!("An error happened during the call: {}: {}", code as u8, msg);
+                let error = format!(
+                    "Cycles sent: {}\nCycles refunded: {}\n{}",
+                    args.amount, refund, call_error
+                );
+                return Err(error);
             }
         };
 
-        events::record(events::EventKind::CyclesSent {
-            to: args.canister,
-            amount: args.amount,
-        });
-        super::update_chart();
+        Ok(())
     }
 
     /// Receive cycles from another canister.
     #[update(name = "wallet_receive")]
-    fn receive() -> ReceiveResult {
+    fn receive() {
         let from = caller();
         let amount = ic_cdk::api::call::msg_cycles_available();
         if amount > 0 {
+            let amount_accepted = ic_cdk::api::call::msg_cycles_accept(amount);
             events::record(events::EventKind::CyclesReceived {
                 from,
-                amount: amount as u64,
+                amount: amount_accepted as u64,
             });
-        }
-        super::update_chart();
-        ReceiveResult {
-            accepted: ic_cdk::api::call::msg_cycles_accept(amount) as u64,
+            super::update_chart();
         }
     }
 
@@ -259,18 +263,18 @@ mod wallet {
     }
 
     #[update(guard = "is_custodian", name = "wallet_create_canister")]
-    async fn create_canister(args: CreateCanisterArgs) -> CreateResult {
-        let create_result = create_canister_call(args.cycles).await;
+    async fn create_canister(args: CreateCanisterArgs) -> Result<CreateResult, String> {
+        let create_result = create_canister_call(args.cycles).await?;
 
         if let Some(new_controller) = args.controller {
-            set_controller_call(create_result.canister_id.clone(), new_controller, false).await;
+            set_controller_call(create_result.canister_id.clone(), new_controller, false).await?;
         }
 
         super::update_chart();
-        create_result
+        Ok(create_result)
     }
 
-    async fn create_canister_call(cycles: u64) -> CreateResult {
+    async fn create_canister_call(cycles: u64) -> Result<CreateResult, String> {
         let (create_result,): (CreateResult,) = match api::call::call_with_payment(
             Principal::management_canister(),
             "create_canister",
@@ -281,10 +285,10 @@ mod wallet {
         {
             Ok(x) => x,
             Err((code, msg)) => {
-                ic_cdk::trap(&format!(
+                return Err(format!(
                     "An error happened during the call: {}: {}",
                     code as u8, msg
-                ));
+                ))
             }
         };
 
@@ -292,14 +296,14 @@ mod wallet {
             canister: create_result.canister_id.clone(),
             cycles,
         });
-        create_result
+        Ok(create_result)
     }
 
     async fn set_controller_call(
         canister_id: Principal,
         new_controller: Principal,
         update_acl: bool,
-    ) {
+    ) -> Result<(), String> {
         if update_acl {
             match api::call::call(
                 canister_id.clone(),
@@ -310,20 +314,20 @@ mod wallet {
             {
                 Ok(x) => x,
                 Err((code, msg)) => {
-                    ic_cdk::trap(&format!(
+                    return Err(format!(
                         "An error happened during the call: {}: {}",
                         code as u8, msg
-                    ));
+                    ))
                 }
             };
 
             match api::call::call(canister_id.clone(), "remove_controller", (id(),)).await {
                 Ok(x) => x,
                 Err((code, msg)) => {
-                    ic_cdk::trap(&format!(
+                    return Err(format!(
                         "An error happened during the call: {}: {}",
                         code as u8, msg
-                    ));
+                    ))
                 }
             };
         }
@@ -348,15 +352,16 @@ mod wallet {
         {
             Ok(x) => x,
             Err((code, msg)) => {
-                ic_cdk::trap(&format!(
+                return Err(format!(
                     "An error happened during the call: {}: {}",
                     code as u8, msg
-                ));
+                ))
             }
         };
+        Ok(())
     }
 
-    async fn install_wallet(canister_id: Principal, wasm_module: Vec<u8>) {
+    async fn install_wallet(canister_id: &Principal, wasm_module: Vec<u8>) -> Result<(), String> {
         // Install Wasm
         #[derive(CandidType, Deserialize)]
         enum InstallMode {
@@ -385,7 +390,7 @@ mod wallet {
             wasm_module: wasm_module.clone(),
             arg: b" ".to_vec(),
             compute_allocation: None,
-            memory_allocation: Some(Nat::from(DEFAULT_MEM_ALLOCATION)),
+            memory_allocation: None,
         };
 
         match api::call::call(
@@ -397,10 +402,10 @@ mod wallet {
         {
             Ok(x) => x,
             Err((code, msg)) => {
-                ic_cdk::trap(&format!(
+                return Err(format!(
                     "An error happened during the call: {}: {}",
                     code as u8, msg
-                ));
+                ))
             }
         };
 
@@ -410,19 +415,26 @@ mod wallet {
 
         // Store wallet wasm
         let store_args = WalletStoreWASMArgs { wasm_module };
-        match api::call::call(canister_id, "wallet_store_wallet_wasm", (store_args,)).await {
+        match api::call::call(
+            canister_id.clone(),
+            "wallet_store_wallet_wasm",
+            (store_args,),
+        )
+        .await
+        {
             Ok(x) => x,
             Err((code, msg)) => {
-                ic_cdk::trap(&format!(
+                return Err(format!(
                     "An error happened during the call: {}: {}",
                     code as u8, msg
-                ));
+                ))
             }
         };
+        Ok(())
     }
 
     #[update(guard = "is_custodian", name = "wallet_create_wallet")]
-    async fn create_wallet(args: CreateCanisterArgs) -> CreateResult {
+    async fn create_wallet(args: CreateCanisterArgs) -> Result<CreateResult, String> {
         let wallet_bytes = storage::get::<super::WalletWASMBytes>();
         let wasm_module = match &wallet_bytes.0 {
             None => {
@@ -431,16 +443,16 @@ mod wallet {
             Some(o) => o,
         };
 
-        let create_result = create_canister_call(args.cycles).await;
+        let create_result = create_canister_call(args.cycles).await?;
 
-        install_wallet(create_result.canister_id.clone(), wasm_module.to_vec()).await;
+        install_wallet(&create_result.canister_id, wasm_module.clone()).await?;
 
         // Set controller
         if let Some(new_controller) = args.controller {
-            set_controller_call(create_result.canister_id.clone(), new_controller, true).await;
+            set_controller_call(create_result.canister_id.clone(), new_controller, true).await?;
         }
         super::update_chart();
-        create_result
+        Ok(create_result)
     }
 
     #[derive(CandidType, Deserialize)]
@@ -449,11 +461,16 @@ mod wallet {
         wasm_module: Vec<u8>,
     }
 
-    #[update(guard = "is_custodian", name = "wallet_store_wallet_wasm")]
+    #[update(guard = "is_controller", name = "wallet_store_wallet_wasm")]
     async fn store_wallet_wasm(args: WalletStoreWASMArgs) {
         let wallet_bytes = storage::get_mut::<super::WalletWASMBytes>();
         wallet_bytes.0 = Some(args.wasm_module);
         super::update_chart();
+    }
+
+    /// @todo Once https://github.com/dfinity/cdk-rs/issues/70 is fixed, use the proper guard above.
+    fn is_controller() -> Result<(), String> {
+        super::is_controller()
     }
 
     /***************************************************************************************************
@@ -476,10 +493,9 @@ mod wallet {
 
     /// Forward a call to another canister.
     #[update(guard = "is_custodian", name = "wallet_call")]
-    async fn call(args: CallCanisterArgs) -> CallResult {
+    async fn call(args: CallCanisterArgs) -> Result<CallResult, String> {
         if api::id() == caller() {
-            // TODO: Return Err as a part of https://github.com/dfinity/wallet-rs/issues/32
-            ic_cdk::trap("Attempted to call forward on self. This is not allowed. Call this method via a different custodian.");
+            return Err("Attempted to call forward on self. This is not allowed. Call this method via a different custodian.".to_string());
         }
 
         match api::call::call_raw(
@@ -497,14 +513,12 @@ mod wallet {
                     cycles: args.cycles,
                 });
                 super::update_chart();
-                CallResult { r#return: x }
+                Ok(CallResult { r#return: x })
             }
-            Err((code, msg)) => {
-                ic_cdk::trap(&format!(
-                    "An error happened during the call: {}: {}",
-                    code as u8, msg
-                ));
-            }
+            Err((code, msg)) => Err(format!(
+                "An error happened during the call: {}: {}",
+                code as u8, msg
+            )),
         }
     }
 }
@@ -514,7 +528,7 @@ mod wallet {
  **************************************************************************************************/
 
 // Address book
-#[update]
+#[update(guard = "is_controller")]
 fn add_address(address: AddressEntry) {
     storage::get_mut::<AddressBook>().insert(address.clone());
     record(EventKind::AddressAdded {
@@ -525,12 +539,12 @@ fn add_address(address: AddressEntry) {
     update_chart();
 }
 
-#[query]
+#[query(guard = "is_custodian")]
 fn list_addresses() -> Vec<&'static AddressEntry> {
     storage::get::<AddressBook>().iter().collect()
 }
 
-#[update]
+#[update(guard = "is_controller")]
 fn remove_address(address: Principal) {
     storage::get_mut::<AddressBook>().remove(&address);
     update_chart();

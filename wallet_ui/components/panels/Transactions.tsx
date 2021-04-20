@@ -31,110 +31,106 @@ const useRowStyles = makeStyles((_theme) => ({
 
 function AddressAddedRow({ event }: TransactionRowProps) {
   const classes = useRowStyles();
-  if (!("AddressAdded" in event.kind)) {
-    return null;
-  }
-  const addressAdded = event.kind.AddressAdded!;
-  const role = Object.keys(addressAdded.role!)[0];
+  if ("AddressAdded" in event.kind) {
+    const addressAdded = event.kind.AddressAdded!;
+    const role = Object.keys(addressAdded.role!)[0];
 
-  return (
-    <>
-      <TableRow className={classes.root}>
-        <TableCell component="th" scope="row">
-          <ReactTimeago date={new Date(event.timestamp.toNumber())} />
-        </TableCell>
-        <TableCell>{role} Added</TableCell>
-        <TableCell>
-          Principal "<code>{addressAdded.id?.toText()}</code>"
-          {addressAdded.name.length == 1
-            ? ` with name ${addressAdded.name[0]}`
-            : ""}
-        </TableCell>
-        <TableCell />
-      </TableRow>
-    </>
-  );
+    return (
+      <>
+        <TableRow className={classes.root}>
+          <TableCell component="th" scope="row">
+            <ReactTimeago date={new Date(Number(event.timestamp))} />
+          </TableCell>
+          <TableCell>{role} Added</TableCell>
+          <TableCell>
+            Principal "<code>{addressAdded.id?.toText()}</code>"
+            {addressAdded.name.length == 1
+              ? ` with name ${addressAdded.name[0]}`
+              : ""}
+          </TableCell>
+          <TableCell />
+        </TableRow>
+      </>
+    );
+  }
+  return null;
 }
 
 function CyclesSentRow({ event }: TransactionRowProps) {
   const classes = useRowStyles();
-  if (!("CyclesSent" in event.kind)) {
-    return null;
-  }
-  const cyclesSent = event.kind.CyclesSent!;
+  if ("CyclesSent" in event.kind) {
+    const cyclesSent = event.kind.CyclesSent!;
 
-  return (
-    <>
-      <TableRow className={classes.root}>
-        <TableCell component="th" scope="row">
-          <ReactTimeago date={new Date(event.timestamp.toNumber())} />
-        </TableCell>
-        <TableCell>Cycle Sent</TableCell>
-        <TableCell>
-          Sent {cyclesSent.amount.toNumber().toLocaleString()} cycles to{" "}
-          <code>{cyclesSent.to.toText()}</code>
-        </TableCell>
-        <TableCell />
-      </TableRow>
-    </>
-  );
+    return (
+      <>
+        <TableRow className={classes.root}>
+          <TableCell component="th" scope="row">
+            <ReactTimeago date={new Date(Number(event.timestamp))} />
+          </TableCell>
+          <TableCell>Cycle Sent</TableCell>
+          <TableCell>
+            Sent {cyclesSent.amount.toLocaleString()} cycles to{" "}
+            <code>{cyclesSent.to.toText()}</code>
+          </TableCell>
+          <TableCell />
+        </TableRow>
+      </>
+    );
+  }
+  return null;
 }
 
 function CyclesReceivedRow({ event }: TransactionRowProps) {
   const classes = useRowStyles();
-  if (!("CyclesReceived" in event.kind)) {
-    return null;
-  }
-  const cyclesReceived = event.kind.CyclesReceived!;
+  if ("CyclesReceived" in event.kind) {
+    const cyclesReceived = event.kind.CyclesReceived!;
 
-  return (
-    <>
-      <TableRow className={classes.root}>
-        <TableCell component="th" scope="row">
-          <ReactTimeago date={new Date(event.timestamp.toNumber())} />
-        </TableCell>
-        <TableCell>Cycle Received</TableCell>
-        <TableCell>
-          Received {cyclesReceived.amount.toNumber().toLocaleString()} cycles
-          from <code>{cyclesReceived.from.toText()}</code>
-        </TableCell>
-        <TableCell />
-      </TableRow>
-    </>
-  );
+    return (
+      <>
+        <TableRow className={classes.root}>
+          <TableCell component="th" scope="row">
+            <ReactTimeago date={new Date(Number(event.timestamp))} />
+          </TableCell>
+          <TableCell>Cycle Received</TableCell>
+          <TableCell>
+            Received {cyclesReceived.amount.toLocaleString()} cycles from{" "}
+            <code>{cyclesReceived.from.toText()}</code>
+          </TableCell>
+          <TableCell />
+        </TableRow>
+      </>
+    );
+  }
+  return null;
 }
 
 function CanisterCreatedRow({ event }: TransactionRowProps) {
   const classes = useRowStyles();
-  if (!("CanisterCreated" in event.kind)) {
-    return null;
-  }
-  const createdCanister = event.kind.CanisterCreated!;
+  if ("CanisterCreated" in event.kind) {
+    const createdCanister = event.kind.CanisterCreated;
 
-  return (
-    <TableRow className={classes.root}>
-      <TableCell component="th" scope="row">
-        <ReactTimeago date={new Date(event.timestamp.toNumber())} />
-      </TableCell>
-      <TableCell>Canister Created</TableCell>
-      <TableCell>
-        Created{" "}
-        <code>
-          {createdCanister.canister.toText()} (used{" "}
-          {createdCanister.cycles.toNumber().toLocaleString()} cycles)
-        </code>
-      </TableCell>
-      <TableCell />
-    </TableRow>
-  );
+    return (
+      <TableRow className={classes.root}>
+        <TableCell component="th" scope="row">
+          <ReactTimeago date={new Date(Number(event.timestamp))} />
+        </TableCell>
+        <TableCell>Canister Created</TableCell>
+        <TableCell>
+          Created{" "}
+          <code>
+            {createdCanister.canister.toText()} (used{" "}
+            {createdCanister.cycles.toLocaleString()} cycles)
+          </code>
+        </TableCell>
+        <TableCell />
+      </TableRow>
+    );
+  }
+  return null;
 }
 
 function TransactionRow({ event, expanded, setExpanded }: TransactionRowProps) {
-  console.log(event.timestamp.toNumber(), new Date(event.timestamp.toNumber()));
-  const classes = useRowStyles();
-
   const eventKind = Object.keys(event.kind)[0] as keyof EventKind;
-  let type;
 
   switch (eventKind) {
     case "CyclesSent":
@@ -159,25 +155,21 @@ function TransactionRow({ event, expanded, setExpanded }: TransactionRowProps) {
   }
 }
 
-export default function Events() {
-  const [transactions, setTransactions] = useState<Event[]>([]);
+type Props = {
+  transactions?: Event[];
+};
+export default function Transactions(props: Props) {
+  const { transactions } = props;
   const [expanded, setExpanded] = useState(-1);
 
-  useEffect(() => {
-    Wallet.events()
-      .then((events) => {
-        return events.sort((a, b) => {
-          // Reverse sort on timestamp.
-          return +b.timestamp - +a.timestamp;
-        });
-      })
-      .then(setTransactions);
-  }, []);
+  if (!transactions) {
+    return null;
+  }
 
   return (
     <React.Fragment>
-      <Typography component="h2" variant="h6" color="primary" gutterBottom>
-        Recent Events
+      <Typography component="h2" variant="h6" gutterBottom>
+        Transaction History
       </Typography>
       <Table size="small">
         <TableHead>
@@ -193,6 +185,7 @@ export default function Events() {
             <TransactionRow
               event={event}
               expanded={event.id === expanded}
+              key={event.id}
               setExpanded={(isExpanded) =>
                 setExpanded(isExpanded ? event.id : -1)
               }

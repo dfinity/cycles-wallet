@@ -4,3 +4,4 @@ canister_ids.json
 node_modules/
 target/
 dist/
+.idea/

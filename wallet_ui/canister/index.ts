@@ -16,8 +16,6 @@
 import { convertIdlEventMap, factory } from "./wallet.did";
 import { HttpAgent, Actor, Principal, ActorSubclass } from "@dfinity/agent";
 import { AuthenticationClient } from "../utils/authClient";
-import { SiteInfo } from "./site";
-import BigNumber from "bignumber.js";
 import _SERVICE, { Event } from "../types/declaration";
 
 // Need to export the enumaration from wallet.did
@@ -25,16 +23,32 @@ export * from "./wallet.did";
 export { Principal } from "@dfinity/agent";
 
 const authClient = new AuthenticationClient();
-const site = SiteInfo.fromWindow();
 
 export async function getAgentPrincipal(): Promise<Principal> {
   return authClient.getIdentity().getPrincipal();
 }
-export function getCanisterId(): Principal {
-  if (!site.principal) {
-    throw new Error("Could not find the canister ID.");
+
+function getCanisterId(): Principal {
+  // Check the query params.
+  const maybeCanisterId = new URLSearchParams(window.location.search).get(
+    "canisterId"
+  );
+  if (maybeCanisterId) {
+    return Principal.fromText(maybeCanisterId);
   }
-  return site.principal;
+
+  // Return the first canister ID when resolving from the right hand side.
+  const domain = window.location.hostname.split(".").reverse();
+  for (const subdomain of domain) {
+    try {
+      if (subdomain.length >= 25) {
+        // The following throws if it can't decode or the checksum is invalid.
+        return Principal.fromText(subdomain);
+      }
+    } catch (_) {}
+  }
+
+  throw new Error("Could not find the canister ID.");
 }
 
 let walletCanisterCache: ActorSubclass<_SERVICE>;
@@ -64,10 +78,7 @@ async function getWalletCanister(): Promise<ActorSubclass<_SERVICE>> {
   let walletId: Principal | null = null;
   walletId = getWalletId(walletId);
 
-  const agent = new HttpAgent({
-    host: await site.getHost(),
-    identity: authClient.getIdentity(),
-  });
+  const agent = new HttpAgent({ identity: authClient.getIdentity() });
 
   if (!walletId) {
     throw new Error("Need to have a wallet ID.");
@@ -75,6 +86,9 @@ async function getWalletCanister(): Promise<ActorSubclass<_SERVICE>> {
     walletCanisterCache = (Actor as any).createActor(factory as any, {
       agent,
       canisterId: walletId,
+      // Override the defaults for polling.
+      maxAttempts: 201,
+      throttleDurationInMSecs: 1500,
     }) as ActorSubclass<_SERVICE>;
     return walletCanisterCache;
   }
@@ -108,7 +122,7 @@ function precisionToNanoseconds(precision: ChartPrecision) {
   if (precision >= ChartPrecision.Hourly) result *= 60;
   if (precision >= ChartPrecision.Minutes) result *= 60;
 
-  return new BigNumber(result);
+  return BigInt(result);
 }
 
 export const Wallet = {
@@ -119,9 +133,7 @@ export const Wallet = {
     await this.balance();
   },
   async balance(): Promise<number> {
-    return (
-      await (await getWalletCanister()).wallet_balance()
-    ).amount.toNumber();
+    return Number((await (await getWalletCanister()).wallet_balance()).amount);
   },
   async events(from?: number, to?: number): Promise<Event[]> {
     return (
@@ -136,7 +148,7 @@ export const Wallet = {
   async chart(p: ChartPrecision, count?: number): Promise<[Date, number][]> {
     const precision = precisionToNanoseconds(p);
     const optCount: [] | [number] = count ? [count] : [];
-    const optPrecision: [] | [BigNumber] = precision ? [precision] : [];
+    const optPrecision: [] | [bigint] = precision ? [precision] : [];
     return (
       await (await getWalletCanister()).get_chart([
         {
@@ -144,7 +156,10 @@ export const Wallet = {
           precision: optPrecision,
         },
       ])
-    ).map(([a, b]) => [new Date(a.toNumber() / 1000000), b.toNumber()]);
+    ).map(([a, b]) => [
+      new Date(Number(BigInt(a) / BigInt(1000000))),
+      Number(b),
+    ]);
   },
   async create_canister(p: {
     controller?: Principal;
@@ -152,7 +167,7 @@ export const Wallet = {
   }): Promise<Principal> {
     const result = await (await getWalletCanister()).wallet_create_canister({
       controller: p.controller ? [p.controller] : [],
-      cycles: new BigNumber(p.cycles),
+      cycles: BigInt(p.cycles),
     });
     return result.canister_id;
   },
@@ -162,14 +177,14 @@ export const Wallet = {
   }): Promise<Principal> {
     const result = await (await getWalletCanister()).wallet_create_wallet({
       controller: p.controller ? [p.controller] : [],
-      cycles: new BigNumber(p.cycles),
+      cycles: BigInt(p.cycles),
     });
     return result.canister_id;
   },
-  async send(p: { canister: Principal; amount: number }): Promise<void> {
+  async send(p: { canister: Principal; amount: BigInt }): Promise<void> {
     await (await getWalletCanister()).wallet_send({
       canister: p.canister,
-      amount: new BigNumber(p.amount),
+      amount: p.amount,
     });
   },
 };

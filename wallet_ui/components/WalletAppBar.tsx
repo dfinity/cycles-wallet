@@ -13,7 +13,6 @@ import Typography from "@material-ui/core/Typography";
 
 import makeStyles from "@material-ui/core/styles/makeStyles";
 import AccountCircle from "@material-ui/icons/AccountCircle";
-
 import { getWalletId, Principal } from "../canister";
 
 const drawerWidth = 240;
@@ -25,6 +24,14 @@ const useStyles = makeStyles((theme) => ({
       easing: theme.transitions.easing.sharp,
       duration: theme.transitions.duration.leavingScreen,
     }),
+    height: "58px",
+    boxShadow: "none",
+    borderBottom: `1px solid ${
+      theme.palette.type === "dark" ? "#3F4043" : "#EFEFEF"
+    }`,
+    display: "flex",
+    flexDirection: "row-reverse",
+    alignItems: "center",
   },
   appBarShift: {
     marginLeft: drawerWidth,
@@ -42,7 +49,7 @@ const useStyles = makeStyles((theme) => ({
     display: "none",
   },
   toolbar: {
-    paddingRight: 24, // keep right padding when drawer closed
+    flexDirection: "row-reverse",
   },
   title: {
     marginLeft: "auto",
@@ -86,29 +93,21 @@ export function WalletAppBar(props: {
   const menuId = "primary-search-account-menu";
 
   return (
-    <AppBar position="absolute" className={clsx(classes.appBar, open && menu && classes.appBarShift)}>
-      <Toolbar className={classes.toolbar}>
-        <MenuItem className={clsx(classes.menuButton, (open || !menu) && classes.menuButtonHidden)}>
-          <IconButton edge="start" color="inherit" aria-label="open drawer" onClick={onOpenToggle}>
-            <MenuIcon />
-          </IconButton>
-        </MenuItem>
-        <MenuItem className={classes.title}>
-          <Typography variant="h6" color="inherit" noWrap className={classes.title}>
-            {walletId && walletId.toText()}
-          </Typography>
-        </MenuItem>
-        <MenuItem onClick={handleProfileMenuOpen}>
-          <IconButton
-            aria-label="account of current user"
-            aria-controls="primary-search-account-menu"
-            aria-haspopup="true"
-            color="inherit"
-          >
-            <AccountCircle />
-          </IconButton>
-        </MenuItem>
-      </Toolbar>
+    <AppBar
+      position="absolute"
+      color="inherit"
+      className={clsx(classes.appBar, open && menu && classes.appBarShift)}
+    >
+      <button
+        title="account of current user"
+        aria-controls="primary-search-account-menu"
+        aria-haspopup="true"
+        type="button"
+        style={{ padding: "13px" }}
+        onClick={handleProfileMenuOpen}
+      >
+        <img src="/checkers.png" alt="generic avatar background" />
+      </button>
       <Menu
         anchorEl={anchorEl}
         anchorOrigin={{ vertical: "top", horizontal: "right" }}
@@ -119,7 +118,10 @@ export function WalletAppBar(props: {
         onClose={handleMenuClose}
       >
         <MenuItem onClick={handleMenuClose}>
-          <FormControlLabel control={<Switch checked={dark} onChange={onDarkToggle} />} label="Dark Mode" />
+          <FormControlLabel
+            control={<Switch checked={dark} onChange={onDarkToggle} />}
+            label="Dark Mode"
+          />
         </MenuItem>
       </Menu>
     </AppBar>

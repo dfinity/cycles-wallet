@@ -6,10 +6,9 @@ import DialogContent from "@material-ui/core/DialogContent";
 import DialogActions from "@material-ui/core/DialogActions";
 import DialogContentText from "@material-ui/core/DialogContentText";
 import Button from "@material-ui/core/Button";
-import { CircularProgress } from "@material-ui/core";
+import CircularProgress from "@material-ui/core/CircularProgress";
 import makeStyles from "@material-ui/core/styles/makeStyles";
 import green from "@material-ui/core/colors/green";
-import Typography from "@material-ui/core/Typography";
 import FormControl from "@material-ui/core/FormControl";
 import TextField from "@material-ui/core/TextField";
 import { Principal, Wallet } from "../../canister";
@@ -62,7 +61,7 @@ export function SendCyclesDialog(props: {
 
   const [loading, setLoading] = useState(false);
   const [principal, setPrincipal] = useState("");
-  const [cycles, setCycles] = useState(0);
+  const [cycles, setCycles] = useState(BigInt(0));
   const [error, setError] = useState(false);
   const classes = useStyles();
 
@@ -81,8 +80,8 @@ export function SendCyclesDialog(props: {
     }
   }
   function handleCycleChange(ev: ChangeEvent<HTMLInputElement>) {
-    let c = +ev.target.value;
-    setCycles(c);
+    let c = ev.target.value;
+    setCycles(BigInt(c));
   }
 
   function send() {
@@ -90,7 +89,7 @@ export function SendCyclesDialog(props: {
 
     Wallet.send({
       canister: Principal.fromText(principal),
-      amount: cycles,
+      amount: BigInt(cycles),
     }).then(
       () => {
         setLoading(false);
@@ -115,11 +114,11 @@ export function SendCyclesDialog(props: {
         {"Send Cycles to Another Canister"}
       </DialogTitle>
       <DialogContent>
-        <DialogContentText>
-          <Typography>
+        <div>
+          <DialogContentText>
             Send cycles to a canister. Do not send cycles to a user, the call
             will fail. This cannot be validated from the user interface.
-          </Typography>
+          </DialogContentText>
           <FormControl className={classes.formControl}>
             <TextField
               label="Principal"
@@ -133,7 +132,7 @@ export function SendCyclesDialog(props: {
             />
             <TextField
               label="Cycles"
-              value={cycles}
+              value={Number(cycles)}
               style={{ margin: 8 }}
               fullWidth
               disabled={loading}
@@ -143,7 +142,7 @@ export function SendCyclesDialog(props: {
               }}
             />
           </FormControl>
-        </DialogContentText>
+        </div>
       </DialogContent>
       <DialogActions>
         <Button onClick={handleClose} color="primary" disabled={loading}>
