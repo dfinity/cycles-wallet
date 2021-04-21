@@ -32,7 +32,9 @@ const track = css`
 
 const styles = css`
   position: relative;
-  border: 1px solid var(--primaryContrast);
+  border: 1px solid #d9d9da;
+  @media (prefers-color-scheme: dark) {
+  }
 
   .input-container {
     overflow: hidden;

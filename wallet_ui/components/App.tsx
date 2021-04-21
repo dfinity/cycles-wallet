@@ -160,10 +160,7 @@ export default function App() {
           --primaryColor: ${darkState ? "rgba(69, 70, 81, 0.75)" : "#292a2e"};
           --primaryContrast: white;
           --textColor: ${darkState ? "white" : "black"};
-<<<<<<< HEAD
           --backgroundColor: ${darkState ? "#3030" : "white"};
-=======
->>>>>>> next
         }
       `}
       </style>

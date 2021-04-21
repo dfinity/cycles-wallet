@@ -3,9 +3,12 @@ import Dialog from "@material-ui/core/Dialog";
 import DialogContent from "@material-ui/core/DialogContent";
 import DialogActions from "@material-ui/core/DialogActions";
 import Button from "@material-ui/core/Button";
-import { Box, CircularProgress } from "@material-ui/core";
 import makeStyles from "@material-ui/core/styles/makeStyles";
 import green from "@material-ui/core/colors/green";
+import DialogContentText from "@material-ui/core/DialogContentText";
+import Typography from "@material-ui/core/Typography";
+import CircularProgress from "@material-ui/core/CircularProgress";
+import Box from "@material-ui/core/Box";
 import FormControl from "@material-ui/core/FormControl";
 import TextField from "@material-ui/core/TextField";
 import { Principal, Wallet } from "../../canister";
@@ -63,10 +66,6 @@ export function SendCyclesDialog(props: {
     } catch {
       setError(true);
     }
-  }
-  function handleCycleChange(ev: ChangeEvent<HTMLInputElement>) {
-    let c = ev.target.value;
-    setCycles(BigInt(c));
   }
 
   function send() {
@@ -127,7 +126,12 @@ export function SendCyclesDialog(props: {
         </div>
       </DialogContent>
       <DialogActions>
-        <Button onClick={handleClose} color="primary" disabled={loading}>
+        <Button
+          onClick={handleClose}
+          color="primary"
+          disabled={loading}
+          style={{ color: "var(--text-color)" }}
+        >
           Cancel
         </Button>
         <div className={classes.wrapper}>
