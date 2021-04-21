@@ -6,6 +6,10 @@ The basic wallet canister implementation in Rust
 
 ## Demo
 
+- Clone the repo: `git clone git@github.com:dfinity/wallet-rs.git`
+- Change to the working directory: `cd wallet-rs`
+- Check whether you have `cmake` installed: `cmake --version`
+  If needed, you can install cmake on macOS using `brew install cmake`
 - Install dependencies: `npm install`
 - Start replica: `dfx start --background --clean`
 - Deploy to replica locally: `dfx deploy`

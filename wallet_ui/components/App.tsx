@@ -5,7 +5,13 @@ import { WalletAppBar } from "./WalletAppBar";
 import Typography from "@material-ui/core/Typography";
 import Link from "@material-ui/core/Link";
 import {
-  HashRouter as Router,
+  orange,
+  lightBlue,
+  deepPurple,
+  deepOrange,
+} from "@material-ui/core/colors";
+import {
+  BrowserRouter as Router,
   Switch as RouterSwitch,
   Route,
 } from "react-router-dom";
@@ -154,7 +160,10 @@ export default function App() {
           --primaryColor: ${darkState ? "rgba(69, 70, 81, 0.75)" : "#292a2e"};
           --primaryContrast: white;
           --textColor: ${darkState ? "white" : "black"};
+<<<<<<< HEAD
           --backgroundColor: ${darkState ? "#3030" : "white"};
+=======
+>>>>>>> next
         }
       `}
       </style>

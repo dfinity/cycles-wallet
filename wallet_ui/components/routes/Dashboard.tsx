@@ -11,24 +11,16 @@ import ChevronLeftIcon from "@material-ui/icons/ChevronLeft";
 import { CycleBalance } from "../panels/CycleBalance";
 import Drawer from "@material-ui/core/Drawer";
 import { Copyright } from "../App";
-import ListItemText from "@material-ui/core/ListItemText";
-import ListItemIcon from "@material-ui/core/ListItemIcon";
-import ListItem from "@material-ui/core/ListItem";
-import SendIcon from "@material-ui/icons/Send";
-import List from "@material-ui/core/List";
-import AddCircleOutlineIcon from "@material-ui/icons/AddCircleOutline";
 import { SendCyclesDialog } from "../panels/SendCycles";
 import { BalanceChart } from "../panels/BalanceChart";
 import Dialog from "@material-ui/core/Dialog";
 import DialogTitle from "@material-ui/core/DialogTitle";
-import { DialogContent } from "@material-ui/core";
+import DialogContent from "@material-ui/core/DialogContent";
 import DialogContentText from "@material-ui/core/DialogContentText";
 import DialogActions from "@material-ui/core/DialogActions";
 import Button from "@material-ui/core/Button";
-import { CreateWalletDialog } from "../panels/CreateWallet";
 import { Wallet } from "../../canister";
 import type { Event } from "../../canister/declaration";
-import type BigNumber from "bignumber.js";
 import Canisters from "../panels/Canisters";
 import { PrimaryButton } from "../Buttons";
 import Events from "../panels/Transactions";
@@ -125,7 +117,7 @@ export function Dashboard(props: { open: boolean; onOpenToggle: () => void }) {
         return events
           .sort((a, b) => {
             // Reverse sort on timestamp.
-            return +b.timestamp - +a.timestamp;
+            return Number(b.timestamp) - Number(a.timestamp);
           })
           .reduce((start, next) => {
             const [kindField] = Object.entries(next.kind);

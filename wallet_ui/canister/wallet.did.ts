@@ -1,13 +1,12 @@
 // This file was generated using did-to-js tools, with some modifications.
 // It is essentially hand written.
 import type { IDL, Principal } from "@dfinity/agent";
-import BigNumber from "bignumber.js";
 import { Event } from "../types";
 
 export function convertIdlEventMap(idlEvent: any): Event {
   return {
     id: idlEvent.id,
-    timestamp: new BigNumber(idlEvent.timestamp.div(1000000).toNumber()),
+    timestamp: idlEvent.timestamp / BigInt(1000000),
     kind: idlEvent.kind,
   };
 }
@@ -86,7 +85,7 @@ export const factory: IDL.InterfaceFactory = ({ IDL }) => {
     ),
     wallet_send: IDL.Func(
       [IDL.Record({ canister: IDL.Principal, amount: IDL.Nat64 })],
-      [],
+      [IDL.Variant({ Ok: IDL.Null, Err: IDL.Text })],
       []
     ),
     authorize: IDL.Func([IDL.Principal], [], []),

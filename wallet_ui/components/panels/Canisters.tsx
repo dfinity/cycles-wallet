@@ -1,19 +1,10 @@
 import * as React from "react";
 import type { Principal } from "@dfinity/agent";
-import {
-  Button,
-  CircularProgress,
-  Dialog,
-  Grid,
-  Icon,
-  List,
-  ListItem,
-  ListItemIcon,
-  ListItemText,
-  SvgIcon,
-  Typography,
-} from "@material-ui/core";
-import AddCircleOutlineIcon from "@material-ui/icons/AddCircleOutline";
+import CircularProgress from "@material-ui/core/CircularProgress";
+import Grid from "@material-ui/core/Grid";
+import List from "@material-ui/core/List";
+import ListItem from "@material-ui/core/ListItem";
+import Typography from "@material-ui/core/Typography";
 import { EventList } from "../routes/Dashboard";
 import "../../css/Events.scss";
 import { CreateCanisterDialog } from "./CreateCanister";
@@ -21,7 +12,7 @@ import { CreateWalletDialog } from "./CreateWallet";
 import { CreateDialog } from "./CreateDialog";
 import PlusIcon from "../icons/PlusIcon";
 import { css } from "@emotion/css";
-import { PlainButton, PrimaryButton } from "../Buttons";
+import { PlainButton } from "../Buttons";
 
 interface Props {
   canisters?: EventList["canisters"];

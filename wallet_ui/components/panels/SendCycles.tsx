@@ -6,7 +6,6 @@ import Button from "@material-ui/core/Button";
 import { Box, CircularProgress } from "@material-ui/core";
 import makeStyles from "@material-ui/core/styles/makeStyles";
 import green from "@material-ui/core/colors/green";
-import Typography from "@material-ui/core/Typography";
 import FormControl from "@material-ui/core/FormControl";
 import TextField from "@material-ui/core/TextField";
 import { Principal, Wallet } from "../../canister";
@@ -65,13 +64,17 @@ export function SendCyclesDialog(props: {
       setError(true);
     }
   }
+  function handleCycleChange(ev: ChangeEvent<HTMLInputElement>) {
+    let c = ev.target.value;
+    setCycles(BigInt(c));
+  }
 
   function send() {
     setLoading(true);
 
     Wallet.send({
       canister: Principal.fromText(principal),
-      amount: cycles,
+      amount: BigInt(cycles),
     }).then(
       () => {
         setLoading(false);
@@ -100,6 +103,10 @@ export function SendCyclesDialog(props: {
       </Box>
       <DialogContent>
         <div>
+          <DialogContentText>
+            Send cycles to a canister. Do not send cycles to a user, the call
+            will fail. This cannot be validated from the user interface.
+          </DialogContentText>
           <FormControl className={classes.formControl}>
             <TextField
               label="Enter Canister Principal"

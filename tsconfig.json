@@ -13,5 +13,6 @@
     "jsx": "react" /* Specify JSX code generation: 'preserve', 'react-native', or 'react'. */,
     "typeRoots": ["./src/@types", "./wallet_ui/types", "./node_modules/@types"],
     "allowSyntheticDefaultImports": true
-  }
+  },
+  "include": ["**/*"]
 }
