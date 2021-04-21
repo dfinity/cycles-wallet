@@ -151,7 +151,12 @@ function CycleSlider(props: Props) {
         className={css`
           transform: scale(0.75);
           margin-bottom: 8px;
+          &#cycles-label {
+            position: static;
+          }
         `}
+        shrink={true}
+        id="cycles-label"
       >
         Add Cycles
       </InputLabel>

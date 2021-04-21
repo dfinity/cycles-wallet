@@ -1,5 +1,5 @@
 import NumberFormat from "react-number-format";
-import React, { ChangeEvent, useState } from "react";
+import * as React from "react";
 import DialogTitle from "@material-ui/core/DialogTitle";
 import Dialog from "@material-ui/core/Dialog";
 import DialogContent from "@material-ui/core/DialogContent";
@@ -13,6 +13,7 @@ import Typography from "@material-ui/core/Typography";
 import FormControl from "@material-ui/core/FormControl";
 import TextField from "@material-ui/core/TextField";
 import { Principal, Wallet } from "../../canister";
+import CycleSlider from "../CycleSlider";
 
 const useStyles = makeStyles((theme) => ({
   wrapper: {
@@ -60,17 +61,24 @@ export function CreateWalletDialog(props: {
 }) {
   const { open, close } = props;
 
-  const [loading, setLoading] = useState(false);
-  const [controller, setController] = useState("");
-  const [cycles, setCycles] = useState(0);
-  const [canisterId, setCanisterId] = useState<Principal | undefined>();
-  const [error, setError] = useState(false);
+  const [loading, setLoading] = React.useState(false);
+  const [controller, setController] = React.useState("");
+  const [cycles, setCycles] = React.useState(0);
+  const [balance, setBalance] = React.useState(0);
+  const [canisterId, setCanisterId] = React.useState<Principal | undefined>();
+  const [error, setError] = React.useState(false);
   const classes = useStyles();
+
+  React.useEffect(() => {
+    Wallet.balance().then((amount) => {
+      setBalance(amount);
+    });
+  }, []);
 
   function handleClose() {
     close();
   }
-  function handleControllerChange(ev: ChangeEvent<HTMLInputElement>) {
+  function handleControllerChange(ev: React.ChangeEvent<HTMLInputElement>) {
     let p = ev.target.value;
 
     setController(p);
@@ -80,10 +88,6 @@ export function CreateWalletDialog(props: {
     } catch {
       setError(true);
     }
-  }
-  function handleCycleChange(ev: ChangeEvent<HTMLInputElement>) {
-    let c = +ev.target.value;
-    setCycles(c);
   }
 
   function create() {
@@ -123,23 +127,17 @@ export function CreateWalletDialog(props: {
             <TextField
               label="Controller"
               value={controller}
-              style={{ margin: 8 }}
+              style={{ margin: "8px 0 24px" }}
               fullWidth
               disabled={loading}
               onChange={handleControllerChange}
               error={error}
               autoFocus
             />
-            <TextField
-              label="Cycles"
-              value={cycles}
-              style={{ margin: 8 }}
-              fullWidth
-              disabled={loading}
-              onChange={handleCycleChange}
-              InputProps={{
-                inputComponent: NumberFormatCustom,
-              }}
+            <CycleSlider
+              balance={balance}
+              cycles={cycles}
+              setCycles={setCycles}
             />
           </FormControl>
         </div>
