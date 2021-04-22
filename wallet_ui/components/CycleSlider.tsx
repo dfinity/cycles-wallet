@@ -2,6 +2,7 @@ import * as React from "react";
 import { Box, InputLabel, Typography } from "@material-ui/core";
 import { css } from "@emotion/css";
 import TextField from "@material-ui/core/TextField";
+import NumberFormat from "react-number-format";
 
 const thumb = css`
   border: transparent;
@@ -112,6 +113,26 @@ const styles = css`
   }
 `;
 
+function NumberFormatCustom(props: any) {
+  const { inputRef, onChange, ...other } = props;
+
+  return (
+    <NumberFormat
+      {...other}
+      getInputRef={inputRef}
+      onValueChange={(values) => {
+        onChange({
+          target: {
+            value: values.value,
+          },
+        });
+      }}
+      thousandSeparator
+      isNumericString
+    />
+  );
+}
+
 interface Props {
   cycles: number;
   setCycles: (c: number) => void;
@@ -166,15 +187,20 @@ function CycleSlider(props: Props) {
         <div>
           <Box fontWeight="fontWeightBold" pt="10px" pl="12px" pr="12px">
             <TextField
-              label="Cycles"
+              className={css`
+                .MuiInputBase-root:after,
+                .MuiInputBase-root:before {
+                  border: none !important;
+                }
+              `}
               value={Number(cycles)}
-              style={{ margin: 8 }}
+              style={{ margin: "0" }}
               fullWidth
               disabled={loading}
               onChange={(e) => setCycles(Number(e.target.value))}
-              // InputProps={{
-              //   inputComponent: NumberFormatCustom,
-              // }}
+              InputProps={{
+                inputComponent: NumberFormatCustom,
+              }}
             />
           </Box>
           <Box pl="12px" mb="12px">
