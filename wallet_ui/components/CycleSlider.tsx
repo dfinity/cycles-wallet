@@ -204,7 +204,7 @@ function CycleSlider(props: Props) {
             />
           </Box>
           <Box pl="12px" mb="12px">
-            ${(cyclesSdrRate * sdrUsdRate).toFixed(2)}
+           ~ ${(cyclesSdrRate * sdrUsdRate).toFixed(2)}
           </Box>
         </div>
         <div className="input-container">
