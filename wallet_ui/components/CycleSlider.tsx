@@ -188,6 +188,11 @@ function CycleSlider(props: Props) {
           <Box fontWeight="fontWeightBold" pt="10px" pl="12px" pr="12px">
             <TextField
               className={css`
+                &::after {
+                  content: "C";
+                  position: absolute;
+                  right: 0;
+                }
                 .MuiInputBase-root:after,
                 .MuiInputBase-root:before {
                   border: none !important;
@@ -203,8 +208,8 @@ function CycleSlider(props: Props) {
               }}
             />
           </Box>
-          <Box pl="12px" mb="12px">
-           ~ ${(cyclesSdrRate * sdrUsdRate).toFixed(2)}
+          <Box pl="12px" mb="12px" title="approximate value in US dollars">
+            ~ ${(cyclesSdrRate * sdrUsdRate).toFixed(2)}
           </Box>
         </div>
         <div className="input-container">
