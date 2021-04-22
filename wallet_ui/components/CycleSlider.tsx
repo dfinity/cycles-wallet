@@ -1,6 +1,7 @@
 import * as React from "react";
 import { Box, InputLabel, Typography } from "@material-ui/core";
 import { css } from "@emotion/css";
+import TextField from "@material-ui/core/TextField";
 
 const thumb = css`
   border: transparent;
@@ -112,14 +113,15 @@ const styles = css`
 `;
 
 interface Props {
-  balance?: number;
-  startingNumber?: number;
   cycles: number;
   setCycles: (c: number) => void;
+  balance?: number;
+  startingNumber?: number;
+  loading?: boolean;
 }
 
 function CycleSlider(props: Props) {
-  const { balance = 0, cycles, setCycles } = props;
+  const { balance = 0, cycles, setCycles, loading } = props;
 
   // TODO: Replace with dynamic value
   const cyclesSdrRate = (cycles / 1000000000000) * 0.65;
@@ -163,35 +165,17 @@ function CycleSlider(props: Props) {
       <div className={styles}>
         <div>
           <Box fontWeight="fontWeightBold" pt="10px" pl="12px" pr="12px">
-            <details>
-              <summary
-                title="cycles count (click to reveal manual number input)"
-                className={css`
-                  list-style: none;
-                  display: flex;
-                  flex-direction: row;
-                  justify-content: space-between;
-                  &::-webkit-details-marker {
-                    display: none;
-                  }
-                  &::after {
-                    content: "C";
-                  }
-                `}
-              >
-                {cycles.toLocaleString()}
-              </summary>
-              <input
-                type="number"
-                name="cycles"
-                id="cycles-number"
-                value={Number(cycles)}
-                onChange={(e) => {
-                  console.log("number", e.target.value);
-                  setCycles(Number(e.target.value));
-                }}
-              />
-            </details>
+            <TextField
+              label="Cycles"
+              value={Number(cycles)}
+              style={{ margin: 8 }}
+              fullWidth
+              disabled={loading}
+              onChange={(e) => setCycles(Number(e.target.value))}
+              // InputProps={{
+              //   inputComponent: NumberFormatCustom,
+              // }}
+            />
           </Box>
           <Box pl="12px" mb="12px">
             ${(cyclesSdrRate * sdrUsdRate).toFixed(2)}
@@ -202,6 +186,7 @@ function CycleSlider(props: Props) {
             type="range"
             name="cycles"
             id="cycles-range"
+            disabled={loading}
             min={0}
             max={1000}
             onChange={handleSlide}

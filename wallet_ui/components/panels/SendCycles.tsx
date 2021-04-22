@@ -122,6 +122,7 @@ export function SendCyclesDialog(props: {
             balance={balance}
             cycles={cycles}
             setCycles={setCycles}
+            loading={loading}
           />
         </div>
       </DialogContent>
