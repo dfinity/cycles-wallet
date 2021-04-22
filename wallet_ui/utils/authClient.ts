@@ -148,6 +148,7 @@ export class AuthenticationClient {
       redirectUri: options.redirectUri || window.location.origin,
       scope: options.scope ?? [],
       publicKey: key.getPublicKey(),
+      identityProvider: "https://identity.messaging.ic0.app/authorize",
     }).toString();
   }
 }
