@@ -138,6 +138,7 @@ export function CreateWalletDialog(props: {
               balance={balance}
               cycles={cycles}
               setCycles={setCycles}
+              loading={loading}
             />
           </FormControl>
         </div>
