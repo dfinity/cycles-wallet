@@ -11,7 +11,7 @@ use crate::address::{AddressBook, AddressEntry, Role};
 use crate::events::EventBuffer;
 use events::{record, Event, EventKind};
 
-struct WalletWASMBytes(Option<Vec<u8>>);
+struct WalletWASMBytes(Option<serde_bytes::ByteBuf>);
 
 impl Default for WalletWASMBytes {
     fn default() -> Self {
@@ -36,7 +36,7 @@ struct StableStorage {
     events: EventBuffer,
     name: Option<String>,
     chart: Vec<ChartTick>,
-    wasm_module: Option<Vec<u8>>,
+    wasm_module: Option<serde_bytes::ByteBuf>,
 }
 
 #[pre_upgrade]
@@ -445,7 +445,7 @@ mod wallet {
 
         let create_result = create_canister_call(args.cycles).await?;
 
-        install_wallet(&create_result.canister_id, wasm_module.clone()).await?;
+        install_wallet(&create_result.canister_id, wasm_module.clone().into_vec()).await?;
 
         // Set controller
         if let Some(new_controller) = args.controller {
@@ -464,7 +464,7 @@ mod wallet {
     #[update(guard = "is_controller", name = "wallet_store_wallet_wasm")]
     async fn store_wallet_wasm(args: WalletStoreWASMArgs) {
         let wallet_bytes = storage::get_mut::<super::WalletWASMBytes>();
-        wallet_bytes.0 = Some(args.wasm_module);
+        wallet_bytes.0 = Some(serde_bytes::ByteBuf::from(args.wasm_module));
         super::update_chart();
     }
 
