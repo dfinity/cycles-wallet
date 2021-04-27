@@ -10,7 +10,11 @@ import {
   deepPurple,
   deepOrange,
 } from "@material-ui/core/colors";
-import { BrowserRouter as Router, Switch as RouterSwitch, Route } from "react-router-dom";
+import {
+  BrowserRouter as Router,
+  Switch as RouterSwitch,
+  Route,
+} from "react-router-dom";
 
 // For Switch Theming
 import ThemeProvider from "@material-ui/styles/ThemeProvider";
@@ -156,6 +160,7 @@ export default function App() {
           --primaryColor: ${darkState ? "rgba(69, 70, 81, 0.75)" : "#292a2e"};
           --primaryContrast: white;
           --textColor: ${darkState ? "white" : "black"};
+          --backgroundColor: ${darkState ? "#3030" : "white"};
         }
       `}
       </style>

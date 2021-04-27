@@ -1,17 +1,18 @@
-import NumberFormat from "react-number-format";
-import React, { ChangeEvent, useState } from "react";
-import DialogTitle from "@material-ui/core/DialogTitle";
+import React, { ChangeEvent, useEffect, useState } from "react";
 import Dialog from "@material-ui/core/Dialog";
 import DialogContent from "@material-ui/core/DialogContent";
 import DialogActions from "@material-ui/core/DialogActions";
-import DialogContentText from "@material-ui/core/DialogContentText";
 import Button from "@material-ui/core/Button";
-import CircularProgress from "@material-ui/core/CircularProgress";
 import makeStyles from "@material-ui/core/styles/makeStyles";
 import green from "@material-ui/core/colors/green";
+import DialogContentText from "@material-ui/core/DialogContentText";
+import Typography from "@material-ui/core/Typography";
+import CircularProgress from "@material-ui/core/CircularProgress";
+import Box from "@material-ui/core/Box";
 import FormControl from "@material-ui/core/FormControl";
 import TextField from "@material-ui/core/TextField";
 import { Principal, Wallet } from "../../canister";
+import CycleSlider from "../CycleSlider";
 
 const useStyles = makeStyles((theme) => ({
   wrapper: {
@@ -29,29 +30,9 @@ const useStyles = makeStyles((theme) => ({
   formControl: {
     display: "flex",
     flexWrap: "wrap",
+    marginBottom: "24px",
   },
 }));
-
-function NumberFormatCustom(props: any) {
-  const { inputRef, onChange, ...other } = props;
-
-  return (
-    <NumberFormat
-      {...other}
-      getInputRef={inputRef}
-      onValueChange={(values) => {
-        onChange({
-          target: {
-            value: values.value,
-          },
-        });
-      }}
-      thousandSeparator
-      isNumericString
-      suffix=" cycles"
-    />
-  );
-}
 
 export function SendCyclesDialog(props: {
   open: boolean;
@@ -61,9 +42,16 @@ export function SendCyclesDialog(props: {
 
   const [loading, setLoading] = useState(false);
   const [principal, setPrincipal] = useState("");
-  const [cycles, setCycles] = useState(BigInt(0));
+  const [balance, setBalance] = useState(0);
+  const [cycles, setCycles] = useState(0);
   const [error, setError] = useState(false);
   const classes = useStyles();
+
+  useEffect(() => {
+    Wallet.balance().then((amount) => {
+      setBalance(amount);
+    });
+  }, []);
 
   function handleClose() {
     close();
@@ -78,10 +66,6 @@ export function SendCyclesDialog(props: {
     } catch {
       setError(true);
     }
-  }
-  function handleCycleChange(ev: ChangeEvent<HTMLInputElement>) {
-    let c = ev.target.value;
-    setCycles(BigInt(c));
   }
 
   function send() {
@@ -110,9 +94,12 @@ export function SendCyclesDialog(props: {
       disableBackdropClick={loading}
       aria-labelledby="alert-dialog-title"
     >
-      <DialogTitle id="alert-dialog-title">
-        {"Send Cycles to Another Canister"}
-      </DialogTitle>
+      <Box p={3}>
+        <Typography id="alert-dialog-title" variant="h4" component="h2">
+          Send Cycles
+        </Typography>
+        <Typography>Send to an existing or new canister.</Typography>
+      </Box>
       <DialogContent>
         <div>
           <DialogContentText>
@@ -121,31 +108,31 @@ export function SendCyclesDialog(props: {
           </DialogContentText>
           <FormControl className={classes.formControl}>
             <TextField
-              label="Principal"
+              label="Enter Canister Principal"
               value={principal}
-              style={{ margin: 8 }}
               fullWidth
               disabled={loading}
               onChange={handlePrincipalChange}
               error={error}
               autoFocus
-            />
-            <TextField
-              label="Cycles"
-              value={Number(cycles)}
-              style={{ margin: 8 }}
-              fullWidth
-              disabled={loading}
-              onChange={handleCycleChange}
-              InputProps={{
-                inputComponent: NumberFormatCustom,
-              }}
+              InputLabelProps={{ shrink: true }}
             />
           </FormControl>
+          <CycleSlider
+            balance={balance}
+            cycles={cycles}
+            setCycles={setCycles}
+            loading={loading}
+          />
         </div>
       </DialogContent>
       <DialogActions>
-        <Button onClick={handleClose} color="primary" disabled={loading}>
+        <Button
+          onClick={handleClose}
+          color="primary"
+          disabled={loading}
+          style={{ color: "var(--text-color)" }}
+        >
           Cancel
         </Button>
         <div className={classes.wrapper}>

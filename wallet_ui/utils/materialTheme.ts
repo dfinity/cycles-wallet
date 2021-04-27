@@ -17,6 +17,10 @@ const generateTheme = (darkState: boolean) => {
         main: mainSecondaryColor,
       },
     },
+    transitions: {
+      // So we have `transition: none;` everywhere
+      create: () => "none",
+    },
   });
 };
 
