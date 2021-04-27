@@ -140,8 +140,8 @@ export function Authorize() {
                 <Box mb={2}>
                   <Typography variant="body1">
                     This user does not have access to this wallet. If you have
-                    administrative control or know someone who does, add your
-                    principal as custodian.
+                    administrative control, or know someone who does, add your
+                    principal as a custodian.
                   </Typography>
                 </Box>
 
