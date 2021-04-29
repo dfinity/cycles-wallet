@@ -35,7 +35,7 @@ echo
 echo == Create a new canister with Alice as controller using 1000000000001 cycles.
 echo
 
-CREATE_RES=$(dfx --identity id_alice canister call alice wallet_create_canister "(record { cycles = 1000000000001; controller = null })")
+CREATE_RES=$(dfx --identity id_alice canister call alice wallet_create_canister "(record { cycles = 1000000000001; settings = record {null; null; null;}; })")
 echo New canister id = $(echo "${CREATE_RES}" | tr '\n' ' ' |  cut -d'"' -f 2)
 
 echo
