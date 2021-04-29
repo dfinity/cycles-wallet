@@ -251,10 +251,24 @@ mod wallet {
     /***************************************************************************************************
      * Managing Canister
      **************************************************************************************************/
-    #[derive(CandidType, Deserialize)]
+    #[derive(CandidType, Clone, Deserialize)]
+    struct CanisterSettings {
+        controller: Option<Principal>,
+        compute_allocation: Option<Nat>,
+        memory_allocation: Option<Nat>,
+        freezing_threshold: Option<Nat>,
+    }
+
+    #[derive(CandidType, Clone, Deserialize)]
     struct CreateCanisterArgs {
         cycles: u64,
-        controller: Option<Principal>,
+        settings: CanisterSettings,
+    }
+
+    #[derive(CandidType, Deserialize)]
+    struct UpdateSettingsArgs {
+        canister_id: Principal,
+        settings: CanisterSettings,
     }
 
     #[derive(CandidType, Deserialize)]
@@ -264,22 +278,26 @@ mod wallet {
 
     #[update(guard = "is_custodian", name = "wallet_create_canister")]
     async fn create_canister(args: CreateCanisterArgs) -> Result<CreateResult, String> {
-        let create_result = create_canister_call(args.cycles).await?;
-
-        if let Some(new_controller) = args.controller {
-            set_controller_call(create_result.canister_id.clone(), new_controller, false).await?;
-        }
+        let create_result = create_canister_call(args).await?;
 
         super::update_chart();
         Ok(create_result)
     }
 
-    async fn create_canister_call(cycles: u64) -> Result<CreateResult, String> {
+    async fn create_canister_call(args: CreateCanisterArgs) -> Result<CreateResult, String> {
+        #[derive(CandidType)]
+        struct In {
+            settings: Option<CanisterSettings>,
+        }
+        let in_arg = In {
+            settings: Some(args.settings),
+        };
+
         let (create_result,): (CreateResult,) = match api::call::call_with_payment(
             Principal::management_canister(),
             "create_canister",
-            (),
-            cycles as i64,
+            (in_arg,),
+            args.cycles as i64,
         )
         .await
         {
@@ -294,21 +312,20 @@ mod wallet {
 
         events::record(events::EventKind::CanisterCreated {
             canister: create_result.canister_id.clone(),
-            cycles,
+            cycles: args.cycles,
         });
         Ok(create_result)
     }
 
-    async fn set_controller_call(
-        canister_id: Principal,
-        new_controller: Principal,
+    async fn update_settings_call(
+        args: UpdateSettingsArgs,
         update_acl: bool,
     ) -> Result<(), String> {
         if update_acl {
             match api::call::call(
-                canister_id.clone(),
+                args.canister_id.clone(),
                 "add_controller",
-                (new_controller.clone(),),
+                (args.settings.controller.clone().unwrap().clone(),),
             )
             .await
             {
@@ -321,7 +338,7 @@ mod wallet {
                 }
             };
 
-            match api::call::call(canister_id.clone(), "remove_controller", (id(),)).await {
+            match api::call::call(args.canister_id.clone(), "remove_controller", (id(),)).await {
                 Ok(x) => x,
                 Err((code, msg)) => {
                     return Err(format!(
@@ -332,24 +349,7 @@ mod wallet {
             };
         }
 
-        #[derive(CandidType)]
-        struct In {
-            canister_id: Principal,
-            new_controller: Principal,
-        }
-
-        let controller_cfg = In {
-            canister_id,
-            new_controller,
-        };
-
-        match api::call::call(
-            Principal::management_canister(),
-            "set_controller",
-            (controller_cfg,),
-        )
-        .await
-        {
+        match api::call::call(Principal::management_canister(), "update_settings", (args,)).await {
             Ok(x) => x,
             Err((code, msg)) => {
                 return Err(format!(
@@ -380,8 +380,6 @@ mod wallet {
             #[serde(with = "serde_bytes")]
             wasm_module: Vec<u8>,
             arg: Vec<u8>,
-            compute_allocation: Option<Nat>,
-            memory_allocation: Option<Nat>,
         }
 
         let install_config = CanisterInstall {
@@ -389,8 +387,6 @@ mod wallet {
             canister_id: canister_id.clone(),
             wasm_module: wasm_module.clone(),
             arg: b" ".to_vec(),
-            compute_allocation: None,
-            memory_allocation: None,
         };
 
         match api::call::call(
@@ -443,13 +439,28 @@ mod wallet {
             Some(o) => o,
         };
 
-        let create_result = create_canister_call(args.cycles).await?;
+        let args_without_controller = CreateCanisterArgs {
+            cycles: args.cycles,
+            settings: CanisterSettings {
+                controller: None,
+                ..args.clone().settings
+            },
+        };
+
+        let create_result = create_canister_call(args_without_controller).await?;
 
         install_wallet(&create_result.canister_id, wasm_module.clone().into_vec()).await?;
 
         // Set controller
-        if let Some(new_controller) = args.controller {
-            set_controller_call(create_result.canister_id.clone(), new_controller, true).await?;
+        if args.settings.controller.is_some() {
+            update_settings_call(
+                UpdateSettingsArgs {
+                    canister_id: create_result.canister_id.clone(),
+                    settings: args.settings,
+                },
+                true,
+            )
+            .await?;
         }
         super::update_chart();
         Ok(create_result)
