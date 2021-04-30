@@ -13,13 +13,22 @@
  * It is also useful because that puts all the code in one place, including the
  * authentication logic. We do not use `window.ic` anywhere in this.
  */
-import { convertIdlEventMap, factory } from "./wallet.did";
 import { HttpAgent, Actor, Principal, ActorSubclass } from "@dfinity/agent";
 import { AuthenticationClient } from "../utils/authClient";
-import _SERVICE, { Event } from "../types/declaration";
+import _SERVICE from "./wallet/wallet";
+import factory, { Event } from "./wallet";
 
-// Need to export the enumaration from wallet.did
-export * from "./wallet.did";
+function convertIdlEventMap(idlEvent: any): Event {
+  return {
+    id: idlEvent.id,
+    timestamp: idlEvent.timestamp / BigInt(1000000),
+    kind: idlEvent.kind,
+  };
+}
+
+export * from "./wallet";
+
+// Need to export the enumeration from wallet.did
 export { Principal } from "@dfinity/agent";
 
 const authClient = new AuthenticationClient();
@@ -166,25 +175,43 @@ export const Wallet = {
     cycles: number;
   }): Promise<Principal> {
     const result = await (await getWalletCanister()).wallet_create_canister({
-      controller: p.controller ? [p.controller] : [],
+      settings: {
+        compute_allocation: [],
+        controller: p.controller ? [p.controller] : [],
+        freezing_threshold: [],
+        memory_allocation: [],
+      },
       cycles: BigInt(p.cycles),
     });
-    return result.canister_id;
+    if ("Ok" in result) {
+      return result.Ok.canister_id;
+    } else {
+      throw result.Err;
+    }
   },
   async create_wallet(p: {
     controller?: Principal;
     cycles: number;
   }): Promise<Principal> {
     const result = await (await getWalletCanister()).wallet_create_wallet({
-      controller: p.controller ? [p.controller] : [],
+      settings: {
+        compute_allocation: [],
+        controller: p.controller ? [p.controller] : [],
+        freezing_threshold: [],
+        memory_allocation: [],
+      },
       cycles: BigInt(p.cycles),
     });
-    return result.canister_id;
+    if ("Ok" in result) {
+      return result.Ok.canister_id;
+    } else {
+      throw result.Err;
+    }
   },
   async send(p: { canister: Principal; amount: BigInt }): Promise<void> {
     await (await getWalletCanister()).wallet_send({
       canister: p.canister,
-      amount: p.amount,
+      amount: BigInt(p.amount),
     });
   },
 };
