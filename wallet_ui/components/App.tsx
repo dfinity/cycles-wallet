@@ -14,13 +14,14 @@ import {
   BrowserRouter as Router,
   Switch as RouterSwitch,
   Route,
+  Redirect,
 } from "react-router-dom";
 
 // For Switch Theming
 import ThemeProvider from "@material-ui/styles/ThemeProvider";
 
 // For document title setting
-import { handleAuthRedirect, Wallet } from "../canister";
+import { authClient, Wallet } from "../canister";
 
 // Routes
 import { Authorize } from "./routes/Authorize";
@@ -132,25 +133,29 @@ function useDarkState(): [boolean, (newState?: boolean) => void] {
 
 export default function App() {
   const [ready, setReady] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [open, setOpen] = useLocalStorage("app-menu-open", false);
   const [darkState, setDarkState] = useDarkState();
 
   useEffect(() => {
-    Wallet.name().then((name) => {
-      document.title = name;
+    authClient.then(async (client) => {
+      setIsAuthenticated(await client.isAuthenticated());
     });
-  }, []);
+  }, [authClient, setIsAuthenticated]);
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      Wallet.name().then((name) => {
+        document.title = name;
+      });
+    }
+  }, [isAuthenticated]);
+
+  console.log("isAuthenticated", isAuthenticated);
 
   const theme = generateTheme(darkState);
 
   const classes = useStyles();
-
-  // Check if we need to parse the hash.
-  handleAuthRedirect().then(() => setReady(true));
-
-  if (!ready) {
-    return <></>;
-  }
 
   return (
     <ThemeProvider theme={theme}>
@@ -180,7 +185,16 @@ export default function App() {
             </Route>
 
             <Route path="/">
-              <Dashboard open={open} onOpenToggle={() => setOpen(!open)} />
+              {!isAuthenticated ? (
+                <Redirect
+                  to={{
+                    pathname: "/authorize",
+                    search: location.search,
+                  }}
+                />
+              ) : (
+                <Dashboard open={open} onOpenToggle={() => setOpen(!open)} />
+              )}
             </Route>
           </RouterSwitch>
         </div>

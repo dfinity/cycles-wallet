@@ -4,7 +4,7 @@ import {
   Wallet,
   Principal,
   getAgentPrincipal,
-  login,
+  authClient,
   getWalletId,
 } from "../../canister";
 import { useHistory } from "react-router";
@@ -114,8 +114,8 @@ export function Authorize() {
   if (agentPrincipal && !agentPrincipal.isAnonymous()) {
     const canisterId = getWalletId();
     const isLocalhost = !!window.location.hostname.match(/^(.*\.)?localhost$/);
-    const canisterCallShCode = `dfx canister --no-wallet${
-      isLocalhost ? "" : " --network alpha"
+    const canisterCallShCode = `dfx canister ${
+      isLocalhost ? "" : "--no-wallet  --network alpha"
     } call "${
       canisterId?.toText() || ""
     }" authorize '(principal "${agentPrincipal.toText()}")'`;
@@ -213,7 +213,17 @@ export function Authorize() {
                     authenticate.
                   </Typography>
                 </Box>
-                <PrimaryButton onClick={async () => await login()}>
+                <PrimaryButton
+                  onClick={async () => {
+                    await (await authClient).login({
+                      identityProvider:
+                        "https://identity.messaging.ic0.app#authorize",
+                    });
+                    setAgentPrincipal(
+                      (await authClient).getIdentity().getPrincipal()
+                    );
+                  }}
+                >
                   Authenticate
                 </PrimaryButton>
               </Paper>
