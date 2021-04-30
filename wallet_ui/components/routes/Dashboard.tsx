@@ -20,7 +20,7 @@ import DialogContentText from "@material-ui/core/DialogContentText";
 import DialogActions from "@material-ui/core/DialogActions";
 import Button from "@material-ui/core/Button";
 import { Wallet } from "../../canister";
-import type { Event } from "../../canister/declaration";
+import type { Event } from "../../canister/wallet/wallet";
 import Canisters from "../panels/Canisters";
 import { PrimaryButton } from "../Buttons";
 import Events from "../panels/Transactions";

@@ -8,7 +8,7 @@ import TableRow from "@material-ui/core/TableRow";
 import Typography from "@material-ui/core/Typography";
 import { Wallet } from "../../canister";
 import ReactTimeago from "react-timeago";
-import { Event, EventKind } from "../../types";
+import { Event, EventKind } from "../../canister";
 
 interface TransactionRowProps {
   event: Event;
