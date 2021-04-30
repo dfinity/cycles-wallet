@@ -15,7 +15,7 @@
  */
 import { HttpAgent, Actor, Principal, ActorSubclass } from "@dfinity/agent";
 import { AuthClient } from "@dfinity/auth-client";
-import _SERVICE from "./wallet/wallet";
+import _SERVICE, { Event } from "./wallet/wallet";
 import wallet_idl from "./interface.js";
 export * from "./wallet";
 
