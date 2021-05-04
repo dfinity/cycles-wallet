@@ -13,7 +13,13 @@
  * It is also useful because that puts all the code in one place, including the
  * authentication logic. We do not use `window.ic` anywhere in this.
  */
-import { HttpAgent, Actor, Principal, ActorSubclass } from "@dfinity/agent";
+import {
+  HttpAgent,
+  Actor,
+  Principal,
+  ActorSubclass,
+  AnonymousIdentity,
+} from "@dfinity/agent";
 import { AuthClient } from "@dfinity/auth-client";
 import _SERVICE, { Event } from "./wallet/wallet";
 import wallet_idl from "./interface.js";
@@ -52,7 +58,7 @@ function getCanisterId(): Principal {
 
   throw new Error("Could not find the canister ID.");
 }
-let walletCanisterCache: ActorSubclass<_SERVICE>;
+let walletCanisterCache: ActorSubclass<_SERVICE> | null = null;
 
 export async function getAgentPrincipal(): Promise<Principal> {
   const identity = await authClient.getIdentity();
@@ -71,12 +77,11 @@ async function getWalletCanister(): Promise<ActorSubclass<_SERVICE>> {
   let walletId: Principal | null = null;
   walletId = getWalletId(walletId);
 
-  if (!(await authClient.isAuthenticated())) {
+  if (!authClient.ready) {
     return Promise.reject("not yet ready");
   }
 
-  const identity = await authClient.getIdentity();
-
+  const identity = (await authClient.getIdentity()) ?? new AnonymousIdentity();
   const agent = new HttpAgent({
     identity,
   });
@@ -132,6 +137,9 @@ export const Wallet = {
   async balance(): Promise<number> {
     const walletCanister = await getWalletCanister();
     return Number((await walletCanister.wallet_balance()).amount);
+  },
+  clearWalletCache() {
+    walletCanisterCache = null;
   },
   async events(from?: number, to?: number): Promise<Event[]> {
     return (

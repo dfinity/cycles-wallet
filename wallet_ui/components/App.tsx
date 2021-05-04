@@ -134,29 +134,24 @@ function useDarkState(): [boolean, (newState?: boolean) => void] {
 }
 
 export default function App() {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [ready, setReady] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState<null | boolean>(null);
   const [open, setOpen] = useLocalStorage("app-menu-open", false);
   const [darkState, setDarkState] = useDarkState();
+  const classes = useStyles();
+  const theme = generateTheme(darkState);
 
   useEffect(() => {
     if (!authClient.ready) {
       return;
     }
+    setReady(true);
     authClient.isAuthenticated().then((value) => {
       setIsAuthenticated(value ?? false);
     });
   }, [authClient.ready]);
 
-  console.log("isAuthenticated", isAuthenticated);
-  const history = useHistory();
-
-  if (authClient.ready && !isAuthenticated) {
-    history.push(`/authorize${location.search ? `?${location.search}` : ""}`);
-  }
-
-  const theme = generateTheme(darkState);
-
-  const classes = useStyles();
+  if (!ready) return null;
 
   return (
     <ThemeProvider theme={theme}>
@@ -182,11 +177,20 @@ export default function App() {
 
           <RouterSwitch>
             <Route path="/authorize">
-              <Authorize />
+              <Authorize setIsAuthenticated={setIsAuthenticated} />
             </Route>
 
             <Route path="/">
-              <Dashboard open={open} onOpenToggle={() => setOpen(!open)} />
+              {authClient.ready && isAuthenticated === false ? (
+                <Redirect
+                  to={{
+                    pathname: `/authorize`,
+                    search: location.search,
+                  }}
+                />
+              ) : (
+                <Dashboard open={open} onOpenToggle={() => setOpen(!open)} />
+              )}
             </Route>
           </RouterSwitch>
         </div>

@@ -8,13 +8,12 @@ class AuthClientWrapper {
     return this;
   }
   async create() {
-    console.trace("create");
     this.authClient = await AuthClient.create();
+    await this.authClient?.isAuthenticated();
     this.ready = true;
   }
   async login(): Promise<Identity | undefined> {
     return new Promise(async (resolve) => {
-      console.trace("login");
       return await this.authClient?.login({
         identityProvider:
           "http://localhost:8000?canisterId=rno2w-sqaaa-aaaaa-aaacq-cai#authorize",
@@ -26,12 +25,10 @@ class AuthClientWrapper {
   }
 
   async getIdentity() {
-    console.trace("getIdentity");
     return await this.authClient?.getIdentity();
   }
 
   async isAuthenticated() {
-    console.trace("isAuthenticated");
     return await this.authClient?.isAuthenticated();
   }
 }

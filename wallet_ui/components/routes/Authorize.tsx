@@ -87,7 +87,12 @@ const CopyButton = (props: {
   );
 };
 
-export function Authorize() {
+type AuthorizeProps = {
+  setIsAuthenticated: (x: boolean) => void;
+};
+
+export function Authorize(props: AuthorizeProps) {
+  const { setIsAuthenticated } = props;
   const [agentPrincipal, setAgentPrincipal] = useState<Principal | null>(null);
   const [copied, setCopied] = useState(false);
   const history = useHistory();
@@ -196,43 +201,43 @@ export function Authorize() {
         </Box>
       </main>
     );
-  } else if (agentPrincipal && agentPrincipal.isAnonymous()) {
-    return (
-      <main className={classes.content}>
-        <div className={classes.appBarSpacer} />
-        <Container maxWidth="lg" className={classes.container}>
-          <Grid container spacing={3}>
-            <Grid item xs={12}>
-              <Paper className={classes.paper}>
-                <Typography component="h1" variant="h4">
-                  Anonymous Device
-                </Typography>
-                <Box mb={4}>
-                  <Typography variant="body1" color="textPrimary">
-                    You are using an anonymous Principal. You need to
-                    authenticate.
-                  </Typography>
-                </Box>
-                <PrimaryButton
-                  onClick={async () => {
-                    await authClient.login();
-                    const identity = await authClient.getIdentity();
-                    if (identity) {
-                      setAgentPrincipal(identity.getPrincipal());
-                    } else {
-                      console.error("could not get identity");
-                    }
-                  }}
-                >
-                  Authenticate
-                </PrimaryButton>
-              </Paper>
-            </Grid>
-          </Grid>
-        </Container>
-      </main>
-    );
-  } else {
-    return <></>;
   }
+
+  return (
+    <main className={classes.content}>
+      <div className={classes.appBarSpacer} />
+      <Container maxWidth="lg" className={classes.container}>
+        <Grid container spacing={3}>
+          <Grid item xs={12}>
+            <Paper className={classes.paper}>
+              <Typography component="h1" variant="h4">
+                Anonymous Device
+              </Typography>
+              <Box mb={4}>
+                <Typography variant="body1" color="textPrimary">
+                  You are using an anonymous Principal. You need to
+                  authenticate.
+                </Typography>
+              </Box>
+              <PrimaryButton
+                onClick={async () => {
+                  await authClient.login();
+                  const identity = await authClient.getIdentity();
+                  Wallet.clearWalletCache();
+                  if (identity) {
+                    setIsAuthenticated(true);
+                    setAgentPrincipal(identity.getPrincipal());
+                  } else {
+                    console.error("could not get identity");
+                  }
+                }}
+              >
+                Authenticate
+              </PrimaryButton>
+            </Paper>
+          </Grid>
+        </Grid>
+      </Container>
+    </main>
+  );
 }

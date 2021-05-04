@@ -29,5 +29,8 @@ module.exports = {
       "/api": "http://localhost:8000",
       "/bls.wasm": "http://localhost:8000",
     },
+    historyApiFallback: {
+      index: "index.html",
+    },
   },
 };
