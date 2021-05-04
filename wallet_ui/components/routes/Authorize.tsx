@@ -4,7 +4,6 @@ import {
   Wallet,
   Principal,
   getAgentPrincipal,
-  authClient,
   getWalletId,
 } from "../../canister";
 import { useHistory } from "react-router";
@@ -21,6 +20,7 @@ import { Copyright } from "../App";
 import Button from "@material-ui/core/Button";
 import { PrimaryButton } from "../Buttons";
 import { css } from "@emotion/css";
+import { authClient } from "../../utils/authClient";
 
 const CHECK_ACCESS_FREQUENCY_IN_SECONDS = 15;
 
@@ -215,13 +215,13 @@ export function Authorize() {
                 </Box>
                 <PrimaryButton
                   onClick={async () => {
-                    await (await authClient).login({
-                      identityProvider:
-                        "https://identity.messaging.ic0.app#authorize",
-                    });
-                    setAgentPrincipal(
-                      (await authClient).getIdentity().getPrincipal()
-                    );
+                    await authClient.login();
+                    const identity = await authClient.getIdentity();
+                    if (identity) {
+                      setAgentPrincipal(identity.getPrincipal());
+                    } else {
+                      console.error("could not get identity");
+                    }
                   }}
                 >
                   Authenticate

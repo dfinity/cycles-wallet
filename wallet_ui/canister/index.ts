@@ -17,6 +17,7 @@ import { HttpAgent, Actor, Principal, ActorSubclass } from "@dfinity/agent";
 import { AuthClient } from "@dfinity/auth-client";
 import _SERVICE, { Event } from "./wallet/wallet";
 import wallet_idl from "./interface.js";
+import { authClient } from "../utils/authClient";
 export * from "./wallet";
 
 function convertIdlEventMap(idlEvent: any): Event {
@@ -28,12 +29,6 @@ function convertIdlEventMap(idlEvent: any): Event {
 }
 // Need to export the enumeration from wallet.did
 export { Principal } from "@dfinity/agent";
-
-async function _getAuthClient() {
-  return await AuthClient.create();
-}
-
-export const authClient = _getAuthClient();
 
 function getCanisterId(): Principal {
   // Check the query params.
@@ -60,7 +55,12 @@ function getCanisterId(): Principal {
 let walletCanisterCache: ActorSubclass<_SERVICE>;
 
 export async function getAgentPrincipal(): Promise<Principal> {
-  return (await authClient).getIdentity().getPrincipal();
+  const identity = await authClient.getIdentity();
+  if (identity) {
+    return await identity.getPrincipal();
+  } else {
+    return Promise.reject("Could not find identity");
+  }
 }
 
 async function getWalletCanister(): Promise<ActorSubclass<_SERVICE>> {
@@ -70,7 +70,13 @@ async function getWalletCanister(): Promise<ActorSubclass<_SERVICE>> {
 
   let walletId: Principal | null = null;
   walletId = getWalletId(walletId);
-  const identity = (await authClient).getIdentity();
+
+  if (!(await authClient.isAuthenticated())) {
+    return Promise.reject("not yet ready");
+  }
+
+  const identity = await authClient.getIdentity();
+
   const agent = new HttpAgent({
     identity,
   });
@@ -124,7 +130,8 @@ export const Wallet = {
     await this.balance();
   },
   async balance(): Promise<number> {
-    return Number((await (await getWalletCanister()).wallet_balance()).amount);
+    const walletCanister = await getWalletCanister();
+    return Number((await walletCanister.wallet_balance()).amount);
   },
   async events(from?: number, to?: number): Promise<Event[]> {
     return (

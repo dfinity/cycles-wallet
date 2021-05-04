@@ -15,19 +15,21 @@ import {
   Switch as RouterSwitch,
   Route,
   Redirect,
+  useHistory,
 } from "react-router-dom";
 
 // For Switch Theming
 import ThemeProvider from "@material-ui/styles/ThemeProvider";
 
 // For document title setting
-import { authClient, Wallet } from "../canister";
+import { Wallet } from "../canister";
 
 // Routes
 import { Authorize } from "./routes/Authorize";
 import { Dashboard } from "./routes/Dashboard";
 import { useLocalStorage } from "../utils/hooks";
 import generateTheme from "../utils/materialTheme";
+import { authClient } from "../utils/authClient";
 
 export function Copyright() {
   return (
@@ -132,26 +134,25 @@ function useDarkState(): [boolean, (newState?: boolean) => void] {
 }
 
 export default function App() {
-  const [ready, setReady] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [open, setOpen] = useLocalStorage("app-menu-open", false);
   const [darkState, setDarkState] = useDarkState();
 
   useEffect(() => {
-    authClient.then(async (client) => {
-      setIsAuthenticated(await client.isAuthenticated());
-    });
-  }, [authClient, setIsAuthenticated]);
-
-  useEffect(() => {
-    if (isAuthenticated) {
-      Wallet.name().then((name) => {
-        document.title = name;
-      });
+    if (!authClient.ready) {
+      return;
     }
-  }, [isAuthenticated]);
+    authClient.isAuthenticated().then((value) => {
+      setIsAuthenticated(value ?? false);
+    });
+  }, [authClient.ready]);
 
   console.log("isAuthenticated", isAuthenticated);
+  const history = useHistory();
+
+  if (authClient.ready && !isAuthenticated) {
+    history.push(`/authorize${location.search ? `?${location.search}` : ""}`);
+  }
 
   const theme = generateTheme(darkState);
 
@@ -185,16 +186,7 @@ export default function App() {
             </Route>
 
             <Route path="/">
-              {!isAuthenticated ? (
-                <Redirect
-                  to={{
-                    pathname: "/authorize",
-                    search: location.search,
-                  }}
-                />
-              ) : (
-                <Dashboard open={open} onOpenToggle={() => setOpen(!open)} />
-              )}
+              <Dashboard open={open} onOpenToggle={() => setOpen(!open)} />
             </Route>
           </RouterSwitch>
         </div>
