@@ -15,8 +15,6 @@ class AuthClientWrapper {
   async login(): Promise<Identity | undefined> {
     return new Promise(async (resolve) => {
       return await this.authClient?.login({
-        identityProvider:
-          "http://localhost:8000?canisterId=rno2w-sqaaa-aaaaa-aaacq-cai#authorize",
         onSuccess: async () => {
           resolve(await this.authClient?.getIdentity());
         },
