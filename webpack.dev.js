@@ -30,7 +30,7 @@ module.exports = {
       "/bls.wasm": "http://localhost:8000",
     },
     historyApiFallback: {
-      index: "index.html",
+      index: "/",
     },
   },
 };
