@@ -5,17 +5,10 @@ import { WalletAppBar } from "./WalletAppBar";
 import Typography from "@material-ui/core/Typography";
 import Link from "@material-ui/core/Link";
 import {
-  orange,
-  lightBlue,
-  deepPurple,
-  deepOrange,
-} from "@material-ui/core/colors";
-import {
   BrowserRouter as Router,
   Switch as RouterSwitch,
   Route,
   Redirect,
-  useHistory,
 } from "react-router-dom";
 
 // For Switch Theming
@@ -140,6 +133,12 @@ export default function App() {
   const [darkState, setDarkState] = useDarkState();
   const classes = useStyles();
   const theme = generateTheme(darkState);
+
+  useEffect(() => {
+    Wallet.name().then((name) => {
+      document.title = name;
+    });
+  }, []);
 
   useEffect(() => {
     if (!authClient.ready) {

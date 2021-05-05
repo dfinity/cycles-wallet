@@ -20,9 +20,8 @@ import {
   ActorSubclass,
   AnonymousIdentity,
 } from "@dfinity/agent";
-import { AuthClient } from "@dfinity/auth-client";
-import _SERVICE, { Event } from "./wallet/wallet";
-import wallet_idl from "./interface.js";
+import _SERVICE from "./wallet/wallet";
+import factory, { Event } from "./wallet";
 import { authClient } from "../utils/authClient";
 export * from "./wallet";
 
@@ -88,9 +87,12 @@ async function getWalletCanister(): Promise<ActorSubclass<_SERVICE>> {
   if (!walletId) {
     throw new Error("Need to have a wallet ID.");
   } else {
-    walletCanisterCache = Actor.createActor<_SERVICE>(wallet_idl, {
+    walletCanisterCache = (Actor as any).createActor(factory as any, {
       agent,
       canisterId: (await getWalletId()) || "",
+      // Override the defaults for polling.
+      maxAttempts: 201,
+      throttleDurationInMSecs: 1500,
     }) as ActorSubclass<_SERVICE>;
     return walletCanisterCache;
   }
