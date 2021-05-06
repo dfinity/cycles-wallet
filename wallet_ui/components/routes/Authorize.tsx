@@ -119,8 +119,8 @@ export function Authorize(props: AuthorizeProps) {
   if (agentPrincipal && !agentPrincipal.isAnonymous()) {
     const canisterId = getWalletId();
     const isLocalhost = !!window.location.hostname.match(/^(.*\.)?localhost$/);
-    const canisterCallShCode = `dfx canister ${
-      isLocalhost ? "" : "--no-wallet  --network alpha"
+    const canisterCallShCode = `dfx canister --no-wallet${
+      isLocalhost ? "" : " --network ic"
     } call "${
       canisterId?.toText() || ""
     }" authorize '(principal "${agentPrincipal.toText()}")'`;
@@ -215,7 +215,7 @@ export function Authorize(props: AuthorizeProps) {
               </Typography>
               <Box mb={4}>
                 <Typography variant="body1" color="textPrimary">
-                  You are using an anonymous Principal. You need to
+                  You are currently using this service anonymously. Please
                   authenticate.
                 </Typography>
               </Box>
