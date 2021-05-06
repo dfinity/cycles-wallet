@@ -215,8 +215,7 @@ export function Authorize(props: AuthorizeProps) {
               </Typography>
               <Box mb={4}>
                 <Typography variant="body1" color="textPrimary">
-                  You are using an anonymous Principal. You need to
-                  authenticate.
+                  You are currently using this service anonymously. Please authenticate.
                 </Typography>
               </Box>
               <PrimaryButton
