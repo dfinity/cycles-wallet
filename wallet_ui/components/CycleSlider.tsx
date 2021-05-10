@@ -149,7 +149,6 @@ function CycleSlider(props: Props) {
   const sdrUsdRate = 0.69977;
 
   function handleSlide(e: any) {
-    console.log("slide", e.target.value);
     if (balance && e.target?.value) {
       const newValue = Math.floor((balance * e.target.value) / 1000);
       setCycles(newValue);

@@ -5,28 +5,24 @@ import { WalletAppBar } from "./WalletAppBar";
 import Typography from "@material-ui/core/Typography";
 import Link from "@material-ui/core/Link";
 import {
-  orange,
-  lightBlue,
-  deepPurple,
-  deepOrange,
-} from "@material-ui/core/colors";
-import {
   BrowserRouter as Router,
   Switch as RouterSwitch,
   Route,
+  Redirect,
 } from "react-router-dom";
 
 // For Switch Theming
 import ThemeProvider from "@material-ui/styles/ThemeProvider";
 
 // For document title setting
-import { handleAuthRedirect, Wallet } from "../canister";
+import { Wallet } from "../canister";
 
 // Routes
 import { Authorize } from "./routes/Authorize";
 import { Dashboard } from "./routes/Dashboard";
 import { useLocalStorage } from "../utils/hooks";
 import generateTheme from "../utils/materialTheme";
+import { authClient } from "../utils/authClient";
 
 export function Copyright() {
   return (
@@ -132,8 +128,11 @@ function useDarkState(): [boolean, (newState?: boolean) => void] {
 
 export default function App() {
   const [ready, setReady] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState<null | boolean>(null);
   const [open, setOpen] = useLocalStorage("app-menu-open", false);
   const [darkState, setDarkState] = useDarkState();
+  const classes = useStyles();
+  const theme = generateTheme(darkState);
 
   useEffect(() => {
     Wallet.name().then((name) => {
@@ -141,16 +140,17 @@ export default function App() {
     });
   }, []);
 
-  const theme = generateTheme(darkState);
+  useEffect(() => {
+    if (!authClient.ready) {
+      return;
+    }
+    setReady(true);
+    authClient.isAuthenticated().then((value) => {
+      setIsAuthenticated(value ?? false);
+    });
+  }, [authClient.ready]);
 
-  const classes = useStyles();
-
-  // Check if we need to parse the hash.
-  handleAuthRedirect().then(() => setReady(true));
-
-  if (!ready) {
-    return <></>;
-  }
+  if (!ready) return null;
 
   return (
     <ThemeProvider theme={theme}>
@@ -176,11 +176,20 @@ export default function App() {
 
           <RouterSwitch>
             <Route path="/authorize">
-              <Authorize />
+              <Authorize setIsAuthenticated={setIsAuthenticated} />
             </Route>
 
             <Route path="/">
-              <Dashboard open={open} onOpenToggle={() => setOpen(!open)} />
+              {authClient.ready && isAuthenticated === false ? (
+                <Redirect
+                  to={{
+                    pathname: `/authorize`,
+                    search: location.search,
+                  }}
+                />
+              ) : (
+                <Dashboard open={open} onOpenToggle={() => setOpen(!open)} />
+              )}
             </Route>
           </RouterSwitch>
         </div>

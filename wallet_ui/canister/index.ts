@@ -13,10 +13,17 @@
  * It is also useful because that puts all the code in one place, including the
  * authentication logic. We do not use `window.ic` anywhere in this.
  */
-import { HttpAgent, Actor, Principal, ActorSubclass } from "@dfinity/agent";
-import { AuthenticationClient } from "../utils/authClient";
+import {
+  HttpAgent,
+  Actor,
+  Principal,
+  ActorSubclass,
+  AnonymousIdentity,
+} from "@dfinity/agent";
 import _SERVICE from "./wallet/wallet";
 import factory, { Event } from "./wallet";
+import { authClient } from "../utils/authClient";
+export * from "./wallet";
 
 function convertIdlEventMap(idlEvent: any): Event {
   return {
@@ -25,17 +32,8 @@ function convertIdlEventMap(idlEvent: any): Event {
     kind: idlEvent.kind,
   };
 }
-
-export * from "./wallet";
-
 // Need to export the enumeration from wallet.did
 export { Principal } from "@dfinity/agent";
-
-const authClient = new AuthenticationClient();
-
-export async function getAgentPrincipal(): Promise<Principal> {
-  return authClient.getIdentity().getPrincipal();
-}
 
 function getCanisterId(): Principal {
   // Check the query params.
@@ -59,21 +57,14 @@ function getCanisterId(): Principal {
 
   throw new Error("Could not find the canister ID.");
 }
+let walletCanisterCache: ActorSubclass<_SERVICE> | null = null;
 
-let walletCanisterCache: ActorSubclass<_SERVICE>;
-
-export async function login() {
-  const redirectUri = `${location.origin}/${location.search}`;
-  await authClient.loginWithRedirect({
-    redirectUri,
-    scope: [getWalletId()],
-  });
-}
-
-export async function handleAuthRedirect() {
-  // Check if we need to parse the authentication.
-  if (authClient.shouldParseResult(location)) {
-    await authClient.handleRedirectCallback(location);
+export async function getAgentPrincipal(): Promise<Principal> {
+  const identity = await authClient.getIdentity();
+  if (identity) {
+    return await identity.getPrincipal();
+  } else {
+    return Promise.reject("Could not find identity");
   }
 }
 
@@ -82,19 +73,23 @@ async function getWalletCanister(): Promise<ActorSubclass<_SERVICE>> {
     return walletCanisterCache;
   }
 
-  await handleAuthRedirect();
-
   let walletId: Principal | null = null;
   walletId = getWalletId(walletId);
 
-  const agent = new HttpAgent({ identity: authClient.getIdentity() });
+  if (!authClient.ready) {
+    return Promise.reject("not yet ready");
+  }
 
+  const identity = (await authClient.getIdentity()) ?? new AnonymousIdentity();
+  const agent = new HttpAgent({
+    identity,
+  });
   if (!walletId) {
     throw new Error("Need to have a wallet ID.");
   } else {
     walletCanisterCache = (Actor as any).createActor(factory as any, {
       agent,
-      canisterId: walletId,
+      canisterId: (await getWalletId()) || "",
       // Override the defaults for polling.
       maxAttempts: 201,
       throttleDurationInMSecs: 1500,
@@ -142,7 +137,11 @@ export const Wallet = {
     await this.balance();
   },
   async balance(): Promise<number> {
-    return Number((await (await getWalletCanister()).wallet_balance()).amount);
+    const walletCanister = await getWalletCanister();
+    return Number((await walletCanister.wallet_balance()).amount);
+  },
+  clearWalletCache() {
+    walletCanisterCache = null;
   },
   async events(from?: number, to?: number): Promise<Event[]> {
     return (
