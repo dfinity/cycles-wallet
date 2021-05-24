@@ -126,6 +126,12 @@ fn add_controller(controller: Principal) {
 /// Remove a controller. This is equivalent to moving the role to a regular user.
 #[update(guard = "is_controller")]
 fn remove_controller(controller: Principal) -> Result<(), String> {
+    if !storage::get::<AddressBook>().is_controller(&controller) {
+        return Err(format!(
+            "Cannot remove {} because it is not a controller.",
+            controller.to_text()
+        ));
+    }
     if storage::get::<AddressBook>().controllers().count() > 1 {
         let book = storage::get_mut::<AddressBook>();
 
@@ -169,7 +175,7 @@ fn deauthorize(custodian: Principal) -> Result<(), String> {
         Ok(())
     } else {
         Err(format!(
-            "Cannot deauthorize {} as it ss not a custodian.",
+            "Cannot deauthorize {} as it is not a custodian.",
             custodian.to_text()
         ))
     }
