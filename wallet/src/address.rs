@@ -74,6 +74,10 @@ impl AddressEntry {
     }
 
     pub fn is_custodian(&self) -> bool {
+        self.role == Role::Custodian
+    }
+
+    pub fn is_controller_or_custodian(&self) -> bool {
         self.role == Role::Controller || self.role == Role::Custodian
     }
 }
@@ -134,6 +138,12 @@ impl AddressBook {
     #[inline]
     pub fn is_controller(&self, principal: &Principal) -> bool {
         self.find(principal).map_or(false, |e| e.is_controller())
+    }
+
+    #[inline]
+    pub fn is_controller_or_custodian(&self, principal: &Principal) -> bool {
+        self.find(principal)
+            .map_or(false, |e| e.is_controller_or_custodian())
     }
 
     #[inline]

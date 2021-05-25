@@ -87,7 +87,7 @@ fn post_upgrade() {
 /***************************************************************************************************
  * Wallet Name
  **************************************************************************************************/
-#[query(guard = "is_custodian")]
+#[query(guard = "is_custodian_or_controller")]
 fn name() -> Option<String> {
     storage::get::<WalletName>().0.clone()
 }
@@ -108,7 +108,7 @@ include!(concat!(env!("OUT_DIR"), "/http_request.rs"));
  **************************************************************************************************/
 
 /// Get the controller of this canister.
-#[query(guard = "is_custodian")]
+#[query(guard = "is_custodian_or_controller")]
 fn get_controllers() -> Vec<&'static Principal> {
     storage::get_mut::<AddressBook>()
         .controllers()
@@ -125,14 +125,25 @@ fn add_controller(controller: Principal) {
 
 /// Remove a controller. This is equivalent to moving the role to a regular user.
 #[update(guard = "is_controller")]
-fn remove_controller(controller: Principal) {
-    let book = storage::get_mut::<AddressBook>();
-
-    if let Some(mut entry) = book.take(&controller) {
-        entry.role = Role::Contact;
-        book.insert(entry);
+fn remove_controller(controller: Principal) -> Result<(), String> {
+    if !storage::get::<AddressBook>().is_controller(&controller) {
+        return Err(format!(
+            "Cannot remove {} because it is not a controller.",
+            controller.to_text()
+        ));
     }
-    update_chart();
+    if storage::get::<AddressBook>().controllers().count() > 1 {
+        let book = storage::get_mut::<AddressBook>();
+
+        if let Some(mut entry) = book.take(&controller) {
+            entry.role = Role::Contact;
+            book.insert(entry);
+        }
+        update_chart();
+        Ok(())
+    } else {
+        Err("The wallet must have at least one controller.".to_string())
+    }
 }
 
 /***************************************************************************************************
@@ -140,7 +151,7 @@ fn remove_controller(controller: Principal) {
  **************************************************************************************************/
 
 /// Get the custodians of this canister.
-#[query(guard = "is_custodian")]
+#[query(guard = "is_custodian_or_controller")]
 fn get_custodians() -> Vec<&'static Principal> {
     storage::get::<AddressBook>()
         .custodians()
@@ -157,13 +168,21 @@ fn authorize(custodian: Principal) {
 
 /// Deauthorize a custodian.
 #[update(guard = "is_controller")]
-fn deauthorize(custodian: Principal) {
-    remove_address(custodian);
-    update_chart();
+fn deauthorize(custodian: Principal) -> Result<(), String> {
+    if storage::get::<AddressBook>().is_custodian(&custodian) {
+        remove_address(custodian)?;
+        update_chart();
+        Ok(())
+    } else {
+        Err(format!(
+            "Cannot deauthorize {} as it is not a custodian.",
+            custodian.to_text()
+        ))
+    }
 }
 
 mod wallet {
-    use crate::{events, is_custodian};
+    use crate::{events, is_custodian_or_controller};
     use ic_cdk::export::candid::{CandidType, Nat};
     use ic_cdk::export::Principal;
     use ic_cdk::{api, caller, id, storage};
@@ -185,7 +204,7 @@ mod wallet {
     }
 
     /// Return the cycle balance of this canister.
-    #[query(guard = "is_custodian", name = "wallet_balance")]
+    #[query(guard = "is_custodian_or_controller", name = "wallet_balance")]
     fn balance() -> BalanceResult {
         BalanceResult {
             amount: api::canister_balance() as u64,
@@ -193,7 +212,7 @@ mod wallet {
     }
 
     /// Send cycles to another canister.
-    #[update(guard = "is_custodian", name = "wallet_send")]
+    #[update(guard = "is_custodian_or_controller", name = "wallet_send")]
     async fn send(args: SendCyclesArgs) -> Result<(), String> {
         match api::call::call_with_payment(
             args.canister.clone(),
@@ -276,7 +295,7 @@ mod wallet {
         canister_id: Principal,
     }
 
-    #[update(guard = "is_custodian", name = "wallet_create_canister")]
+    #[update(guard = "is_custodian_or_controller", name = "wallet_create_canister")]
     async fn create_canister(args: CreateCanisterArgs) -> Result<CreateResult, String> {
         let create_result = create_canister_call(args).await?;
 
@@ -429,7 +448,7 @@ mod wallet {
         Ok(())
     }
 
-    #[update(guard = "is_custodian", name = "wallet_create_wallet")]
+    #[update(guard = "is_custodian_or_controller", name = "wallet_create_wallet")]
     async fn create_wallet(args: CreateCanisterArgs) -> Result<CreateResult, String> {
         let wallet_bytes = storage::get::<super::WalletWASMBytes>();
         let wasm_module = match &wallet_bytes.0 {
@@ -503,7 +522,7 @@ mod wallet {
     }
 
     /// Forward a call to another canister.
-    #[update(guard = "is_custodian", name = "wallet_call")]
+    #[update(guard = "is_custodian_or_controller", name = "wallet_call")]
     async fn call(args: CallCanisterArgs) -> Result<CallResult, String> {
         if api::id() == caller() {
             return Err("Attempted to call forward on self. This is not allowed. Call this method via a different custodian.".to_string());
@@ -550,16 +569,23 @@ fn add_address(address: AddressEntry) {
     update_chart();
 }
 
-#[query(guard = "is_custodian")]
+#[query(guard = "is_custodian_or_controller")]
 fn list_addresses() -> Vec<&'static AddressEntry> {
     storage::get::<AddressBook>().iter().collect()
 }
 
 #[update(guard = "is_controller")]
-fn remove_address(address: Principal) {
-    storage::get_mut::<AddressBook>().remove(&address);
-    update_chart();
-    record(EventKind::AddressRemoved { id: address })
+fn remove_address(address: Principal) -> Result<(), String> {
+    if storage::get::<AddressBook>().is_controller(&address)
+        && storage::get::<AddressBook>().controllers().count() == 1
+    {
+        Err("The wallet must have at least one controller.".to_string())
+    } else {
+        storage::get_mut::<AddressBook>().remove(&address);
+        record(EventKind::AddressRemoved { id: address });
+        update_chart();
+        Ok(())
+    }
 }
 
 /***************************************************************************************************
@@ -573,7 +599,7 @@ struct GetEventsArgs {
 }
 
 /// Return the recent events observed by this canister.
-#[query(guard = "is_custodian")]
+#[query(guard = "is_custodian_or_controller")]
 fn get_events(args: Option<GetEventsArgs>) -> &'static [Event] {
     if let Some(GetEventsArgs { from, to }) = args {
         events::get_events(from, to)
@@ -597,7 +623,7 @@ struct GetChartArgs {
     precision: Option<u64>,
 }
 
-#[query(guard = "is_custodian")]
+#[query(guard = "is_custodian_or_controller")]
 fn get_chart(args: Option<GetChartArgs>) -> Vec<(u64, u64)> {
     let chart = storage::get_mut::<Vec<ChartTick>>();
 
@@ -648,11 +674,11 @@ fn is_controller() -> Result<(), String> {
 }
 
 /// Check if the caller is a custodian.
-fn is_custodian() -> Result<(), String> {
+fn is_custodian_or_controller() -> Result<(), String> {
     let caller = &caller();
-    if storage::get::<AddressBook>().is_custodian(caller) || &api::id() == caller {
+    if storage::get::<AddressBook>().is_controller_or_custodian(caller) || &api::id() == caller {
         Ok(())
     } else {
-        Err("Only a custodian can call this method.".to_string())
+        Err("Only a controller or custodian can call this method.".to_string())
     }
 }
