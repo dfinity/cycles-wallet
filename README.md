@@ -1,19 +1,13 @@
-# wallet-canister
+# DFINITY Cycles Wallet
 
-[![Build Status](https://github.com/dfinity-lab/wallet-canister/workflows/build/badge.svg)](https://github.com/dfinity-lab/wallet-canister/actions?query=workflow%3Abuild)
+[![Build Status](https://github.com/dfinity/cycles-wallet/workflows/build/badge.svg)](https://github.com/dfinity-lab/wallet-canister/actions?query=workflow%3Abuild)
 
-The basic wallet canister implementation in Rust
+The DFINITY Cycles Wallet implementation.
 
 ## Demo
 
-- Clone the repo: `git clone git@github.com:dfinity/wallet-rs.git`
-- Change to the working directory: `cd wallet-rs`
-- Check whether you have `cmake` installed: `cmake --version`
-  If needed, you can install cmake on macOS using `brew install cmake`
-- Install dependencies: `npm install`
+- Install dependencies: `npm ci`
 - Start replica: `dfx start --background --clean`
 - Deploy to replica locally: `dfx deploy`
 - Get canister ID: `dfx canister id wallet`
 - Open wallet UI at `http://localhost:8000/?canisterId=<wallet_canister_id_here>`
-
-**NB**: To Update the wallet UI without `dfx deploy`, run `npm run sideload-ui`. In order to do this, you will need to grant access to `Anonymous` for the wallet canister. To do so, run `dfx canister call $(dfx canister id wallet) add_controller '(principal "2vxsx-fae")'`.
