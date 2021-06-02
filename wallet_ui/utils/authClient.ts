@@ -15,6 +15,7 @@ class AuthClientWrapper {
   async login(): Promise<Identity | undefined> {
     return new Promise(async (resolve) => {
       return await this.authClient?.login({
+        identityProvider: this.identityProvider,
         onSuccess: async () => {
           resolve(await this.authClient?.getIdentity());
         },
@@ -28,6 +29,16 @@ class AuthClientWrapper {
 
   async isAuthenticated() {
     return await this.authClient?.isAuthenticated();
+  }
+
+  /**
+   * Get the internet-identity identityProvider URL to use when authenticating the end-user.
+   * Use ?identityProvider if present (useful in development), otherwise return undefined
+   * so that AuthClient default gets used.
+   */
+  private get identityProvider(): string|undefined {
+    const fromUrl = (new URLSearchParams(location.search)).get('identityProvider')
+    return fromUrl || undefined;
   }
 }
 
