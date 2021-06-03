@@ -313,7 +313,7 @@ mod wallet {
     #[query(guard = "is_custodian_or_controller", name = "wallet_balance")]
     fn balance() -> BalanceResult {
         BalanceResult {
-            amount: api::canister_balance() as u64,
+            amount: api::canister_balance(),
         }
     }
 
@@ -328,7 +328,7 @@ mod wallet {
                 events::record(events::EventKind::CyclesSent {
                     to: args.canister,
                     amount: args.amount,
-                    refund: refund as u64,
+                    refund: refund,
                 });
                 super::update_chart();
                 x
@@ -338,7 +338,7 @@ mod wallet {
                 events::record(events::EventKind::CyclesSent {
                     to: args.canister,
                     amount: args.amount,
-                    refund: refund as u64,
+                    refund: refund,
                 });
                 let call_error =
                     format!("An error happened during the call: {}: {}", code as u8, msg);
@@ -362,7 +362,7 @@ mod wallet {
             let amount_accepted = ic_cdk::api::call::msg_cycles_accept(amount);
             events::record(events::EventKind::CyclesReceived {
                 from,
-                amount: amount_accepted as u64,
+                amount: amount_accepted,
             });
             super::update_chart();
         }
@@ -756,8 +756,8 @@ fn get_chart(args: Option<GetChartArgs>) -> Vec<(u64, u64)> {
 
 fn update_chart() {
     let chart = storage::get_mut::<Vec<ChartTick>>();
-    let timestamp = api::time() as u64;
-    let cycles = api::canister_balance() as u64;
+    let timestamp = api::time();
+    let cycles = api::canister_balance();
     chart.push(ChartTick { timestamp, cycles });
 }
 
