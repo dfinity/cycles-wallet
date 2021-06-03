@@ -320,13 +320,8 @@ mod wallet {
     /// Send cycles to another canister.
     #[update(guard = "is_custodian_or_controller", name = "wallet_send")]
     async fn send(args: SendCyclesArgs) -> Result<(), String> {
-        match api::call::call_with_payment(
-            args.canister.clone(),
-            "wallet_receive",
-            (),
-            args.amount as u64,
-        )
-        .await
+        match api::call::call_with_payment(args.canister.clone(), "wallet_receive", (), args.amount)
+            .await
         {
             Ok(x) => {
                 let refund = api::call::msg_cycles_refunded();
@@ -422,7 +417,7 @@ mod wallet {
             Principal::management_canister(),
             "create_canister",
             (in_arg,),
-            args.cycles as u64,
+            args.cycles,
         )
         .await
         {
@@ -638,7 +633,7 @@ mod wallet {
             args.canister.clone(),
             &args.method_name,
             args.args,
-            args.cycles as u64,
+            args.cycles,
         )
         .await
         {
