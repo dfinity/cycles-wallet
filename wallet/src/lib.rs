@@ -1,5 +1,4 @@
 use ic_cdk::api::{data_certificate, set_certified_data, trap};
-use ic_cdk::eprintln;
 use ic_cdk::export::candid::{CandidType, Func, Principal};
 use ic_cdk::*;
 use ic_cdk_macros::*;
@@ -161,7 +160,6 @@ fn http_request(req: HttpRequest) -> HttpResponse {
     };
     let assets = storage::get::<Assets>();
     let certificate_header = make_asset_certificate_header(&assets.hashes, asset);
-    eprintln!("hi {}", asset);
     match assets.contents.get(asset) {
         Some((headers, value)) => {
             let mut headers = headers.clone();
