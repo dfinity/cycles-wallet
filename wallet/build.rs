@@ -1,8 +1,18 @@
+use sha2::Digest;
 use std::env;
 use std::ffi::OsStr;
+use std::fs;
 use std::fs::File;
 use std::io::Write;
 use std::path::{Path, PathBuf};
+
+fn hash_file(path: &Path) -> [u8; 32] {
+    let bytes = fs::read(path)
+        .unwrap_or_else(|e| panic!("failed to read file {}: {}", &path.to_str().unwrap(), e));
+    let mut hasher = sha2::Sha256::new();
+    hasher.update(&bytes);
+    hasher.finalize().into()
+}
 
 fn main() {
     let out_dir = env::var("OUT_DIR").unwrap();
@@ -18,28 +28,11 @@ fn main() {
     eprintln!("cargo:rerun-if-changed={}", loader_path.to_string_lossy());
     let mut f = File::create(&loader_path).unwrap();
 
-    f.write_all(
-        b"
-        #[derive(CandidType, Deserialize, Debug)]
-        pub struct HeaderField(pub String, pub String);
-
-        #[derive(CandidType, Deserialize, Debug)]
-        pub struct HttpRequest {
-            pub method: String,
-            pub url: String,
-            pub headers: Vec<HeaderField>,
-            pub body: Vec<u8>,
-        }
-
-        #[derive(CandidType, Deserialize, Debug)]
-        pub struct HttpResponse {
-            pub status_code: u16,
-            pub headers: Vec<HeaderField>,
-            pub body: Vec<u8>,
-        }
-
-        fn file_name_bytes(path: &str) -> Option<(&'static [u8], &str, bool)> {
-    ",
+    writeln!(
+        f,
+        r#"
+pub fn for_each_asset(mut f: impl FnMut(&'static str, Vec<(String, String)>, &'static [u8], &[u8; 32])) {{
+"#
     )
     .unwrap();
 
@@ -48,8 +41,12 @@ fn main() {
         let path = entry.path();
         let filename = path.file_name().unwrap().to_str().unwrap();
 
-        let (file_type, gzipped) = if filename.ends_with(".js.gz") {
+        let (file_type, gzipped) = if filename.ends_with(".js") {
+            ("text/javascript; charset=UTF-8", false)
+        } else if filename.ends_with(".js.gz") {
             ("text/javascript; charset=UTF-8", true)
+        } else if filename.ends_with(".html") {
+            ("text/html; charset=UTF-8", false)
         } else if filename.ends_with(".html.gz") {
             ("text/html; charset=UTF-8", true)
         } else if filename.ends_with(".png") {
@@ -74,48 +71,20 @@ fn main() {
         let url_path = url_path.to_str().unwrap();
         let url_path = &url_path[..url_path.len() - ext_len];
 
-        f.write_fmt(format_args!(
-            r#"
-            if path == "/{0}" || path == "{0}" {{
-                return Some((include_bytes!("{1}/{2}"), "{3}", {4}));
-            }}
-            "#,
+        let hash = hash_file(&path);
+        writeln!(
+            f,
+            "  f(\"{}\", vec![(\"Content-Type\".to_string(), \"{}\".to_string()){},(\"Cache-Control\".to_string(), \"max-age=600\".to_string())], &include_bytes!(\"{}/{}\")[..], &{:?});",
             url_path,
-            getting_out_dir.to_str().unwrap(),
-            path.to_str().unwrap(),
             file_type,
-            gzipped,
-        ))
+            if gzipped { ",(\"Content-Encoding\".to_string(), \"gzip\".to_string())" } else { "" },
+            getting_out_dir.to_str().unwrap(),
+            path.display(),
+            hash
+        )
         .unwrap();
+        println!("cargo:rerun-if-changed={}", path.to_str().unwrap());
     }
-
-    f.write_all(
-        r#"None
-        }
-
-        #[query]
-        fn http_request(request: HttpRequest) -> HttpResponse {
-            if let Some((bytes, file_type, gzipped)) = file_name_bytes(request.url.as_str()).or_else(|| file_name_bytes("/index.html")) {
-                HttpResponse {
-                  status_code: 200,
-                  headers: vec![
-                    HeaderField("Content-Type".to_string(), file_type.to_string()),
-                    HeaderField("Content-Encoding".to_string(), if gzipped { "gzip" } else { "identity" }.to_string()),
-                    HeaderField("Content-Length".to_string(), format!("{}", bytes.len())),
-                    HeaderField("Cache-Control".to_string(), format!("max-age={}", 600)),
-                  ],
-                  body: bytes.to_vec(),
-                }
-            } else {
-                HttpResponse {
-                  status_code: 404,
-                  headers: vec![],
-                  body: vec![],
-                }
-            }
-        }
-    "#
-        .as_bytes(),
-    )
-    .unwrap();
+    writeln!(f, "}}").unwrap();
+    println!("cargo:rerun-if-changed=build.rs");
 }

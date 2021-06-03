@@ -1,8 +1,13 @@
-use ic_cdk::export::candid::CandidType;
-use ic_cdk::export::Principal;
+use ic_cdk::api::{data_certificate, set_certified_data, trap};
+use ic_cdk::eprintln;
+use ic_cdk::export::candid::{CandidType, Func, Principal};
 use ic_cdk::*;
 use ic_cdk_macros::*;
-use serde::Deserialize;
+use ic_certified_map::{AsHashTree, Hash, RbTree};
+use serde::{Deserialize, Serialize};
+use serde_bytes::{ByteBuf, Bytes};
+use std::borrow::Cow;
+use std::collections::HashMap;
 
 mod address;
 mod events;
@@ -26,6 +31,7 @@ struct WalletName(pub(crate) Option<String>);
 /// Initialize this canister.
 #[init]
 fn init() {
+    init_assets();
     add_address(AddressEntry::new(caller(), None, Role::Controller));
 }
 
@@ -102,6 +108,108 @@ fn set_name(name: String) {
  * Frontend
  **************************************************************************************************/
 include!(concat!(env!("OUT_DIR"), "/http_request.rs"));
+
+struct Assets {
+    contents: HashMap<&'static str, (Vec<HeaderField>, &'static [u8])>,
+    hashes: AssetHashes,
+}
+
+impl Default for Assets {
+    fn default() -> Self {
+        Self {
+            hashes: AssetHashes::default(),
+            contents: HashMap::default(),
+        }
+    }
+}
+
+type AssetHashes = RbTree<&'static str, Hash>;
+type HeaderField = (String, String);
+
+#[derive(Clone, Debug, CandidType, Deserialize)]
+struct HttpRequest {
+    method: String,
+    url: String,
+    headers: Vec<(String, String)>,
+    body: ByteBuf,
+}
+
+#[derive(Clone, Debug, CandidType, Deserialize)]
+struct HttpResponse {
+    status_code: u16,
+    headers: Vec<HeaderField>,
+    body: Cow<'static, Bytes>,
+    streaming_strategy: Option<StreamingStrategy>,
+}
+
+#[derive(Clone, Debug, CandidType, Deserialize)]
+enum StreamingStrategy {
+    Callback { callback: Func, token: Token },
+}
+
+#[derive(Clone, Debug, CandidType, Deserialize)]
+struct Token {}
+
+#[query]
+fn http_request(req: HttpRequest) -> HttpResponse {
+    let parts: Vec<&str> = req.url.split('?').collect();
+    let asset = parts[0].trim_start_matches('/');
+    let asset = if asset.is_empty() {
+        "index.html"
+    } else {
+        asset
+    };
+    let assets = storage::get::<Assets>();
+    let certificate_header = make_asset_certificate_header(&assets.hashes, asset);
+    eprintln!("hi {}", asset);
+    match assets.contents.get(asset) {
+        Some((headers, value)) => {
+            let mut headers = headers.clone();
+            headers.push(certificate_header);
+
+            HttpResponse {
+                status_code: 200,
+                headers,
+                body: Cow::Borrowed(Bytes::new(value)),
+                streaming_strategy: None,
+            }
+        }
+        None => HttpResponse {
+            status_code: 404,
+            headers: vec![certificate_header],
+            body: Cow::Owned(ByteBuf::from(format!("Asset {} not found.", asset))),
+            streaming_strategy: None,
+        },
+    }
+}
+
+fn make_asset_certificate_header(asset_hashes: &AssetHashes, asset_name: &str) -> (String, String) {
+    let certificate = data_certificate().unwrap_or_else(|| {
+        trap("data certificate is only available in query calls");
+    });
+    let witness = asset_hashes.witness(asset_name.as_bytes());
+    let hash_tree = ic_certified_map::labeled(b"http_assets", witness);
+    let mut serializer = serde_cbor::ser::Serializer::new(vec![]);
+    serializer.self_describe().unwrap();
+    hash_tree.serialize(&mut serializer).unwrap();
+    (
+        "IC-Certificate".to_string(),
+        format!(
+            "certificate=:{}:, tree=:{}:",
+            base64::encode(&certificate),
+            base64::encode(&serializer.into_inner())
+        ),
+    )
+}
+
+fn init_assets() {
+    let assets = storage::get_mut::<Assets>();
+    for_each_asset(|name, headers, contents, hash| {
+        assets.hashes.insert(name, *hash);
+        assets.contents.insert(name, (headers, contents));
+    });
+    set_certified_data(&assets.hashes.root_hash());
+}
 
 /***************************************************************************************************
  * Controller Management
@@ -218,7 +326,7 @@ mod wallet {
             args.canister.clone(),
             "wallet_receive",
             (),
-            args.amount as i64,
+            args.amount as u64,
         )
         .await
         {
@@ -316,7 +424,7 @@ mod wallet {
             Principal::management_canister(),
             "create_canister",
             (in_arg,),
-            args.cycles as i64,
+            args.cycles as u64,
         )
         .await
         {
@@ -532,7 +640,7 @@ mod wallet {
             args.canister.clone(),
             &args.method_name,
             args.args,
-            args.cycles as i64,
+            args.cycles as u64,
         )
         .await
         {
