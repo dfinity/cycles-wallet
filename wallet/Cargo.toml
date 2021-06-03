@@ -15,9 +15,9 @@ path = "src/lib.rs"
 [dependencies]
 base64 = "0.13.0"
 ic-types = "0.1.2"
-ic-cdk = { git = "https://github.com/dfinity/cdk-rs", branch = "next"}
-ic-cdk-macros = { git = "https://github.com/dfinity/cdk-rs", branch = "next"}
-ic-certified-map = { git = "https://github.com/dfinity/cdk-rs", branch = "next"}
+ic-cdk = { git = "https://github.com/dfinity/cdk-rs", branch = "main"}
+ic-cdk-macros = { git = "https://github.com/dfinity/cdk-rs", branch = "main"}
+ic-certified-map = { git = "https://github.com/dfinity/cdk-rs", branch = "main"}
 libflate = "1"
 num-traits = "0.2.14"
 serde = "1.0.116"
