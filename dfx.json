@@ -23,7 +23,15 @@
   },
   "networks": {
     "ic": {
-      "providers": ["https://gw.dfinity.network"],
+      "providers": ["https://ic0.app"],
+      "type": "persistent"
+    },
+    "consensus1": {
+      "providers": ["https://consensus1.dfinity.network"],
+      "type": "persistent"
+    },
+    "consensus2": {
+      "providers": ["https://consensus2.dfinity.network"],
       "type": "persistent"
     },
     "local": {

@@ -153,12 +153,6 @@ struct Token {}
 fn http_request(req: HttpRequest) -> HttpResponse {
     let parts: Vec<&str> = req.url.split('?').collect();
     let asset = parts[0];
-    let asset = asset.trim_start_matches('/');
-    let asset = if asset.is_empty() {
-        "index.html"
-    } else {
-        asset
-    };
     let assets = storage::get::<Assets>();
     let certificate_header = make_asset_certificate_header(&assets.hashes, asset);
     match assets.contents.get(asset) {
@@ -204,6 +198,12 @@ fn make_asset_certificate_header(asset_hashes: &AssetHashes, asset_name: &str) -
 fn init_assets() {
     let assets = storage::get_mut::<Assets>();
     for_each_asset(|name, headers, contents, hash| {
+        if name == "/index.html" {
+            assets.hashes.insert("/", *hash);
+            assets
+                .contents
+                .insert("/", (headers.clone().clone().clone(), contents));
+        }
         assets.hashes.insert(name, *hash);
         assets.contents.insert(name, (headers, contents));
     });

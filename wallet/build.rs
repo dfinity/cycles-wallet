@@ -72,6 +72,7 @@ pub fn for_each_asset(mut f: impl FnMut(&'static str, Vec<(String, String)>, &'s
         let ext_len = if ext == Some(OsStr::new("gz")) { 3 } else { 0 };
         let url_path = url_path.to_str().unwrap();
         let url_path = &url_path[..url_path.len() - ext_len];
+        let url_path = "/".to_string() + url_path;
 
         let hash = hash_file(&path);
         writeln!(
