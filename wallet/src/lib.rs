@@ -152,7 +152,8 @@ struct Token {}
 #[query]
 fn http_request(req: HttpRequest) -> HttpResponse {
     let parts: Vec<&str> = req.url.split('?').collect();
-    let asset = parts[0].trim_start_matches('/');
+    let asset = parts[0];
+    let asset = asset.trim_start_matches('/');
     let asset = if asset.is_empty() {
         "index.html"
     } else {
@@ -206,7 +207,8 @@ fn init_assets() {
         assets.hashes.insert(name, *hash);
         assets.contents.insert(name, (headers, contents));
     });
-    set_certified_data(&assets.hashes.root_hash());
+    let full_tree_hash = ic_certified_map::labeled_hash(b"http_assets", &assets.hashes.root_hash());
+    set_certified_data(&full_tree_hash);
 }
 
 /***************************************************************************************************

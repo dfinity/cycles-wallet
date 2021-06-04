@@ -51,6 +51,8 @@ pub fn for_each_asset(mut f: impl FnMut(&'static str, Vec<(String, String)>, &'s
             ("text/html; charset=UTF-8", true)
         } else if filename.ends_with(".png") {
             ("image/png", false)
+        } else if filename.ends_with(".ico") {
+            ("image/x-icon", false)
         } else if filename.ends_with(".svg") {
             ("image/svg+xml", false)
         } else if filename.ends_with(".txt") {
