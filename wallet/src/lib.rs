@@ -106,7 +106,7 @@ fn set_name(name: String) {
 /***************************************************************************************************
  * Frontend
  **************************************************************************************************/
-include!(concat!(env!("OUT_DIR"), "/http_request.rs"));
+include!(concat!(env!("OUT_DIR"), "/assets.rs"));
 
 struct Assets {
     contents: HashMap<&'static str, (Vec<HeaderField>, &'static [u8])>,

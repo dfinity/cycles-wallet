@@ -24,7 +24,7 @@ fn main() {
         .components()
         .map(|_| "..")
         .collect();
-    let loader_path = Path::new(&out_dir).join("http_request.rs");
+    let loader_path = Path::new(&out_dir).join("assets.rs");
     eprintln!("cargo:rerun-if-changed={}", loader_path.to_string_lossy());
     let mut f = File::create(&loader_path).unwrap();
 
