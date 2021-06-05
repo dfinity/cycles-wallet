@@ -200,9 +200,7 @@ fn init_assets() {
     for_each_asset(|name, headers, contents, hash| {
         if name == "/index.html" {
             assets.hashes.insert("/", *hash);
-            assets
-                .contents
-                .insert("/", (headers.clone().clone().clone(), contents));
+            assets.contents.insert("/", (headers.clone(), contents));
         }
         assets.hashes.insert(name, *hash);
         assets.contents.insert(name, (headers, contents));

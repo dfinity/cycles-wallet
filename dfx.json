@@ -26,14 +26,6 @@
       "providers": ["https://ic0.app"],
       "type": "persistent"
     },
-    "consensus1": {
-      "providers": ["https://consensus1.dfinity.network"],
-      "type": "persistent"
-    },
-    "consensus2": {
-      "providers": ["https://consensus2.dfinity.network"],
-      "type": "persistent"
-    },
     "local": {
       "bind": "0.0.0.0:8000",
       "type": "ephemeral"
