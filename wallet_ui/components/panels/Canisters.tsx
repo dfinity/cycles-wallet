@@ -13,6 +13,7 @@ import { CreateDialog } from "./CreateDialog";
 import PlusIcon from "../icons/PlusIcon";
 import { css } from "@emotion/css";
 import { PlainButton } from "../Buttons";
+import { format_cycles } from "../../utils/cycles";
 
 interface Props {
   canisters?: EventList["canisters"];
@@ -109,12 +110,8 @@ function Canisters(props: Props) {
             if (!("CanisterCreated" in canister.kind)) {
               return null;
             }
-            canister.kind["CanisterCreated"].canister;
-
-            const principal = canister.kind["CanisterCreated"]
-              .canister as Principal;
-            const value =
-              canister.kind["CanisterCreated"].cycles.toString() + " TC";
+            const principal = canister.kind["CanisterCreated"].canister as Principal;
+            const value = format_cycles(canister.kind["CanisterCreated"].cycles);
             return (
               <ListItem key={canister.id} className="flex column">
                 <h4>{"Anonymous Canister"}</h4>
