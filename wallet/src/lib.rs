@@ -1,8 +1,12 @@
-use ic_cdk::export::candid::CandidType;
-use ic_cdk::export::Principal;
+use ic_cdk::api::{data_certificate, set_certified_data, trap};
+use ic_cdk::export::candid::{CandidType, Func, Principal};
 use ic_cdk::*;
 use ic_cdk_macros::*;
-use serde::Deserialize;
+use ic_certified_map::{AsHashTree, Hash, RbTree};
+use serde::{Deserialize, Serialize};
+use serde_bytes::{ByteBuf, Bytes};
+use std::borrow::Cow;
+use std::collections::HashMap;
 
 mod address;
 mod events;
@@ -26,6 +30,7 @@ struct WalletName(pub(crate) Option<String>);
 /// Initialize this canister.
 #[init]
 fn init() {
+    init_assets();
     add_address(AddressEntry::new(caller(), None, Role::Controller));
 }
 
@@ -101,7 +106,108 @@ fn set_name(name: String) {
 /***************************************************************************************************
  * Frontend
  **************************************************************************************************/
-include!(concat!(env!("OUT_DIR"), "/http_request.rs"));
+include!(concat!(env!("OUT_DIR"), "/assets.rs"));
+
+struct Assets {
+    contents: HashMap<&'static str, (Vec<HeaderField>, &'static [u8])>,
+    hashes: AssetHashes,
+}
+
+impl Default for Assets {
+    fn default() -> Self {
+        Self {
+            hashes: AssetHashes::default(),
+            contents: HashMap::default(),
+        }
+    }
+}
+
+type AssetHashes = RbTree<&'static str, Hash>;
+type HeaderField = (String, String);
+
+#[derive(Clone, Debug, CandidType, Deserialize)]
+struct HttpRequest {
+    method: String,
+    url: String,
+    headers: Vec<(String, String)>,
+    body: ByteBuf,
+}
+
+#[derive(Clone, Debug, CandidType, Deserialize)]
+struct HttpResponse {
+    status_code: u16,
+    headers: Vec<HeaderField>,
+    body: Cow<'static, Bytes>,
+    streaming_strategy: Option<StreamingStrategy>,
+}
+
+#[derive(Clone, Debug, CandidType, Deserialize)]
+enum StreamingStrategy {
+    Callback { callback: Func, token: Token },
+}
+
+#[derive(Clone, Debug, CandidType, Deserialize)]
+struct Token {}
+
+#[query]
+fn http_request(req: HttpRequest) -> HttpResponse {
+    let parts: Vec<&str> = req.url.split('?').collect();
+    let asset = parts[0];
+    let assets = storage::get::<Assets>();
+    let certificate_header = make_asset_certificate_header(&assets.hashes, asset);
+    match assets.contents.get(asset) {
+        Some((headers, value)) => {
+            let mut headers = headers.clone();
+            headers.push(certificate_header);
+
+            HttpResponse {
+                status_code: 200,
+                headers,
+                body: Cow::Borrowed(Bytes::new(value)),
+                streaming_strategy: None,
+            }
+        }
+        None => HttpResponse {
+            status_code: 404,
+            headers: vec![certificate_header],
+            body: Cow::Owned(ByteBuf::from(format!("Asset {} not found.", asset))),
+            streaming_strategy: None,
+        },
+    }
+}
+
+fn make_asset_certificate_header(asset_hashes: &AssetHashes, asset_name: &str) -> (String, String) {
+    let certificate = data_certificate().unwrap_or_else(|| {
+        trap("data certificate is only available in query calls");
+    });
+    let witness = asset_hashes.witness(asset_name.as_bytes());
+    let hash_tree = ic_certified_map::labeled(b"http_assets", witness);
+    let mut serializer = serde_cbor::ser::Serializer::new(vec![]);
+    serializer.self_describe().unwrap();
+    hash_tree.serialize(&mut serializer).unwrap();
+    (
+        "IC-Certificate".to_string(),
+        format!(
+            "certificate=:{}:, tree=:{}:",
+            base64::encode(&certificate),
+            base64::encode(&serializer.into_inner())
+        ),
+    )
+}
+
+fn init_assets() {
+    let assets = storage::get_mut::<Assets>();
+    for_each_asset(|name, headers, contents, hash| {
+        if name == "/index.html" {
+            assets.hashes.insert("/", *hash);
+            assets.contents.insert("/", (headers.clone(), contents));
+        }
+        assets.hashes.insert(name, *hash);
+        assets.contents.insert(name, (headers, contents));
+    });
+    let full_tree_hash = ic_certified_map::labeled_hash(b"http_assets", &assets.hashes.root_hash());
+    set_certified_data(&full_tree_hash);
+}
 
 /***************************************************************************************************
  * Controller Management
@@ -207,27 +313,22 @@ mod wallet {
     #[query(guard = "is_custodian_or_controller", name = "wallet_balance")]
     fn balance() -> BalanceResult {
         BalanceResult {
-            amount: api::canister_balance() as u64,
+            amount: api::canister_balance(),
         }
     }
 
     /// Send cycles to another canister.
     #[update(guard = "is_custodian_or_controller", name = "wallet_send")]
     async fn send(args: SendCyclesArgs) -> Result<(), String> {
-        match api::call::call_with_payment(
-            args.canister.clone(),
-            "wallet_receive",
-            (),
-            args.amount as i64,
-        )
-        .await
+        match api::call::call_with_payment(args.canister.clone(), "wallet_receive", (), args.amount)
+            .await
         {
             Ok(x) => {
                 let refund = api::call::msg_cycles_refunded();
                 events::record(events::EventKind::CyclesSent {
                     to: args.canister,
                     amount: args.amount,
-                    refund: refund as u64,
+                    refund: refund,
                 });
                 super::update_chart();
                 x
@@ -237,7 +338,7 @@ mod wallet {
                 events::record(events::EventKind::CyclesSent {
                     to: args.canister,
                     amount: args.amount,
-                    refund: refund as u64,
+                    refund: refund,
                 });
                 let call_error =
                     format!("An error happened during the call: {}: {}", code as u8, msg);
@@ -261,7 +362,7 @@ mod wallet {
             let amount_accepted = ic_cdk::api::call::msg_cycles_accept(amount);
             events::record(events::EventKind::CyclesReceived {
                 from,
-                amount: amount_accepted as u64,
+                amount: amount_accepted,
             });
             super::update_chart();
         }
@@ -316,7 +417,7 @@ mod wallet {
             Principal::management_canister(),
             "create_canister",
             (in_arg,),
-            args.cycles as i64,
+            args.cycles,
         )
         .await
         {
@@ -532,7 +633,7 @@ mod wallet {
             args.canister.clone(),
             &args.method_name,
             args.args,
-            args.cycles as i64,
+            args.cycles,
         )
         .await
         {
@@ -655,8 +756,8 @@ fn get_chart(args: Option<GetChartArgs>) -> Vec<(u64, u64)> {
 
 fn update_chart() {
     let chart = storage::get_mut::<Vec<ChartTick>>();
-    let timestamp = api::time() as u64;
-    let cycles = api::canister_balance() as u64;
+    let timestamp = api::time();
+    let cycles = api::canister_balance();
     chart.push(ChartTick { timestamp, cycles });
 }
 

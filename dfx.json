@@ -23,7 +23,7 @@
   },
   "networks": {
     "ic": {
-      "providers": ["https://gw.dfinity.network"],
+      "providers": ["https://ic0.app"],
       "type": "persistent"
     },
     "local": {

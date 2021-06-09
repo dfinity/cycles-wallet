@@ -83,6 +83,38 @@ type CreateCanisterArgs = record {
   settings: CanisterSettings;
 };
 
+
+// Assets
+type HeaderField = record { text; text; };
+
+type HttpRequest = record {
+  method: text;
+  url: text;
+  headers: vec HeaderField;
+  body: blob;
+};
+
+type HttpResponse = record {
+  status_code: nat16;
+  headers: vec HeaderField;
+  body: blob;
+  streaming_strategy: opt StreamingStrategy;
+};
+
+type StreamingCallbackHttpResponse = record {
+  body: blob;
+  token: opt Token;
+};
+
+type Token = record {};
+
+type StreamingStrategy = variant {
+  Callback: record {
+    callback: func (Token) -> (StreamingCallbackHttpResponse) query;
+    token: Token;
+  };
+};
+
 service : {
   // Wallet Name
   name: () -> (opt text) query;
@@ -128,4 +160,7 @@ service : {
   // Events
   get_events: (opt record { from: opt nat32; to: opt nat32; }) -> (vec Event) query;
   get_chart: (opt record { count: opt nat32; precision: opt nat64; } ) -> (vec record { nat64; nat64; }) query;
+
+  // Assets
+  http_request: (request: HttpRequest) -> (HttpResponse) query;
 }
