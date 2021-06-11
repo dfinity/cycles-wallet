@@ -5,6 +5,7 @@ import "../../css/CycleBalance.css";
 import Typography from "@material-ui/core/Typography";
 import makeStyles from "@material-ui/core/styles/makeStyles";
 import { useLocalStorage } from "../../utils/hooks";
+import { format_cycles_and_suffix } from "../../utils/cycles";
 import Box from "@material-ui/core/Box";
 
 const useStyles = makeStyles((theme) => ({
@@ -60,11 +61,7 @@ export function CycleBalance() {
     return <></>;
   }
 
-  const suffix =
-    SUFFIX_LIST[Math.min(6, Math.floor(Math.log10(5000000000000) / 3))];
-  const ll = SUFFIX_LIST.indexOf(suffix);
-  const humanCycles = Math.floor(cycles / 10 ** (ll * 3));
-
+  const [cycles_string, suffix] = format_cycles_and_suffix(BigInt(cycles));
   return (
     <Box mb={2}>
       <Typography
@@ -80,12 +77,12 @@ export function CycleBalance() {
       </Typography>
 
       <Typography component="h3" variant="h4">
-        {humanCycles && (
+        {cycles_string && (
           <>
             <span style={{ fontSize: "48px", fontWeight: "bold" }}>
-              {humanCycles}
+              {cycles_string}
             </span>
-            <Typography component="span"> TC</Typography>
+            <Typography component="span"> {suffix}C</Typography>
           </>
         )}
       </Typography>
