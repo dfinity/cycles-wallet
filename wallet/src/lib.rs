@@ -15,6 +15,8 @@ use crate::address::{AddressBook, AddressEntry, Role};
 use crate::events::EventBuffer;
 use events::{record, Event, EventKind};
 
+const WALLET_API_VERSION: &str = "0.2.0";
+
 struct WalletWASMBytes(Option<serde_bytes::ByteBuf>);
 
 impl Default for WalletWASMBytes {
@@ -87,6 +89,14 @@ fn post_upgrade() {
         chart.clear();
         chart.clone_from(&storage.chart);
     }
+}
+
+/***************************************************************************************************
+ * Wallet API Version
+ **************************************************************************************************/
+#[query(guard = "is_custodian_or_controller")]
+fn version() -> String {
+    WALLET_API_VERSION.to_string()
 }
 
 /***************************************************************************************************
@@ -374,6 +384,7 @@ mod wallet {
     #[derive(CandidType, Clone, Deserialize)]
     struct CanisterSettings {
         controller: Option<Principal>,
+        controllers: Option<Vec<Principal>>,
         compute_allocation: Option<Nat>,
         memory_allocation: Option<Nat>,
         freezing_threshold: Option<Nat>,
@@ -404,13 +415,27 @@ mod wallet {
         Ok(create_result)
     }
 
+    fn make_valid_canister_settings(settings: CanisterSettings) -> CanisterSettings {
+        // Agent <= 0.7.0, dfx <= 0.8.1 will send controller
+        // Agents >= 0.?.?, dfx >= 0.?.? will send controllers
+        // The IC accept either controller or controllers, but not both.
+        CanisterSettings {
+            controller: if settings.controllers.is_some() {
+                None
+            } else {
+                settings.controller
+            },
+            ..settings
+        }
+    }
+
     async fn create_canister_call(args: CreateCanisterArgs) -> Result<CreateResult, String> {
         #[derive(CandidType)]
         struct In {
             settings: Option<CanisterSettings>,
         }
         let in_arg = In {
-            settings: Some(args.settings),
+            settings: Some(make_valid_canister_settings(args.settings)),
         };
 
         let (create_result,): (CreateResult,) = match api::call::call_with_payment(
@@ -442,21 +467,43 @@ mod wallet {
         update_acl: bool,
     ) -> Result<(), String> {
         if update_acl {
-            match api::call::call(
-                args.canister_id.clone(),
-                "add_controller",
-                (args.settings.controller.clone().unwrap().clone(),),
-            )
-            .await
-            {
-                Ok(x) => x,
-                Err((code, msg)) => {
-                    return Err(format!(
-                        "An error happened during the call: {}: {}",
-                        code as u8, msg
-                    ))
+            if let Some(controllers) = args.settings.controllers.as_ref() {
+                for controller in controllers {
+                    match api::call::call(
+                        args.canister_id.clone(),
+                        "add_controller",
+                        (controller.clone(),),
+                    )
+                        .await
+                    {
+                        Ok(x) => x,
+                        Err((code, msg)) => {
+                            return Err(format!(
+                                "An error happened during the call: {}: {}",
+                                code as u8, msg
+                            ))
+                        }
+                    };
                 }
-            };
+            } else if let Some(controller) = args.settings.controller {
+                match api::call::call(
+                    args.canister_id.clone(),
+                    "add_controller",
+                    (controller.clone(),),
+                )
+                    .await
+                {
+                    Ok(x) => x,
+                    Err((code, msg)) => {
+                        return Err(format!(
+                            "An error happened during the call: {}: {}",
+                            code as u8, msg
+                        ))
+                    }
+                };
+            } else {
+                return Err(format!("update_settings_call with update_acl=true, but without controller or controllers"));
+            }
 
             match api::call::call(args.canister_id.clone(), "remove_controller", (id(),)).await {
                 Ok(x) => x,
@@ -468,6 +515,11 @@ mod wallet {
                 }
             };
         }
+
+        let args = UpdateSettingsArgs {
+            settings: make_valid_canister_settings(args.settings),
+            ..args
+        };
 
         match api::call::call(Principal::management_canister(), "update_settings", (args,)).await {
             Ok(x) => x,
@@ -563,6 +615,7 @@ mod wallet {
             cycles: args.cycles,
             settings: CanisterSettings {
                 controller: None,
+                controllers: None,
                 ..args.clone().settings
             },
         };
@@ -572,11 +625,11 @@ mod wallet {
         install_wallet(&create_result.canister_id, wasm_module.clone().into_vec()).await?;
 
         // Set controller
-        if args.settings.controller.is_some() {
+        if args.settings.controller.is_some() || args.settings.controllers.is_some() {
             update_settings_call(
                 UpdateSettingsArgs {
                     canister_id: create_result.canister_id.clone(),
-                    settings: args.settings,
+                    settings: make_valid_canister_settings(args.settings),
                 },
                 true,
             )
