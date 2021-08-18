@@ -40,7 +40,11 @@ jobs:
         run: bash .github/workflows/provision-linux.sh
 
       - name: Build
-        run: dfx build
+        run: |
+          dfx start --background
+          dfx canister create wallet
+          dfx build wallet
+          dfx stop
 
       - name: Run e2e tests
         # but note, dfx doesn't yet use the built wasm.
