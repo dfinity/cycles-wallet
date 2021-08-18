@@ -33,7 +33,7 @@ jobs:
           rustup target add wasm32-unknown-unknown
           rustup component add rustfmt
       - name: Build
-        run: cargo build --manifest-path wallet/Cargo.toml --target wasm32-unknown-unknown --release
+        run: dfx build
 
       - name: Provision Darwin
         if: matrix.os == 'macos-latest'
