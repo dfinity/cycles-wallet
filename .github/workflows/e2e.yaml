@@ -32,9 +32,7 @@ jobs:
           rustup default ${{ matrix.rust }}
           rustup component add rustfmt
       - name: Build
-        run: |
-          cd wallet
-          cargo build
+        run: cargo build --manifest-path wallet/Cargo.toml --target wasm32-unknown-unknown --release
 
       - name: Provision Darwin
         if: matrix.os == 'macos-latest'
