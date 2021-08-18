@@ -40,20 +40,5 @@ Module hash: a609400f2576d1d6df72ce868b359fd08e1d68e58454ef17db2361d2f1c242a1
 
 Module hash: 3d5b221387875574a9fd75b3165403cf1b301650a602310e9e4229d2f6766dcc
 
-### Fixed
-
-- Return correct content type and encoding for non-gz files.
-- Updated frontend for changes to canister creation interface.
-
-## [0.1.0] - 2021-04-29
-
-Module hash: ca5fa9c4c40194538619928415875a7d757e0b838b3eab545245505d71dd04fe
-
-### Changed
-
-- Update to spec 0.17.0.
-
-### Changed
-
-- The wallet_create_canister method now takes a single record argument, which includes canister settings.
-
+This is the oldest version of this module found on the IC.  It was released with dfx 0.7.0-beta.5.
+It conforms to version 0.17.0 of the public interface.
