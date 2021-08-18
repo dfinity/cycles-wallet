@@ -32,15 +32,15 @@ jobs:
           rustup default ${{ matrix.rust }}
           rustup target add wasm32-unknown-unknown
           rustup component add rustfmt
-      - name: Build
-        run: dfx build
-
       - name: Provision Darwin
         if: matrix.os == 'macos-latest'
         run: bash .github/workflows/provision-darwin.sh
       - name: Provision Linux
         if: matrix.os == 'ubuntu-latest'
         run: bash .github/workflows/provision-linux.sh
+
+      - name: Build
+        run: dfx build
 
       - name: Run e2e tests
         # but note, dfx doesn't yet use the built wasm.
