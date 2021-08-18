@@ -30,6 +30,7 @@ jobs:
         run: |
           rustup update ${{ matrix.rust }} --no-self-update
           rustup default ${{ matrix.rust }}
+          rustup target add wasm32-unknown-unknown
           rustup component add rustfmt
       - name: Build
         run: cargo build --manifest-path wallet/Cargo.toml --target wasm32-unknown-unknown --release
