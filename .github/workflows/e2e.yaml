@@ -32,8 +32,9 @@ jobs:
           rustup default ${{ matrix.rust }}
           rustup component add rustfmt
       - name: Build
-        run: cargo build
-        # but note, dfx doesn't yet use the built wasm.
+        run: |
+          cd wallet
+          cargo build
 
       - name: Provision Darwin
         if: matrix.os == 'macos-latest'
@@ -43,4 +44,5 @@ jobs:
         run: bash .github/workflows/provision-linux.sh
 
       - name: Run e2e tests
+        # but note, dfx doesn't yet use the built wasm.
         run: bats e2e/bash/*.bash
