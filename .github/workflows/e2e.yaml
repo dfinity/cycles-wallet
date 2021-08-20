@@ -51,6 +51,7 @@ jobs:
         run: |
           pwd
           export
+          find $(pwd) -name '*.wasm'
           ls -l $DFX_WALLET_WASM
           bats e2e/bash/*.bash
         env:
