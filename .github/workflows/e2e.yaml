@@ -12,7 +12,7 @@ jobs:
       matrix:
         os: [ macos-latest, ubuntu-latest ]
         rust: [ '1.52.1' ]
-        dfx: [ '0.7.2', '0.8.1' ] # only >= 0.8.1 makes sense
+        dfx: [ '0.7.2', '0.8.0' ] # only >= 0.8.1 makes sense
     env:
       DFX_VERSION: ${{ matrix.dfx }}
 
