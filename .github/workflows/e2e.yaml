@@ -55,4 +55,4 @@ jobs:
           ls -l $DFX_WALLET_WASM
           bats e2e/bash/*.bash
         env:
-          DFX_WALLET_WASM: ${GITHUB_WORKSPACE}/wallet/target/wasm32-unknown-unknown/release/wallet-opt.wasm
+          DFX_WALLET_WASM: ${{ env.GITHUB_WORKSPACE }}/wallet/target/wasm32-unknown-unknown/release/wallet-opt.wasm
