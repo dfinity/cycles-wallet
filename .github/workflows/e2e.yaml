@@ -49,11 +49,6 @@ jobs:
       - name: Run e2e tests
         # but note, dfx doesn't yet use the built wasm.
         run: |
-          echo "GITHUB_WORKSPACE is " ${{ env.GITHUB_WORKSPACE }}
-          pwd
+          export DFX_WALLET_WASM=$GITHUB_WORKSPACE/wallet/target/wasm32-unknown-unknown/release/wallet-opt.wasm
           export
-          find $(pwd) -name '*.wasm'
-          ls -l $DFX_WALLET_WASM
           bats e2e/bash/*.bash
-        env:
-          DFX_WALLET_WASM: ${{ env.GITHUB_WORKSPACE }}/wallet/target/wasm32-unknown-unknown/release/wallet-opt.wasm
