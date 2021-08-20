@@ -49,6 +49,7 @@ jobs:
       - name: Run e2e tests
         # but note, dfx doesn't yet use the built wasm.
         run: |
+          echo "GITHUB_WORKSPACE is " ${{ env.GITHUB_WORKSPACE }}
           pwd
           export
           find $(pwd) -name '*.wasm'
