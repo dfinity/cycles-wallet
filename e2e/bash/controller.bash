@@ -93,8 +93,8 @@ teardown() {
 
 @test "wallet create wallet" {
     # curious: the cycles wallet has a wallet_create_wallet method, published
-    # in its .did file.  dfx doesn't call it.  The sdk repo has one call to it,
-    # in an e2e ref test.  Maybe other users of the agent call it, though.
+    # in its .did file.  dfx doesn't call it.  Maybe other users of the agent call it, though.
+    # The sdk repo has one call to the method in an e2e ref test.  This is a copy of that test.
     WALLET_ID=$(dfx identity get-wallet)
     CREATE_RES=$(dfx canister --no-wallet call "${WALLET_ID}" wallet_create_wallet "(record { cycles = (2000000000000:nat64); settings = record {controller = opt principal \"$(dfx identity get-principal)\";};})")
     CHILD_ID=$(echo "${CREATE_RES}" | tr '\n' ' ' |  cut -d'"' -f 2)
