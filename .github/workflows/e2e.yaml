@@ -12,7 +12,8 @@ jobs:
       matrix:
         os: [ macos-latest, ubuntu-latest ]
         rust: [ '1.52.1' ]
-        dfx: [ '0.7.2', '0.8.0' ] # only >= 0.8.1 makes sense
+        # only dfx >= 0.8.1 lets us override the wallet module with DFX_WALLET_WASM
+        dfx: [ '0.8.1' ]
     env:
       DFX_VERSION: ${{ matrix.dfx }}
 
@@ -46,9 +47,7 @@ jobs:
           dfx build wallet
           dfx stop
 
-      - name: Run e2e tests
-        # but note, dfx doesn't yet use the built wasm.
+      - name: Run e2e tests vs dfx ${{ matrix.dfx }}
         run: |
           export DFX_WALLET_WASM=$GITHUB_WORKSPACE/wallet/target/wasm32-unknown-unknown/release/wallet-opt.wasm
-          export
           bats e2e/bash/*.bash
