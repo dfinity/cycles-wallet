@@ -594,6 +594,7 @@ mod wallet {
 
     #[update(guard = "is_controller", name = "wallet_store_wallet_wasm")]
     async fn store_wallet_wasm(args: WalletStoreWASMArgs) {
+        ic_cdk::trap("forced trap in store_wallet_wasm");
         let wallet_bytes = storage::get_mut::<super::WalletWASMBytes>();
         wallet_bytes.0 = Some(serde_bytes::ByteBuf::from(args.wasm_module));
         super::update_chart();
