@@ -96,7 +96,6 @@ fn post_upgrade() {
  **************************************************************************************************/
 #[query(guard = "is_custodian_or_controller")]
 fn wallet_api_version() -> String {
-    // yes ic_cdk::trap("wallet_api_version");
     WALLET_API_VERSION.to_string()
 }
 
@@ -422,12 +421,8 @@ mod wallet {
         // The IC accept either controller or controllers, but not both.
         CanisterSettings {
             controller: if settings.controllers.is_some() {
-                // yes ic_cdk::trap("make_valid_canister_settings (controllers)");
-
                 None
             } else {
-                // yes ic_cdk::trap("make_valid_canister_settings (controller)");
-
                 settings.controller
             },
             ..settings
@@ -471,11 +466,8 @@ mod wallet {
         args: UpdateSettingsArgs,
         update_acl: bool,
     ) -> Result<(), String> {
-        // yes ic_cdk::trap("update_settings_call");
-
         if update_acl {
             if let Some(controllers) = args.settings.controllers.as_ref() {
-                // yes ic_cdk::trap("update_settings_call (controllers set)");
                 for controller in controllers {
                     match api::call::call(
                         args.canister_id.clone(),
@@ -494,7 +486,6 @@ mod wallet {
                     };
                 }
             } else if let Some(controller) = args.settings.controller {
-                // yes ic_cdk::trap("update_settings_call (controller set)");
                 match api::call::call(
                     args.canister_id.clone(),
                     "add_controller",
@@ -524,8 +515,6 @@ mod wallet {
                 }
             };
         }
-
-        // yes ic_cdk::trap("update_settings_call (UpdateSettingsArgs)");
 
         let args = UpdateSettingsArgs {
             settings: make_valid_canister_settings(args.settings),
@@ -637,8 +626,6 @@ mod wallet {
 
         // Set controller
         if args.settings.controller.is_some() || args.settings.controllers.is_some() {
-            // yes ic_cdk::trap("create_wallet (controller or controllers set)");
-
             update_settings_call(
                 UpdateSettingsArgs {
                     canister_id: create_result.canister_id.clone(),
