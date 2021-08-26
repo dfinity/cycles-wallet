@@ -416,8 +416,8 @@ mod wallet {
     }
 
     fn make_valid_canister_settings(settings: CanisterSettings) -> CanisterSettings {
-        // Agent <= 0.7.0, dfx <= 0.8.1 will send controller
-        // Agents >= 0.?.?, dfx >= 0.?.? will send controllers
+        // Agent <= 0.8.0, dfx <= 0.8.1 will send controller
+        // Agents >= 0.9.0, dfx >= 0.8.2 will send controllers
         // The IC accept either controller or controllers, but not both.
         CanisterSettings {
             controller: if settings.controllers.is_some() {
