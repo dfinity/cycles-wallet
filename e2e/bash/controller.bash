@@ -22,6 +22,9 @@ teardown() {
 }
 
 @test "canister creation sets controller to the wallet" {
+    # invokes:
+    #  - wallet_create_canister
+
     assert_command dfx identity new alice
     assert_command dfx identity use alice
 
@@ -42,6 +45,9 @@ teardown() {
 }
 
 @test "canister installation sets controller to the wallet" {
+    # invokes:
+    #  - wallet_create_canister
+
     assert_command dfx identity new alice
     assert_command dfx identity use alice
 
@@ -61,6 +67,9 @@ teardown() {
 }
 
 @test "update-settings sets controller" {
+    # invokes:
+    #  - wallet_create_canister
+
     assert_command dfx identity new alice
     assert_command dfx identity new bob
 
@@ -92,6 +101,11 @@ teardown() {
 }
 
 @test "wallet create wallet" {
+    # invokes:
+    #  - wallet_create_wallet
+    #  - update_settings_call
+    #  - update_settings_call (with controller)
+
     # curious: the cycles wallet has a wallet_create_wallet method, published
     # in its .did file.  dfx doesn't call it.  Maybe other users of the agent call it, though.
     # The sdk repo has one call to the method in an e2e ref test.  This is a copy of that test.
