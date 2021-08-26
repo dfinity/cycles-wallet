@@ -96,7 +96,7 @@ fn post_upgrade() {
  **************************************************************************************************/
 #[query(guard = "is_custodian_or_controller")]
 fn wallet_api_version() -> String {
-    ic_cdk::trap("wallet_api_version");
+    // yes ic_cdk::trap("wallet_api_version");
     WALLET_API_VERSION.to_string()
 }
 
@@ -422,7 +422,7 @@ mod wallet {
         // The IC accept either controller or controllers, but not both.
         CanisterSettings {
             controller: if settings.controllers.is_some() {
-                ic_cdk::trap("make_valid_canister_settings (controllers)");
+                // yes ic_cdk::trap("make_valid_canister_settings (controllers)");
 
                 None
             } else {
@@ -475,14 +475,14 @@ mod wallet {
 
         if update_acl {
             if let Some(controllers) = args.settings.controllers.as_ref() {
-                ic_cdk::trap("update_settings_call (controllers set)");
+                // yes ic_cdk::trap("update_settings_call (controllers set)");
                 for controller in controllers {
                     match api::call::call(
                         args.canister_id.clone(),
                         "add_controller",
                         (controller.clone(),),
                     )
-                        .await
+                    .await
                     {
                         Ok(x) => x,
                         Err((code, msg)) => {
@@ -500,7 +500,7 @@ mod wallet {
                     "add_controller",
                     (controller.clone(),),
                 )
-                    .await
+                .await
                 {
                     Ok(x) => x,
                     Err((code, msg)) => {
