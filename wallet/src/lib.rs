@@ -95,7 +95,7 @@ fn post_upgrade() {
  * Wallet API Version
  **************************************************************************************************/
 #[query(guard = "is_custodian_or_controller")]
-fn version() -> String {
+fn wallet_api_version() -> String {
     WALLET_API_VERSION.to_string()
 }
 
