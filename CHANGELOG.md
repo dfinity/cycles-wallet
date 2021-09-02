@@ -11,7 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Added wallet_api_version() method
 - Added CanisterSettings field: controllers
-  - If present, the controller field will be ignored by this canister, and will be passed through as None to the IC.
+  - Either the controller field or the controllers field may be present, but not both.
 - Support for certified assets and http_request() interface.
 
 ### Changed

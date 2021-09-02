@@ -384,7 +384,7 @@ mod wallet {
     #[derive(CandidType, Clone, Deserialize)]
     struct CanisterSettings {
         // dfx versions <= 0.8.1 (or other wallet callers expecting version 0.1.0 of the wallet)
-        // will set up to a single controller through the `controller` field.
+        // will set a controller (or not) in the the `controller` field:
         controller: Option<Principal>,
 
         // dfx versions >= 0.8.2 will set 0 or more controllers here:
@@ -420,7 +420,8 @@ mod wallet {
         Ok(create_result)
     }
 
-    fn validate_canister_settings(settings: CanisterSettings) -> Result<CanisterSettings, String> {
+    // Make it so the controller or controllers are stored only in the controllers field.
+    fn normalize_canister_settings(settings: CanisterSettings) -> Result<CanisterSettings, String> {
         // Agent <= 0.8.0, dfx <= 0.8.1 will send controller
         // Agents >= 0.9.0, dfx >= 0.8.2 will send controllers
         // The management canister will accept either controller or controllers, but not both.
@@ -428,6 +429,11 @@ mod wallet {
             (Some(_), Some(_)) => {
                 Err("CanisterSettings cannot have both controller and controllers set.".to_string())
             }
+            (Some(controller), None) => Ok(CanisterSettings {
+                controller: None,
+                controllers: Some(vec![*controller]),
+                ..settings
+            }),
             _ => Ok(settings),
         }
     }
@@ -438,7 +444,7 @@ mod wallet {
             settings: Option<CanisterSettings>,
         }
         let in_arg = In {
-            settings: Some(validate_canister_settings(args.settings)?),
+            settings: Some(normalize_canister_settings(args.settings)?),
         };
 
         let (create_result,): (CreateResult,) = match api::call::call_with_payment(
@@ -505,7 +511,7 @@ mod wallet {
                     }
                 };
             } else {
-                return Err(format!("update_settings_call with update_acl=true, but without controller or controllers"));
+                return Err("update_settings_call with update_acl=true, but without controller or controllers".to_string());
             }
 
             match api::call::call(args.canister_id.clone(), "remove_controller", (id(),)).await {
@@ -520,7 +526,7 @@ mod wallet {
         }
 
         let args = UpdateSettingsArgs {
-            settings: validate_canister_settings(args.settings)?,
+            settings: normalize_canister_settings(args.settings)?,
             ..args
         };
 
@@ -632,7 +638,7 @@ mod wallet {
             update_settings_call(
                 UpdateSettingsArgs {
                     canister_id: create_result.canister_id.clone(),
-                    settings: validate_canister_settings(args.settings)?,
+                    settings: normalize_canister_settings(args.settings)?,
                 },
                 true,
             )
