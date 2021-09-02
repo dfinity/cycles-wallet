@@ -476,6 +476,7 @@ mod wallet {
         update_acl: bool,
     ) -> Result<(), String> {
         if update_acl {
+            // assumption: settings are normalized (settings.controller is never present)
             if let Some(controllers) = args.settings.controllers.as_ref() {
                 for controller in controllers {
                     match api::call::call(
@@ -494,24 +495,6 @@ mod wallet {
                         }
                     };
                 }
-            } else if let Some(controller) = args.settings.controller {
-                match api::call::call(
-                    args.canister_id.clone(),
-                    "add_controller",
-                    (controller.clone(),),
-                )
-                .await
-                {
-                    Ok(x) => x,
-                    Err((code, msg)) => {
-                        return Err(format!(
-                            "An error happened during the call: {}: {}",
-                            code as u8, msg
-                        ))
-                    }
-                };
-            } else {
-                return Err("update_settings_call with update_acl=true, but without controller or controllers".to_string());
             }
 
             match api::call::call(args.canister_id.clone(), "remove_controller", (id(),)).await {
@@ -524,11 +507,6 @@ mod wallet {
                 }
             };
         }
-
-        let args = UpdateSettingsArgs {
-            settings: normalize_canister_settings(args.settings)?,
-            ..args
-        };
 
         match api::call::call(Principal::management_canister(), "update_settings", (args,)).await {
             Ok(x) => x,
