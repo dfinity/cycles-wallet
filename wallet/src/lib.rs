@@ -383,8 +383,13 @@ mod wallet {
      **************************************************************************************************/
     #[derive(CandidType, Clone, Deserialize)]
     struct CanisterSettings {
+        // dfx versions <= 0.8.1 (or other wallet callers expecting version 0.1.0 of the wallet)
+        // will set up to a single controller through the `controller` field.
         controller: Option<Principal>,
+
+        // dfx versions >= 0.8.2 will set 0 or more controllers here:
         controllers: Option<Vec<Principal>>,
+
         compute_allocation: Option<Nat>,
         memory_allocation: Option<Nat>,
         freezing_threshold: Option<Nat>,
@@ -415,17 +420,15 @@ mod wallet {
         Ok(create_result)
     }
 
-    fn make_valid_canister_settings(settings: CanisterSettings) -> CanisterSettings {
+    fn validate_canister_settings(settings: CanisterSettings) -> Result<CanisterSettings, String> {
         // Agent <= 0.8.0, dfx <= 0.8.1 will send controller
         // Agents >= 0.9.0, dfx >= 0.8.2 will send controllers
-        // The IC accept either controller or controllers, but not both.
-        CanisterSettings {
-            controller: if settings.controllers.is_some() {
-                None
-            } else {
-                settings.controller
-            },
-            ..settings
+        // The management canister will accept either controller or controllers, but not both.
+        match (&settings.controller, &settings.controllers) {
+            (Some(_), Some(_)) => {
+                Err("CanisterSettings cannot have both controller and controllers set.".to_string())
+            }
+            _ => Ok(settings),
         }
     }
 
@@ -435,7 +438,7 @@ mod wallet {
             settings: Option<CanisterSettings>,
         }
         let in_arg = In {
-            settings: Some(make_valid_canister_settings(args.settings)),
+            settings: Some(validate_canister_settings(args.settings)?),
         };
 
         let (create_result,): (CreateResult,) = match api::call::call_with_payment(
@@ -517,7 +520,7 @@ mod wallet {
         }
 
         let args = UpdateSettingsArgs {
-            settings: make_valid_canister_settings(args.settings),
+            settings: validate_canister_settings(args.settings)?,
             ..args
         };
 
@@ -629,7 +632,7 @@ mod wallet {
             update_settings_call(
                 UpdateSettingsArgs {
                     canister_id: create_result.canister_id.clone(),
-                    settings: make_valid_canister_settings(args.settings),
+                    settings: validate_canister_settings(args.settings)?,
                 },
                 true,
             )
