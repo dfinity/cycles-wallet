@@ -73,6 +73,7 @@ type WalletResultCall = variant {
 
 type CanisterSettings = record {
   controller: opt principal;
+  controllers: opt vec principal;
   compute_allocation: opt nat;
   memory_allocation: opt nat;
   freezing_threshold: opt nat;
@@ -116,6 +117,8 @@ type StreamingStrategy = variant {
 };
 
 service : {
+  wallet_api_version: () -> (text) query;
+
   // Wallet Name
   name: () -> (opt text) query;
   set_name: (text) -> ();

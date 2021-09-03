@@ -7,8 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.0] - 2021-09-03
+
 ### Added
 
+- Added wallet_api_version() method.
+- Added 'controllers' field to CanisterSettings field.
+  - Either the controller field or the controllers field may be present, but not both.
 - Support for certified assets and http_request() interface.
 
 ### Changed
