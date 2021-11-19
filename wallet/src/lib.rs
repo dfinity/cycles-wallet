@@ -413,9 +413,15 @@ mod wallet {
     }
 
     #[update(guard = "is_custodian_or_controller", name = "wallet_create_canister")]
-    async fn create_canister(args: CreateCanisterArgs) -> Result<CreateResult, String> {
+    async fn create_canister(mut args: CreateCanisterArgs) -> Result<CreateResult, String> {
+        let mut settings = normalize_canister_settings(args.settings)?;
+        let controllers = settings.controllers.get_or_insert_with(|| Vec::with_capacity(1));
+        if controllers.len() == 0 {
+            controllers.push(ic_cdk::api::caller());
+            controllers.push(ic_cdk::api::id());
+        }
+        args.settings = settings;
         let create_result = create_canister_call(args).await?;
-
         super::update_chart();
         Ok(create_result)
     }
@@ -443,15 +449,10 @@ mod wallet {
         struct In {
             settings: Option<CanisterSettings>,
         }
-        let mut settings = normalize_canister_settings(args.settings)?;
-        let controllers = settings.controllers.get_or_insert_with(|| Vec::with_capacity(1));
-        if controllers.len() == 0 {
-            controllers.push(ic_cdk::api::caller());
-            controllers.push(ic_cdk::api::id());
-        }
         let in_arg = In {
-            settings: Some(settings),
+            settings: Some(normalize_canister_settings(args.settings)?),
         };
+
         let (create_result,): (CreateResult,) = match api::call::call_with_payment(
             Principal::management_canister(),
             "create_canister",
