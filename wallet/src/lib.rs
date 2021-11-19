@@ -443,10 +443,15 @@ mod wallet {
         struct In {
             settings: Option<CanisterSettings>,
         }
+        let mut settings = normalize_canister_settings(args.settings)?;
+        let controllers = settings.controllers.get_or_insert_with(|| Vec::with_capacity(1));
+        if controllers.len() == 0 {
+            controllers.push(ic_cdk::api::caller());
+            controllers.push(ic_cdk::api::id());
+        }
         let in_arg = In {
-            settings: Some(normalize_canister_settings(args.settings)?),
+            settings: Some(settings),
         };
-
         let (create_result,): (CreateResult,) = match api::call::call_with_payment(
             Principal::management_canister(),
             "create_canister",
