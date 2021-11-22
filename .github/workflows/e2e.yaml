@@ -10,10 +10,10 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ macos-latest, ubuntu-latest ]
-        rust: [ '1.52.1' ]
+        os: [macos-latest, ubuntu-latest]
+        rust: ["1.52.1"]
         # only dfx >= 0.8.1 lets us override the wallet module with DFX_WALLET_WASM
-        dfx: [ '0.8.1' ]
+        dfx: ["0.8.4"]
     env:
       DFX_VERSION: ${{ matrix.dfx }}
 
