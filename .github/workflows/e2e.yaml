@@ -12,8 +12,8 @@ jobs:
       matrix:
         os: [ macos-latest, ubuntu-latest ]
         rust: [ '1.52.1' ]
-        # only dfx >= 0.8.1 lets us override the wallet module with DFX_WALLET_WASM
-        dfx: [ '0.8.1' ]
+        # only dfx >= 0.8.3 lets us query multiple controllers
+        dfx: [ '0.8.3' ]
     env:
       DFX_VERSION: ${{ matrix.dfx }}
 
