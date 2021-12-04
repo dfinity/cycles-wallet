@@ -13,7 +13,7 @@ jobs:
         os: [ macos-latest, ubuntu-latest ]
         rust: [ '1.52.1' ]
         # only dfx >= 0.8.3 lets us query multiple controllers
-        dfx: [ '0.8.3' ]
+        dfx: [ '0.8.4' ]
     env:
       DFX_VERSION: ${{ matrix.dfx }}
 
