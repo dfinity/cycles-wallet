@@ -9,7 +9,6 @@ jobs:
   test:
     runs-on: ${{ matrix.os }}
     strategy:
-      fail-fast: false
       matrix:
         os: [ macos-latest, ubuntu-latest ]
         rust: [ '1.52.1' ]
@@ -26,7 +25,7 @@ jobs:
           path: |
             ~/.cargo/registry
             ~/.cargo/git
-            target
+            ./wallet/target
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}-${{ matrix.rust }}-1
       - name: Install Rust
         run: |
@@ -51,5 +50,5 @@ jobs:
       - name: Run e2e tests vs dfx ${{ matrix.dfx }}
         run: |
           export DFX_WALLET_WASM=$GITHUB_WORKSPACE/wallet/target/wasm32-unknown-unknown/release/wallet-opt.wasm
-          e2e/bash/test.sh
+          bats e2e/bash/*.bash
 

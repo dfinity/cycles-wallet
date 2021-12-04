@@ -98,10 +98,10 @@ teardown() {
     assert_match "Controllers: $BOB_WALLET"
 
     # Bob is controller, Alice cannot reinstall
-    yes yes | assert_command_fail dfx canister install e2e_project -m reinstall
+    echo yes | assert_command_fail dfx canister install e2e_project -m reinstall
 
     # Bob can reinstall
-    yes yes | assert_command dfx --identity bob canister install e2e_project -m reinstall
+    echo yes | assert_command dfx --identity bob canister install e2e_project -m reinstall
 }
 
 @test "create wallet with single controller through wallet_create_wallet" {
