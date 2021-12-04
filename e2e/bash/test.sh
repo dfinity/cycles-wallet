@@ -1,7 +1,6 @@
 #!/usr/bin/env bash
 set -ex
 
-
 setup() {
     # We want to work from a temporary directory, different for every test.
     x=$(mktemp -d -t dfx-usage-env-home-XXXXXXXX)
@@ -43,8 +42,8 @@ setup
     # assert_match "Controllers: $BOB_WALLET"
 
     # Bob is controller, Alice cannot reinstall
-    yes yes | (dfx canister install e2e_project -m reinstall && exit 1)
+    (echo yes | dfx canister install e2e_project -m reinstall) && exit 1
 
     # Bob can reinstall
-    yes yes | dfx --identity bob canister install e2e_project -m reinstall
+    echo yes | dfx --identity bob canister install e2e_project -m reinstall
     dfx stop
