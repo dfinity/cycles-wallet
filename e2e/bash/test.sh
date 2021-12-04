@@ -43,7 +43,7 @@ setup
     # assert_match "Controllers: $BOB_WALLET"
 
     # Bob is controller, Alice cannot reinstall
-    yes yes | (dfx canister install e2e_project -m reinstall || exit 1)
+    yes yes | (dfx canister install e2e_project -m reinstall && exit 1)
 
     # Bob can reinstall
     yes yes | dfx --identity bob canister install e2e_project -m reinstall
