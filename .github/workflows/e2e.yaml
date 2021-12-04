@@ -12,8 +12,8 @@ jobs:
       matrix:
         os: [ macos-latest, ubuntu-latest ]
         rust: [ '1.52.1' ]
-        # only dfx >= 0.8.1 lets us override the wallet module with DFX_WALLET_WASM
-        dfx: [ '0.8.1' ]
+        # only dfx >= 0.8.3 lets us query multiple controllers
+        dfx: [ '0.8.4' ]
     env:
       DFX_VERSION: ${{ matrix.dfx }}
 
@@ -25,7 +25,7 @@ jobs:
           path: |
             ~/.cargo/registry
             ~/.cargo/git
-            target
+            ./wallet/target
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}-${{ matrix.rust }}-1
       - name: Install Rust
         run: |
@@ -51,3 +51,4 @@ jobs:
         run: |
           export DFX_WALLET_WASM=$GITHUB_WORKSPACE/wallet/target/wasm32-unknown-unknown/release/wallet-opt.wasm
           bats e2e/bash/*.bash
+
