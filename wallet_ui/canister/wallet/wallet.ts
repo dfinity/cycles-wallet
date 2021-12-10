@@ -6,7 +6,7 @@ export interface AddressEntry {
   'role' : Role,
 };
 export interface CanisterSettings {
-  'controller' : [] | [Principal],
+  'controller' : [] | Principal[],
   'freezing_threshold' : [] | [bigint],
   'memory_allocation' : [] | [bigint],
   'compute_allocation' : [] | [bigint],
