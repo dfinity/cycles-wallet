@@ -9,7 +9,6 @@ import Button from "@material-ui/core/Button";
 import CircularProgress from "@material-ui/core/CircularProgress";
 import makeStyles from "@material-ui/core/styles/makeStyles";
 import green from "@material-ui/core/colors/green";
-import Typography from "@material-ui/core/Typography";
 import FormControl from "@material-ui/core/FormControl";
 import TextField from "@material-ui/core/TextField";
 import { getWalletId, Principal, Wallet } from "../../canister";
@@ -58,6 +57,8 @@ function NumberFormatCustom(props: any) {
   );
 }
 
+const walletPrincipal = getWalletId().toString();
+
 export function CreateCanisterDialog(props: {
   open: boolean;
   close: (err?: any) => void;
@@ -96,6 +97,12 @@ export function CreateCanisterDialog(props: {
       return controller;
     })
     setMoreControllers(newInput);
+    try {
+      Principal.fromText(ev.target.value);
+      setError(false);
+    } catch {
+      setError(true);
+    }
   }
 
   function deleteInput(ind : number) {
@@ -123,9 +130,12 @@ export function CreateCanisterDialog(props: {
 
   function create() {
     setLoading(true);
+    let additional = moreControllers.filter(ea => ea.length !== 0);
+    let allControllers = [controller, ...additional];
+    let result = allControllers.map(ea => Principal.fromText(ea));
 
     Wallet.create_canister({
-      controller: controller ? Principal.fromText(controller) : undefined,
+      controller: result,
       cycles,
     }).then(
       (canisterId) => {
@@ -160,7 +170,7 @@ export function CreateCanisterDialog(props: {
             <div style={{display: "flex"}}>
               <TextField
                 label="Controller"
-                value={controller}
+                value={controller} //should default controller(walletId) be editable in the first place?
                 style={{ margin: "8px 0 24px" }}
                 fullWidth
                 disabled={loading}
@@ -174,7 +184,7 @@ export function CreateCanisterDialog(props: {
               </Button>
             </div>
             {moreControllers.map((field : string, ind : number) => (
-              <div style={{display: "flex", marginBottom: "10px"}}>
+              <div key={ind} style={{display: "flex", marginBottom: "10px"}}>
                 <TextField style={{width: "95%"}}
                   label="Controller"
                   value={field}

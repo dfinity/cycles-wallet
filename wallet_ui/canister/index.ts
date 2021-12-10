@@ -170,13 +170,13 @@ export const Wallet = {
     ]);
   },
   async create_canister(p: {
-    controller?: Principal;
+    controller: Principal[];
     cycles: number;
   }): Promise<Principal> {
     const result = await (await getWalletCanister()).wallet_create_canister({
       settings: {
         compute_allocation: [],
-        controller: p.controller ? [p.controller] : [],
+        controller: p.controller,
         freezing_threshold: [],
         memory_allocation: [],
       },
