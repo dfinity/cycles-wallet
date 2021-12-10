@@ -15,7 +15,8 @@ import TextField from "@material-ui/core/TextField";
 import { getWalletId, Principal, Wallet } from "../../canister";
 import { PlainButton, PrimaryButton } from "../Buttons";
 import CycleSlider from "../CycleSlider";
-import { css } from "@emotion/css";
+import AddIcon from '@material-ui/icons/Add';
+import Cancel from '@material-ui/icons/Cancel';
 
 const useStyles = makeStyles((theme) => ({
   wrapper: {
@@ -69,6 +70,8 @@ export function CreateCanisterDialog(props: {
   const [balance, setBalance] = React.useState(0);
   const [canisterId, setCanisterId] = React.useState<Principal | undefined>();
   const [error, setError] = React.useState(false);
+  const [moreControllers, setMoreControllers] = React.useState<string[] | []>([]);
+  const [count, setCount] = React.useState(0);
   const classes = useStyles();
 
   React.useEffect(() => {
@@ -80,6 +83,28 @@ export function CreateCanisterDialog(props: {
   function handleClose() {
     close();
   }
+  function increaseInput() {
+    setCount(count + 1);
+    setMoreControllers(prev => [...prev, ""]);
+  }
+
+  function handleInputChange(ind: number, ev: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) {
+    const newInput = moreControllers.map((controller : string, i : number) => {
+      if(ind === i) {
+        return ev.target.value;
+      }
+      return controller;
+    })
+    setMoreControllers(newInput);
+  }
+
+  function deleteInput(ind : number) {
+    const result = moreControllers.filter((con : string, i: number) => {
+      return ind !== i;
+    });
+    setMoreControllers(result);
+  }
+
   function handleControllerChange(ev: React.ChangeEvent<HTMLInputElement>) {
     let p = ev.target.value;
 
@@ -132,17 +157,38 @@ export function CreateCanisterDialog(props: {
             controller will be this wallet canister.
           </DialogContentText>
           <FormControl className={classes.formControl}>
-            <TextField
-              label="Controller"
-              value={controller}
-              style={{ margin: "8px 0 24px" }}
-              fullWidth
-              disabled={loading}
-              onChange={handleControllerChange}
-              error={error}
-              autoFocus
-              InputLabelProps={{ shrink: true }}
-            />
+            <div style={{display: "flex"}}>
+              <TextField
+                label="Controller"
+                value={controller}
+                style={{ margin: "8px 0 24px" }}
+                fullWidth
+                disabled={loading}
+                onChange={handleControllerChange}
+                error={error}
+                autoFocus
+                InputLabelProps={{ shrink: true }}
+              />
+              <Button onClick={increaseInput}>
+                <AddIcon/>
+              </Button>
+            </div>
+            {moreControllers.map((field : string, ind : number) => (
+              <div style={{display: "flex", marginBottom: "10px"}}>
+                <TextField style={{width: "95%"}}
+                  label="Controller"
+                  value={field}
+                  disabled={loading}
+                  onChange={(event) => handleInputChange(ind, event)}
+                  error={error}
+                  autoFocus
+                  InputLabelProps={{ shrink: true }}
+                />
+                <Button onClick={() => deleteInput(ind)}>
+                  <Cancel/>
+                </Button>
+              </div>
+            ))}
             <CycleSlider
               balance={balance}
               cycles={cycles}
