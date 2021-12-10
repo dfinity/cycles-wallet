@@ -12,7 +12,7 @@ import green from "@material-ui/core/colors/green";
 import Typography from "@material-ui/core/Typography";
 import FormControl from "@material-ui/core/FormControl";
 import TextField from "@material-ui/core/TextField";
-import { Principal, Wallet } from "../../canister";
+import { getWalletId, Principal, Wallet } from "../../canister";
 import { PlainButton, PrimaryButton } from "../Buttons";
 import CycleSlider from "../CycleSlider";
 import { css } from "@emotion/css";
@@ -64,7 +64,7 @@ export function CreateCanisterDialog(props: {
   const { open, close } = props;
 
   const [loading, setLoading] = React.useState(false);
-  const [controller, setController] = React.useState("");
+  const [controller, setController] = React.useState(getWalletId().toString());
   const [cycles, setCycles] = React.useState(0);
   const [balance, setBalance] = React.useState(0);
   const [canisterId, setCanisterId] = React.useState<Principal | undefined>();
