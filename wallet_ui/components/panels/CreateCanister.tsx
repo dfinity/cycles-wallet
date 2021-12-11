@@ -70,7 +70,8 @@ export function CreateCanisterDialog(props: {
   const [cycles, setCycles] = React.useState(0);
   const [balance, setBalance] = React.useState(0);
   const [canisterId, setCanisterId] = React.useState<Principal | undefined>();
-  const [error, setError] = React.useState(false);
+  const [error1, setError1] = React.useState(false);
+  const [error2, setError2] = React.useState(false);
   const [moreControllers, setMoreControllers] = React.useState<string[] | []>([]);
   const [count, setCount] = React.useState(0);
   const classes = useStyles();
@@ -99,9 +100,9 @@ export function CreateCanisterDialog(props: {
     setMoreControllers(newInput);
     try {
       Principal.fromText(ev.target.value);
-      setError(false);
+      setError2(false);
     } catch {
-      setError(true);
+      setError2(true);
     }
   }
 
@@ -118,9 +119,9 @@ export function CreateCanisterDialog(props: {
     setController(p);
     try {
       Principal.fromText(p);
-      setError(false);
+      setError1(false);
     } catch {
-      setError(true);
+      setError1(true);
     }
   }
   function handleCycleChange(ev: React.ChangeEvent<HTMLInputElement>) {
@@ -130,6 +131,7 @@ export function CreateCanisterDialog(props: {
 
   function create() {
     setLoading(true);
+
     let additional = moreControllers.filter(ea => ea.length !== 0);
     let allControllers = [controller, ...additional];
     let result = allControllers.map(ea => Principal.fromText(ea));
@@ -146,7 +148,14 @@ export function CreateCanisterDialog(props: {
         setLoading(false);
         close(err);
       }
-    );
+    ).catch(e => {
+      console.error(e)
+    });
+  }
+
+  function closeCreated() {
+    close(undefined);
+    setCanisterId(undefined);
   }
 
   return (
@@ -175,7 +184,7 @@ export function CreateCanisterDialog(props: {
                 fullWidth
                 disabled={loading}
                 onChange={handleControllerChange}
-                error={error}
+                error={error1}
                 autoFocus
                 InputLabelProps={{ shrink: true }}
               />
@@ -190,7 +199,7 @@ export function CreateCanisterDialog(props: {
                   value={field}
                   disabled={loading}
                   onChange={(event) => handleInputChange(ind, event)}
-                  error={error}
+                  error={error2}
                   autoFocus
                   InputLabelProps={{ shrink: true }}
                 />
@@ -214,7 +223,7 @@ export function CreateCanisterDialog(props: {
         </PlainButton>
         <div className={classes.wrapper}>
           <PrimaryButton
-            disabled={loading || error}
+            disabled={loading || error1 || error2 }
             onClick={create}
             color="secondary"
             autoFocus
@@ -239,7 +248,7 @@ export function CreateCanisterDialog(props: {
             </DialogContentText>
           </DialogContent>
           <DialogActions>
-            <Button onClick={() => close(undefined)} color="primary">
+            <Button onClick={closeCreated} color="primary">
               Okay
             </Button>
           </DialogActions>
