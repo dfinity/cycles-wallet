@@ -53,6 +53,7 @@ export default ({ IDL }) => {
   });
   const CanisterSettings = IDL.Record({
     controller: IDL.Opt(IDL.Principal),
+    controllers: IDL.Opt(IDL.Vec(IDL.Principal)),
     freezing_threshold: IDL.Opt(IDL.Nat),
     memory_allocation: IDL.Opt(IDL.Nat),
     compute_allocation: IDL.Opt(IDL.Nat),

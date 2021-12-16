@@ -135,21 +135,24 @@ export function CreateCanisterDialog(props: {
     let additional = moreControllers.filter(ea => ea.length !== 0);
     let allControllers = [controller, ...additional];
     let result = allControllers.map(ea => Principal.fromText(ea));
+    const args = {result, cycles};
 
-    Wallet.create_canister({
-      controller: result,
-      cycles,
-    }).then(
-      (canisterId) => {
+    console.log('create argument:', args);
+
+    Wallet.create_canister(args).then(
+      (resultCanisterId) => {
+        console.log('result canister id is:', resultCanisterId);
         setLoading(false);
-        setCanisterId(canisterId);
+        setCanisterId(resultCanisterId);
       },
       (err) => {
+        console.log('this is err', err);
         setLoading(false);
         close(err);
       }
     ).catch(e => {
-      console.error(e)
+      console.log(e);
+      console.error(e);
     });
   }
 
