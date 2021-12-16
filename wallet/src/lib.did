@@ -56,6 +56,32 @@ type AddressEntry = record {
   role: Role;
 };
 
+type ChildInfo = record {
+  id: principal;
+  name: opt text;
+  created_at: int64;
+};
+
+type ChildEventKind = variant {
+  CyclesSent: record {
+    amount: nat64;
+    refund: nat64;
+  };
+  Called: record {
+    method_name: text;
+    cycles: nat64;
+  };
+  Created: record {
+    cycles: nat64;
+  };
+};
+
+type ChildEvent = record {
+  id: nat32;
+  timestamp: nat64;
+  kind: ChildEventKind;
+};
+
 type WalletResultCreate = variant {
   Ok : record { canister_id: principal };
   Err: text;
@@ -163,6 +189,11 @@ service : {
   // Events
   get_events: (opt record { from: opt nat32; to: opt nat32; }) -> (vec Event) query;
   get_chart: (opt record { count: opt nat32; precision: opt nat64; } ) -> (vec record { nat64; nat64; }) query;
+
+  // Children
+  list_children: () -> (vec ChildInfo) query;
+  get_child_events: (principal, opt record { from: opt nat32; to: opt nat32; }) -> (opt vec ChildEvent) query;
+  set_short_name: (principal, opt text) -> (opt ChildInfo);
 
   // Assets
   http_request: (request: HttpRequest) -> (HttpResponse) query;

@@ -13,7 +13,7 @@ mod events;
 
 use crate::address::{AddressBook, AddressEntry, Role};
 use crate::events::EventBuffer;
-use events::{record, Event, EventKind};
+use events::{record, ChildList, Event, EventKind};
 
 const WALLET_API_VERSION: &str = "0.2.0";
 
@@ -44,6 +44,7 @@ struct StableStorage {
     name: Option<String>,
     chart: Vec<ChartTick>,
     wasm_module: Option<serde_bytes::ByteBuf>,
+    children: Option<ChildList>,
 }
 
 #[pre_upgrade]
@@ -55,6 +56,7 @@ fn pre_upgrade() {
         name: storage::get::<WalletName>().0.clone(),
         chart: storage::get::<Vec<ChartTick>>().to_vec(),
         wasm_module: storage::get::<WalletWASMBytes>().0.clone(),
+        children: Some(storage::get::<ChildList>().clone()),
     };
     match storage::stable_save((stable,)) {
         Ok(_) => (),
@@ -88,6 +90,11 @@ fn post_upgrade() {
         let chart = storage::get_mut::<Vec<ChartTick>>();
         chart.clear();
         chart.clone_from(&storage.chart);
+        if let Some(children) = storage.children {
+            *storage::get_mut::<ChildList>() = children;
+        } else {
+            events::migrations::_1_create_child_list();
+        }
     }
 }
 
@@ -415,7 +422,9 @@ mod wallet {
     #[update(guard = "is_custodian_or_controller", name = "wallet_create_canister")]
     async fn create_canister(mut args: CreateCanisterArgs) -> Result<CreateResult, String> {
         let mut settings = normalize_canister_settings(args.settings)?;
-        let controllers = settings.controllers.get_or_insert_with(|| Vec::with_capacity(1));
+        let controllers = settings
+            .controllers
+            .get_or_insert_with(|| Vec::with_capacity(2));
         if controllers.len() == 0 {
             controllers.push(ic_cdk::api::caller());
             controllers.push(ic_cdk::api::id());
@@ -753,6 +762,32 @@ fn get_events(args: Option<GetEventsArgs>) -> &'static [Event] {
     } else {
         events::get_events(None, None)
     }
+}
+
+/***************************************************************************************************
+ * Children
+ **************************************************************************************************/
+
+#[query(guard = "is_custodian_or_controller")]
+fn list_children() -> Vec<&'static events::ChildInfo> {
+    events::get_children()
+}
+
+#[query(guard = "is_custodian_or_controller")]
+fn get_child_events(
+    child: Principal,
+    args: Option<GetEventsArgs>,
+) -> Option<Vec<events::ChildEvent>> {
+    if let Some(GetEventsArgs { from, to }) = args {
+        events::get_child_events(&child, from, to)
+    } else {
+        events::get_child_events(&child, None, None)
+    }
+}
+
+#[update(guard = "is_custodian_or_controller")]
+fn set_short_name(child: Principal, name: Option<String>) -> Option<events::ChildInfo> {
+    events::set_short_name(&child, name)
 }
 
 /***************************************************************************************************
