@@ -117,6 +117,7 @@ pub enum EventKind {
     CyclesReceived {
         from: Principal,
         amount: u64,
+        memo: Option<String>,
     },
     AddressAdded {
         id: Principal,

@@ -370,9 +370,14 @@ mod wallet {
         Ok(())
     }
 
+    #[derive(CandidType, Deserialize)]
+    struct ReceiveOptions {
+        memo: Option<String>,
+    }
+
     /// Receive cycles from another canister.
     #[update(name = "wallet_receive")]
-    fn receive() {
+    fn receive(options: Option<ReceiveOptions>) {
         let from = caller();
         let amount = ic_cdk::api::call::msg_cycles_available();
         if amount > 0 {
@@ -380,6 +385,7 @@ mod wallet {
             events::record(events::EventKind::CyclesReceived {
                 from,
                 amount: amount_accepted,
+                memo: options.and_then(|opts| opts.memo)
             });
             super::update_chart();
         }
