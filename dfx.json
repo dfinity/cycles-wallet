@@ -4,21 +4,21 @@
       "build": "wallet/build.sh",
       "candid": "wallet/src/lib.did",
       "type": "custom",
-      "wasm": "wallet/target/wasm32-unknown-unknown/release/wallet-opt.wasm"
+      "wasm": "target/wasm32-unknown-unknown/release/wallet-opt.wasm"
     },
     "alice": {
       "build": "true",
       "dependencies": ["wallet"],
       "candid": "wallet/src/lib.did",
       "type": "custom",
-      "wasm": "wallet/target/wasm32-unknown-unknown/release/wallet-opt.wasm"
+      "wasm": "target/wasm32-unknown-unknown/release/wallet-opt.wasm"
     },
     "bob": {
       "build": "true",
       "dependencies": ["wallet"],
       "candid": "wallet/src/lib.did",
       "type": "custom",
-      "wasm": "wallet/target/wasm32-unknown-unknown/release/wallet-opt.wasm"
+      "wasm": "target/wasm32-unknown-unknown/release/wallet-opt.wasm"
     }
   },
   "networks": {

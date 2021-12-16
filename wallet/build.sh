@@ -13,20 +13,15 @@ npm run build
 gzip -f dist/*.js
 gzip -f dist/*.html
 
-WALLET_DIR="$(dirname "$0")"
+cargo build --target wasm32-unknown-unknown --release
 
-cargo build --manifest-path "$WALLET_DIR/Cargo.toml" --target wasm32-unknown-unknown --release
-
-CURRENT_DIR="$(pwd)"
-cd "$WALLET_DIR/"
 cargo install ic-cdk-optimizer --root target
 STATUS=$?
-cd "$CURRENT_DIR"
 
 if [ "$STATUS" -eq "0" ]; then
-  "$WALLET_DIR"/target/bin/ic-cdk-optimizer \
-      "$WALLET_DIR"/target/wasm32-unknown-unknown/release/wallet.wasm \
-      -o "$WALLET_DIR"/target/wasm32-unknown-unknown/release/wallet-opt.wasm
+  target/bin/ic-cdk-optimizer \
+      target/wasm32-unknown-unknown/release/wallet.wasm \
+      -o target/wasm32-unknown-unknown/release/wallet-opt.wasm
 
   true
 else
