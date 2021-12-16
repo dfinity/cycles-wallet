@@ -120,14 +120,14 @@ impl AddressBook {
     pub fn remove(&mut self, principal: &Principal) {
         // Because we order by ID, we can create entries and remove them.
         self.0
-            .remove(&AddressEntry::new(principal.clone(), None, Role::Contact));
+            .remove(&AddressEntry::new(*principal, None, Role::Contact));
     }
 
     #[inline]
     pub fn take(&mut self, principal: &Principal) -> Option<AddressEntry> {
         // Because we order by ID, we can create entries and remove them.
         self.0
-            .take(&AddressEntry::new(principal.clone(), None, Role::Contact))
+            .take(&AddressEntry::new(*principal, None, Role::Contact))
     }
 
     #[inline]
