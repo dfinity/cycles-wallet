@@ -7,6 +7,7 @@ type EventKind = variant {
   CyclesReceived: record {
     from: principal;
     amount: nat64;
+    memo: opt text;
   };
   AddressAdded: record {
     id: principal;
