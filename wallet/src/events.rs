@@ -161,7 +161,10 @@ impl EventKind {
             Self::CyclesSent { to, amount, refund } => {
                 Some((to, ChildEventKind::CyclesSent { amount, refund }))
             }
-            _ => None,
+            Self::AddressAdded { .. }
+            | Self::AddressRemoved { .. }
+            | Self::CyclesReceived { .. }
+            | Self::WalletDeployed { .. } => None,
         }
     }
 }
