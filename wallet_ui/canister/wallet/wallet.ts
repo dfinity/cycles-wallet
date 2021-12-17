@@ -1,4 +1,4 @@
-import type { Principal } from '@dfinity/agent';
+import type { Principal } from '@dfinity/principal';
 export interface AddressEntry {
   'id' : Principal,
   'kind' : Kind,
@@ -6,8 +6,8 @@ export interface AddressEntry {
   'role' : Role,
 };
 export interface CanisterSettings {
-  'controller' : [] | Principal[],
-  'controllers' : [] | Principal[],
+  'controller' : [] | [Principal],
+  'controllers' : [] | [Principal[]],
   'freezing_threshold' : [] | [bigint],
   'memory_allocation' : [] | [bigint],
   'compute_allocation' : [] | [bigint],

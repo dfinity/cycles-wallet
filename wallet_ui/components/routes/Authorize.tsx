@@ -222,6 +222,7 @@ export function Authorize(props: AuthorizeProps) {
               <PrimaryButton
                 onClick={async () => {
                   await authClient.login();
+                  debugger;
                   const identity = await authClient.getIdentity();
                   Wallet.clearWalletCache();
                   if (identity) {

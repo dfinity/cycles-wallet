@@ -1,5 +1,5 @@
 import * as React from "react";
-import type { Principal } from "@dfinity/agent";
+import type { Principal } from "@dfinity/principal";
 import CircularProgress from "@material-ui/core/CircularProgress";
 import Grid from "@material-ui/core/Grid";
 import List from "@material-ui/core/List";
