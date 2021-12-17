@@ -16,13 +16,13 @@
 import {
   HttpAgent,
   Actor,
-  Principal,
   ActorSubclass,
   AnonymousIdentity,
 } from "@dfinity/agent";
-import _SERVICE from "./wallet/wallet";
+import _SERVICE, { CreateCanisterArgs } from "./wallet/wallet";
 import factory, { Event } from "./wallet";
 import { authClient } from "../utils/authClient";
+import {Principal} from "@dfinity/principal"
 export * from "./wallet";
 
 function convertIdlEventMap(idlEvent: any): Event {
@@ -33,7 +33,7 @@ function convertIdlEventMap(idlEvent: any): Event {
   };
 }
 // Need to export the enumeration from wallet.did
-export { Principal } from "@dfinity/agent";
+export { Principal } from "@dfinity/principal";
 
 function getCanisterId(): Principal {
   // Check the query params.
@@ -173,28 +173,20 @@ export const Wallet = {
     result: Principal[];
     cycles: number;
   }): Promise<Principal> {
-    let pSettings;
-
-    if (p.result.length > 1) {
-      pSettings = {
-        controllers: p.result,
-        controller: [],
-      }
-    } else {
-      pSettings = {
-        controller: p.result,
-        controllers: [],
-      }
+    if(p.result.length < 1) {
+      throw new Error("Canister must be created with at least one controller");
     }
-    const { controller, controllers } = pSettings;
+    const settings: CreateCanisterArgs['settings'] = {
+      compute_allocation: [],
+      freezing_threshold: [],
+      memory_allocation: [],
+      // Prefer storing single controller as controllers
+      controller: [],
+      controllers: [p.result],
+    }
+
     const result = await (await getWalletCanister()).wallet_create_canister({
-      settings: {
-        compute_allocation: [],
-        controller,
-        controllers,
-        freezing_threshold: [],
-        memory_allocation: [],
-      },
+      settings,
       cycles: BigInt(p.cycles),
     });
     if ("Ok" in result) {
@@ -223,7 +215,7 @@ export const Wallet = {
       throw result.Err;
     }
   },
-  async send(p: { canister: Principal; amount: BigInt }): Promise<void> {
+  async send(p: { canister: Principal; amount: bigint }): Promise<void> {
     await (await getWalletCanister()).wallet_send({
       canister: p.canister,
       amount: BigInt(p.amount),

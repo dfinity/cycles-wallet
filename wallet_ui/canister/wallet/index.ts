@@ -1,5 +1,5 @@
 import WalletIdlFactory from "./wallet.did";
-import { IDL } from "@dfinity/agent";
+import { IDL } from "@dfinity/candid";
 
 export * from "./wallet";
 
