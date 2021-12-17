@@ -192,11 +192,13 @@ service : {
   remove_address: (address: principal) -> (WalletResult);
 
   // Events
+  // If `from` is not specified, it will start 20 from the end; if `to` is not specified, it will stop at the end
   get_events: (opt record { from: opt nat32; to: opt nat32; }) -> (vec Event) query;
   get_chart: (opt record { count: opt nat32; precision: opt nat64; } ) -> (vec record { nat64; nat64; }) query;
 
   // Children
   list_children: () -> (vec ChildInfo) query;
+  // If `from` is not specified, it will start 20 from the end; if `to` is not specified, it will stop at the end
   get_child_events: (principal, opt record { from: opt nat32; to: opt nat32; }) -> (opt vec ChildEvent) query;
   set_short_name: (principal, opt text) -> (opt ChildInfo);
 
