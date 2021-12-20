@@ -13,7 +13,7 @@ mod events;
 
 use crate::address::{AddressBook, AddressEntry, Role};
 use crate::events::EventBuffer;
-use events::{record, ChildList, Event, EventKind};
+use events::{record, Event, EventKind, ManagedList};
 
 const WALLET_API_VERSION: &str = "0.2.0";
 
@@ -44,7 +44,7 @@ struct StableStorage {
     name: Option<String>,
     chart: Vec<ChartTick>,
     wasm_module: Option<serde_bytes::ByteBuf>,
-    children: Option<ChildList>,
+    managed: Option<ManagedList>,
 }
 
 #[pre_upgrade]
@@ -56,7 +56,7 @@ fn pre_upgrade() {
         name: storage::get::<WalletName>().0.clone(),
         chart: storage::get::<Vec<ChartTick>>().to_vec(),
         wasm_module: storage::get::<WalletWASMBytes>().0.clone(),
-        children: Some(storage::get::<ChildList>().clone()),
+        managed: Some(storage::get::<ManagedList>().clone()),
     };
     match storage::stable_save((stable,)) {
         Ok(_) => (),
@@ -90,10 +90,10 @@ fn post_upgrade() {
         let chart = storage::get_mut::<Vec<ChartTick>>();
         chart.clear();
         chart.clone_from(&storage.chart);
-        if let Some(children) = storage.children {
-            *storage::get_mut::<ChildList>() = children;
+        if let Some(managed) = storage.managed {
+            *storage::get_mut::<ManagedList>() = managed;
         } else {
-            events::migrations::_1_create_child_list();
+            events::migrations::_1_create_managed_canister_list();
         }
     }
 }
@@ -751,29 +751,42 @@ fn get_events(args: Option<GetEventsArgs>) -> &'static [Event] {
 }
 
 /***************************************************************************************************
- * Children
+ * Managed canisters
  **************************************************************************************************/
 
-#[query(guard = "is_custodian_or_controller")]
-fn list_children() -> Vec<&'static events::ChildInfo> {
-    events::get_children()
-}
-
 #[derive(CandidType, Deserialize)]
-struct GetChildEventArgs {
-    child: Principal,
+struct ListCanistersArgs {
     from: Option<u32>,
     to: Option<u32>,
 }
 
 #[query(guard = "is_custodian_or_controller")]
-fn get_child_events(args: GetChildEventArgs) -> Option<Vec<events::ChildEvent>> {
-    events::get_child_events(&args.child, args.from, args.to)
+fn list_managed_canisters(
+    args: ListCanistersArgs,
+) -> (Vec<&'static events::ManagedCanisterInfo>, u32) {
+    events::get_managed_canisters(args.from, args.to)
+}
+
+#[derive(CandidType, Deserialize)]
+struct GetManagedCanisterEventArgs {
+    canister: Principal,
+    from: Option<u32>,
+    to: Option<u32>,
+}
+
+#[query(guard = "is_custodian_or_controller")]
+fn get_managed_canister_events(
+    args: GetManagedCanisterEventArgs,
+) -> Option<Vec<events::ManagedCanisterEvent>> {
+    events::get_managed_canister_events(&args.canister, args.from, args.to)
 }
 
 #[update(guard = "is_custodian_or_controller")]
-fn set_short_name(child: Principal, name: Option<String>) -> Option<events::ChildInfo> {
-    events::set_short_name(&child, name)
+fn set_short_name(
+    canister: Principal,
+    name: Option<String>,
+) -> Option<events::ManagedCanisterInfo> {
+    events::set_short_name(&canister, name)
 }
 
 /***************************************************************************************************

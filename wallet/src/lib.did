@@ -57,13 +57,13 @@ type AddressEntry = record {
   role: Role;
 };
 
-type ChildInfo = record {
+type ManagedCanisterInfo = record {
   id: principal;
   name: opt text;
   created_at: int64;
 };
 
-type ChildEventKind = variant {
+type ManagedCanisterEventKind = variant {
   CyclesSent: record {
     amount: nat64;
     refund: nat64;
@@ -77,10 +77,10 @@ type ChildEventKind = variant {
   };
 };
 
-type ChildEvent = record {
+type ManagedCanisterEvent = record {
   id: nat32;
   timestamp: nat64;
-  kind: ChildEventKind;
+  kind: ManagedCanisterEventKind;
 };
 
 type ReceiveOptions = record {
@@ -196,11 +196,11 @@ service : {
   get_events: (opt record { from: opt nat32; to: opt nat32; }) -> (vec Event) query;
   get_chart: (opt record { count: opt nat32; precision: opt nat64; } ) -> (vec record { nat64; nat64; }) query;
 
-  // Children
-  list_children: () -> (vec ChildInfo) query;
+  // Managed canisters
+  list_managed_canisters: (record { from: opt nat32; to: opt nat32; }) -> (vec ManagedCanisterInfo, nat32) query;
   // If `from` is not specified, it will start 20 from the end; if `to` is not specified, it will stop at the end
-  get_child_events: (record { child: principal; from: opt nat32; to: opt nat32; }) -> (opt vec ChildEvent) query;
-  set_short_name: (principal, opt text) -> (opt ChildInfo);
+  get_managed_canister_events: (record { canister: principal; from: opt nat32; to: opt nat32; }) -> (opt vec ManagedCanisterEvent) query;
+  set_short_name: (principal, opt text) -> (opt ManagedCanisterInfo);
 
   // Assets
   http_request: (request: HttpRequest) -> (HttpResponse) query;

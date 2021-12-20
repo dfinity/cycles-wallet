@@ -1,30 +1,38 @@
 use crate::address::Role;
+use ic_cdk::export::candid::types::{Compound, Serializer, Type};
 use ic_cdk::export::candid::CandidType;
 use ic_cdk::export::Principal;
 use ic_cdk::{api, storage};
-use serde::Deserialize;
+use indexmap::IndexMap;
+use serde::de::{SeqAccess, Visitor};
+use serde::{Deserialize, Deserializer};
 use std::cmp::min;
-use std::collections::HashMap;
+use std::fmt::{self, Formatter};
 
 #[derive(CandidType, Clone, Default, Deserialize)]
 pub struct EventBuffer {
     events: Vec<Event>,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Default, CandidType, Deserialize)]
-pub struct ChildList(HashMap<Principal, Child>);
+#[derive(Debug, Clone, PartialEq, Eq, Default)]
+pub struct ManagedList(IndexMap<Principal, ManagedCanister>);
 
-impl ChildList {
-    pub fn push(&mut self, child: Principal, event: ChildEventKind) {
-        self.push_with_timestamp(child, event, api::time())
+impl ManagedList {
+    pub fn push(&mut self, canister: Principal, event: ManagedCanisterEventKind) {
+        self.push_with_timestamp(canister, event, api::time())
     }
-    pub fn push_with_timestamp(&mut self, child: Principal, event: ChildEventKind, timestamp: u64) {
+    pub fn push_with_timestamp(
+        &mut self,
+        canister: Principal,
+        event: ManagedCanisterEventKind,
+        timestamp: u64,
+    ) {
         let events = &mut self
             .0
-            .entry(child)
-            .or_insert_with(|| Child::new(child))
+            .entry(canister)
+            .or_insert_with(|| ManagedCanister::new(canister))
             .events;
-        events.push(ChildEvent {
+        events.push(ManagedCanisterEvent {
             kind: event,
             id: events.len() as u32,
             timestamp,
@@ -33,22 +41,22 @@ impl ChildList {
 }
 
 #[derive(Debug, Clone, Eq, CandidType, Deserialize)]
-pub struct Child {
-    pub info: ChildInfo,
-    pub events: Vec<ChildEvent>,
+pub struct ManagedCanister {
+    pub info: ManagedCanisterInfo,
+    pub events: Vec<ManagedCanisterEvent>,
 }
 
 #[derive(Debug, Clone, Eq, CandidType, Deserialize)]
-pub struct ChildInfo {
+pub struct ManagedCanisterInfo {
     pub id: Principal,
     pub name: Option<String>,
     pub created_at: i64,
 }
 
-impl Child {
+impl ManagedCanister {
     pub fn new(id: Principal) -> Self {
         Self {
-            info: ChildInfo {
+            info: ManagedCanisterInfo {
                 id,
                 name: None,
                 created_at: api::time() as i64,
@@ -58,27 +66,27 @@ impl Child {
     }
 }
 
-impl PartialEq for ChildInfo {
+impl PartialEq for ManagedCanisterInfo {
     fn eq(&self, other: &Self) -> bool {
         self.id == other.id
     }
 }
 
-impl PartialEq for Child {
+impl PartialEq for ManagedCanister {
     fn eq(&self, other: &Self) -> bool {
         self.info == other.info
     }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, CandidType, Deserialize)]
-pub struct ChildEvent {
+pub struct ManagedCanisterEvent {
     pub id: u32,
     pub timestamp: u64,
-    pub kind: ChildEventKind,
+    pub kind: ManagedCanisterEventKind,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, CandidType, Deserialize)]
-pub enum ChildEventKind {
+pub enum ManagedCanisterEventKind {
     CyclesSent { amount: u64, refund: u64 },
     Called { method_name: String, cycles: u64 },
     Created { cycles: u64 },
@@ -142,10 +150,10 @@ pub enum EventKind {
 }
 
 impl EventKind {
-    pub fn to_child(&self) -> Option<(Principal, ChildEventKind)> {
+    pub fn to_managed(&self) -> Option<(Principal, ManagedCanisterEventKind)> {
         match *self {
             Self::CanisterCreated { cycles, canister } => {
-                Some((canister, ChildEventKind::Created { cycles }))
+                Some((canister, ManagedCanisterEventKind::Created { cycles }))
             }
             Self::CanisterCalled {
                 canister,
@@ -153,13 +161,13 @@ impl EventKind {
                 cycles,
             } => Some((
                 canister,
-                ChildEventKind::Called {
+                ManagedCanisterEventKind::Called {
                     method_name: method_name.clone(),
                     cycles,
                 },
             )),
             Self::CyclesSent { to, amount, refund } => {
-                Some((to, ChildEventKind::CyclesSent { amount, refund }))
+                Some((to, ManagedCanisterEventKind::CyclesSent { amount, refund }))
             }
             Self::AddressAdded { .. }
             | Self::AddressRemoved { .. }
@@ -179,9 +187,9 @@ pub struct Event {
 /// Record an event.
 pub fn record(kind: EventKind) {
     let buffer = storage::get_mut::<EventBuffer>();
-    if let Some((to, kind)) = kind.to_child() {
-        let children = storage::get_mut::<ChildList>();
-        children.push(to, kind);
+    if let Some((to, kind)) = kind.to_managed() {
+        let managed = storage::get_mut::<ManagedList>();
+        managed.push(to, kind);
     }
     buffer.push(Event {
         id: buffer.len(),
@@ -205,20 +213,25 @@ pub fn get_events(from: Option<u32>, to: Option<u32>) -> &'static [Event] {
     &buffer.as_slice()[from..to]
 }
 
-pub fn get_children() -> Vec<&'static ChildInfo> {
-    storage::get::<ChildList>()
-        .0
-        .values()
-        .map(|x| &x.info)
-        .collect()
-}
-
-pub fn get_child_events(
-    child: &Principal,
+pub fn get_managed_canisters(
     from: Option<u32>,
     to: Option<u32>,
-) -> Option<Vec<ChildEvent>> {
-    let buffer = &storage::get::<ChildList>().0.get(child)?.events;
+) -> (Vec<&'static ManagedCanisterInfo>, u32) {
+    let list = storage::get::<ManagedList>();
+    let from = from.unwrap_or(0) as usize;
+    let to = min(list.0.len(), to.unwrap_or(u32::MAX) as usize);
+    (
+        (from..to).map(|n| &list.0[n].info).collect(),
+        list.0.len() as u32,
+    )
+}
+
+pub fn get_managed_canister_events(
+    canister: &Principal,
+    from: Option<u32>,
+    to: Option<u32>,
+) -> Option<Vec<ManagedCanisterEvent>> {
+    let buffer = &storage::get::<ManagedList>().0.get(canister)?.events;
     let from = from.unwrap_or_else(|| {
         if buffer.len() <= 20 {
             0
@@ -230,21 +243,65 @@ pub fn get_child_events(
     Some(buffer[from..to].to_owned())
 }
 
-pub fn set_short_name(child: &Principal, name: Option<String>) -> Option<ChildInfo> {
-    let child = storage::get_mut::<ChildList>().0.get_mut(child)?;
-    child.info.name = name;
-    Some(child.info.clone())
+pub fn set_short_name(canister: &Principal, name: Option<String>) -> Option<ManagedCanisterInfo> {
+    let canister = storage::get_mut::<ManagedList>().0.get_mut(canister)?;
+    canister.info.name = name;
+    Some(canister.info.clone())
 }
 
 pub mod migrations {
     use super::*;
-    pub fn _1_create_child_list() {
-        let children = storage::get_mut::<ChildList>();
+    pub fn _1_create_managed_canister_list() {
+        let managed = storage::get_mut::<ManagedList>();
         let events = storage::get_mut::<EventBuffer>();
         for event in events.as_slice() {
-            if let Some((to, kind)) = event.kind.to_child() {
-                children.push_with_timestamp(to, kind, event.timestamp);
+            if let Some((to, kind)) = event.kind.to_managed() {
+                managed.push_with_timestamp(to, kind, event.timestamp);
             }
         }
+    }
+}
+
+impl CandidType for ManagedList {
+    fn _ty() -> Type {
+        Type::Vec(Box::new(ManagedCanister::ty()))
+    }
+    fn idl_serialize<S>(&self, serializer: S) -> Result<(), S::Error>
+    where
+        S: Serializer,
+    {
+        let mut compound = serializer.serialize_vec(self.0.len())?;
+        for value in self.0.values() {
+            compound.serialize_element(value)?;
+        }
+        Ok(())
+    }
+}
+
+impl<'de> Deserialize<'de> for ManagedList {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        deserializer.deserialize_seq(IdxMapVisitor)
+    }
+}
+
+struct IdxMapVisitor;
+
+impl<'de> Visitor<'de> for IdxMapVisitor {
+    type Value = ManagedList;
+    fn expecting(&self, formatter: &mut Formatter) -> fmt::Result {
+        write!(formatter, "a sequence of `ManagedList` records")
+    }
+    fn visit_seq<A>(self, mut seq: A) -> Result<Self::Value, A::Error>
+    where
+        A: SeqAccess<'de>,
+    {
+        let mut map = IndexMap::with_capacity(seq.size_hint().unwrap_or(20));
+        while let Some(elem) = seq.next_element::<ManagedCanister>()? {
+            map.insert(elem.info.id, elem);
+        }
+        Ok(ManagedList(map))
     }
 }
