@@ -199,7 +199,7 @@ service : {
   // Children
   list_children: () -> (vec ChildInfo) query;
   // If `from` is not specified, it will start 20 from the end; if `to` is not specified, it will stop at the end
-  get_child_events: (record { child: principal, from: opt nat32; to: opt nat32; }) -> (opt vec ChildEvent) query;
+  get_child_events: (record { child: principal; from: opt nat32; to: opt nat32; }) -> (opt vec ChildEvent) query;
   set_short_name: (principal, opt text) -> (opt ChildInfo);
 
   // Assets
