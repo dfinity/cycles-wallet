@@ -759,16 +759,16 @@ fn list_children() -> Vec<&'static events::ChildInfo> {
     events::get_children()
 }
 
-#[query(guard = "is_custodian_or_controller")]
-fn get_child_events(
+#[derive(CandidType, Deserialize)]
+struct GetChildEventArgs {
     child: Principal,
-    args: Option<GetEventsArgs>,
-) -> Option<Vec<events::ChildEvent>> {
-    if let Some(GetEventsArgs { from, to }) = args {
-        events::get_child_events(&child, from, to)
-    } else {
-        events::get_child_events(&child, None, None)
-    }
+    from: Option<u32>,
+    to: Option<u32>,
+}
+
+#[query(guard = "is_custodian_or_controller")]
+fn get_child_events(args: GetChildEventArgs) -> Option<Vec<events::ChildEvent>> {
+    events::get_child_events(&args.child, args.from, args.to)
 }
 
 #[update(guard = "is_custodian_or_controller")]
