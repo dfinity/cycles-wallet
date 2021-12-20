@@ -149,11 +149,7 @@ export function CreateCanisterDialog(props: {
         console.log('this is err', err);
         setLoading(false);
         close(err);
-      }
-    ).catch(e => {
-      console.log(e);
-      console.error(e);
-    });
+      })
   }
 
   function closeCreated() {
