@@ -213,6 +213,7 @@ pub fn get_events(from: Option<u32>, to: Option<u32>) -> &'static [Event] {
     &buffer.as_slice()[from..to]
 }
 
+/// Return info about canisters managed by this wallet, as well as the total number of managed canisters.
 pub fn get_managed_canisters(
     from: Option<u32>,
     to: Option<u32>,
