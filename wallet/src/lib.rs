@@ -330,9 +330,7 @@ mod wallet {
     /// Send cycles to another canister.
     #[update(guard = "is_custodian_or_controller", name = "wallet_send")]
     async fn send(args: SendCyclesArgs) -> Result<(), String> {
-        match api::call::call_with_payment(args.canister, "wallet_receive", (), args.amount)
-            .await
-        {
+        match api::call::call_with_payment(args.canister, "wallet_receive", (), args.amount).await {
             Ok(x) => {
                 let refund = api::call::msg_cycles_refunded();
                 events::record(events::EventKind::CyclesSent {
@@ -487,12 +485,7 @@ mod wallet {
             // assumption: settings are normalized (settings.controller is never present)
             if let Some(controllers) = args.settings.controllers.as_ref() {
                 for controller in controllers {
-                    match api::call::call(
-                        args.canister_id,
-                        "add_controller",
-                        (*controller,),
-                    )
-                    .await
+                    match api::call::call(args.canister_id, "add_controller", (*controller,)).await
                     {
                         Ok(x) => x,
                         Err((code, msg)) => {
@@ -578,13 +571,7 @@ mod wallet {
 
         // Store wallet wasm
         let store_args = WalletStoreWASMArgs { wasm_module };
-        match api::call::call(
-            *canister_id,
-            "wallet_store_wallet_wasm",
-            (store_args,),
-        )
-        .await
-        {
+        match api::call::call(*canister_id, "wallet_store_wallet_wasm", (store_args,)).await {
             Ok(x) => x,
             Err((code, msg)) => {
                 return Err(format!(
@@ -677,14 +664,7 @@ mod wallet {
             return Err("Attempted to call forward on self. This is not allowed. Call this method via a different custodian.".to_string());
         }
 
-        match api::call::call_raw(
-            args.canister,
-            &args.method_name,
-            args.args,
-            args.cycles,
-        )
-        .await
-        {
+        match api::call::call_raw(args.canister, &args.method_name, args.args, args.cycles).await {
             Ok(x) => {
                 events::record(events::EventKind::CanisterCalled {
                     canister: args.canister,
