@@ -1,7 +1,7 @@
 #!/usr/bin/env bats
 
-# shellcheck disable=SC1090
-source "$BATS_SUPPORT"/load.bash
+# shellcheck source=/dev/null
+source "$BATS_SUPPORT/load.bash"
 
 load util/assertions
 
@@ -80,6 +80,7 @@ teardown() {
     ALICE_WALLET=$(dfx --identity alice identity get-wallet)
     ALICE_ID=$(dfx --identity alice identity get-principal)
     BOB_WALLET=$(dfx --identity bob identity get-wallet)
+    # shellcheck disable=SC2034
     BOB_ID=$(dfx --identity bob identity get-principal)
 
     dfx deploy e2e_project
