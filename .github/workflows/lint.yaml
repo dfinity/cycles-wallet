@@ -11,6 +11,7 @@ jobs:
       matrix:
         rust: ['1.52.1']
         os: [ubuntu-latest]
+        node-version: ['12.x']
 
     steps:
       - uses: actions/checkout@v2
@@ -28,7 +29,24 @@ jobs:
           rustup update ${{ matrix.rust }}
           rustup default ${{ matrix.rust }}
           rustup component add clippy
+      - name: Install DFINITY SDK
+        run: |
+          DFX_VERSION=0.8.4
+          pushd /tmp
+          wget -q https://sdk.dfinity.org/install.sh
+          yes Y | DFX_VERSION=$DFX_VERSION bash install.sh
+          echo $HOME/bin >> $GITHUB_PATH
+          rm install.sh
+          popd
+      - name: Install Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v1
+        with:
+          node-version: ${{ matrix.node-version }}
       - name: Run Lint
-        run: cargo clippy --verbose --tests --benches -- -D clippy::all
+        run: |
+          dfx start --background
+          dfx canister create wallet
+          dfx build wallet
+          cargo clippy --verbose --tests --benches -- -D clippy::all
         env:
           RUST_BACKTRACE: 1
