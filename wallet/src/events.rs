@@ -227,6 +227,9 @@ pub fn get_managed_canisters(
     )
 }
 
+/// Get a list of all events related to a specific managed canister. Returns `None` if the canister is unknown.
+/// 
+/// `from`, if unspecified, defaults to `len - 20`; `to`, if unspecified, defaults to `len`.
 pub fn get_managed_canister_events(
     canister: &Principal,
     from: Option<u32>,
@@ -244,14 +247,19 @@ pub fn get_managed_canister_events(
     Some(buffer[from..to].to_owned())
 }
 
+/// Changes the recorded short name of a canister. Returns the updated info, or `None` if this canister isn't known.
 pub fn set_short_name(canister: &Principal, name: Option<String>) -> Option<ManagedCanisterInfo> {
     let canister = storage::get_mut::<ManagedList>().0.get_mut(canister)?;
     canister.info.name = name;
     Some(canister.info.clone())
 }
 
+/// Migration functions to run on `#[post_upgrade]`.
 pub mod migrations {
     use super::*;
+    /// Creates the managed canister list from the event list. 
+    /// 
+    /// Call during `#[post_upgrade]`, after the event list is deserialized, if the canister list can't be deserialized.
     pub fn _1_create_managed_canister_list() {
         let managed = storage::get_mut::<ManagedList>();
         let events = storage::get_mut::<EventBuffer>();
