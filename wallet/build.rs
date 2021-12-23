@@ -17,7 +17,10 @@ fn hash_file(path: &Path) -> [u8; 32] {
 
 fn main() {
     let out_dir = env::var("OUT_DIR").unwrap();
-    let location = Command::new(env::var("CARGO").unwrap()).args(&["locate-project", "--workspace", "--message-format=plain"]).output().expect("Could not locate project");
+    let location = Command::new(env::var("CARGO").unwrap())
+        .args(&["locate-project", "--workspace", "--message-format=plain"])
+        .output()
+        .expect("Could not locate project");
     assert!(location.status.success(), "Could not locate project");
     let pwd = String::from_utf8(location.stdout).expect("Could not locate project");
     let pwd = Path::new(pwd.trim()).parent().unwrap();
@@ -27,7 +30,10 @@ fn main() {
         .components()
         .map(|_| "..")
         .collect();
-    println!("cargo:rustc-env=DIST_DIR={}/dist/", getting_out_dir.to_str().unwrap());
+    println!(
+        "cargo:rustc-env=DIST_DIR={}/dist/",
+        getting_out_dir.to_str().unwrap()
+    );
     let loader_path = Path::new(&out_dir).join("assets.rs");
     eprintln!("cargo:rerun-if-changed={}", loader_path.to_string_lossy());
     let mut f = File::create(&loader_path).unwrap();

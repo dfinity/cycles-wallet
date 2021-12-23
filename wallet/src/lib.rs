@@ -330,7 +330,7 @@ mod wallet {
     /// Send cycles to another canister.
     #[update(guard = "is_custodian_or_controller", name = "wallet_send")]
     async fn send(args: SendCyclesArgs) -> Result<(), String> {
-        match api::call::call_with_payment(args.canister.clone(), "wallet_receive", (), args.amount)
+        match api::call::call_with_payment(args.canister, "wallet_receive", (), args.amount)
             .await
         {
             Ok(x) => {
@@ -338,7 +338,7 @@ mod wallet {
                 events::record(events::EventKind::CyclesSent {
                     to: args.canister,
                     amount: args.amount,
-                    refund: refund,
+                    refund,
                 });
                 super::update_chart();
                 x
@@ -348,7 +348,7 @@ mod wallet {
                 events::record(events::EventKind::CyclesSent {
                     to: args.canister,
                     amount: args.amount,
-                    refund: refund,
+                    refund,
                 });
                 let call_error =
                     format!("An error happened during the call: {}: {}", code as u8, msg);
@@ -415,8 +415,10 @@ mod wallet {
     #[update(guard = "is_custodian_or_controller", name = "wallet_create_canister")]
     async fn create_canister(mut args: CreateCanisterArgs) -> Result<CreateResult, String> {
         let mut settings = normalize_canister_settings(args.settings)?;
-        let controllers = settings.controllers.get_or_insert_with(|| Vec::with_capacity(1));
-        if controllers.len() == 0 {
+        let controllers = settings
+            .controllers
+            .get_or_insert_with(|| Vec::with_capacity(1));
+        if controllers.is_empty() {
             controllers.push(ic_cdk::api::caller());
             controllers.push(ic_cdk::api::id());
         }
@@ -471,7 +473,7 @@ mod wallet {
         };
 
         events::record(events::EventKind::CanisterCreated {
-            canister: create_result.canister_id.clone(),
+            canister: create_result.canister_id,
             cycles: args.cycles,
         });
         Ok(create_result)
@@ -486,9 +488,9 @@ mod wallet {
             if let Some(controllers) = args.settings.controllers.as_ref() {
                 for controller in controllers {
                     match api::call::call(
-                        args.canister_id.clone(),
+                        args.canister_id,
                         "add_controller",
-                        (controller.clone(),),
+                        (*controller,),
                     )
                     .await
                     {
@@ -503,7 +505,7 @@ mod wallet {
                 }
             }
 
-            match api::call::call(args.canister_id.clone(), "remove_controller", (id(),)).await {
+            match api::call::call(args.canister_id, "remove_controller", (id(),)).await {
                 Ok(x) => x,
                 Err((code, msg)) => {
                     return Err(format!(
@@ -549,7 +551,7 @@ mod wallet {
 
         let install_config = CanisterInstall {
             mode: InstallMode::Install,
-            canister_id: canister_id.clone(),
+            canister_id: *canister_id,
             wasm_module: wasm_module.clone(),
             arg: b" ".to_vec(),
         };
@@ -571,13 +573,13 @@ mod wallet {
         };
 
         events::record(events::EventKind::WalletDeployed {
-            canister: canister_id.clone(),
+            canister: *canister_id,
         });
 
         // Store wallet wasm
         let store_args = WalletStoreWASMArgs { wasm_module };
         match api::call::call(
-            canister_id.clone(),
+            *canister_id,
             "wallet_store_wallet_wasm",
             (store_args,),
         )
@@ -621,7 +623,7 @@ mod wallet {
         if args.settings.controller.is_some() || args.settings.controllers.is_some() {
             update_settings_call(
                 UpdateSettingsArgs {
-                    canister_id: create_result.canister_id.clone(),
+                    canister_id: create_result.canister_id,
                     settings: normalize_canister_settings(args.settings)?,
                 },
                 true,
@@ -676,7 +678,7 @@ mod wallet {
         }
 
         match api::call::call_raw(
-            args.canister.clone(),
+            args.canister,
             &args.method_name,
             args.args,
             args.cycles,
