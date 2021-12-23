@@ -60,7 +60,7 @@ type AddressEntry = record {
 type ManagedCanisterInfo = record {
   id: principal;
   name: opt text;
-  created_at: int64;
+  created_at: nat64;
 };
 
 type ManagedCanisterEventKind = variant {

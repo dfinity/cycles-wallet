@@ -50,7 +50,7 @@ pub struct ManagedCanister {
 pub struct ManagedCanisterInfo {
     pub id: Principal,
     pub name: Option<String>,
-    pub created_at: i64,
+    pub created_at: u64,
 }
 
 impl ManagedCanister {
@@ -59,7 +59,7 @@ impl ManagedCanister {
             info: ManagedCanisterInfo {
                 id,
                 name: None,
-                created_at: api::time() as i64,
+                created_at: api::time(),
             },
             events: vec![],
         }
