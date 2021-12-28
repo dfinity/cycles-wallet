@@ -87,10 +87,10 @@ pub fn for_each_asset(mut f: impl FnMut(&'static str, Vec<(String, String)>, &'s
         let hash = hash_file(&path);
         writeln!(
             f,
-            "  f(\"{}\", vec![(\"Content-Type\".to_string(), \"{}\".to_string()){},(\"Cache-Control\".to_string(), \"max-age=600\".to_string())], &include_bytes!(concat!(env!(\"DIST_DIR\"), \"{}\"))[..], &{:?});",
+            r#"  f("{}", vec![("Content-Type".to_string(), "{}".to_string()){},("Cache-Control".to_string(), "max-age=600".to_string())], &include_bytes!(concat!(env!("DIST_DIR"), "{}"))[..], &{:?});"#,
             url_path,
             file_type,
-            if gzipped { ",(\"Content-Encoding\".to_string(), \"gzip\".to_string())" } else { "" },
+            if gzipped { r#",("Content-Encoding".to_string(), "gzip".to_string())"# } else { "" },
             filename,
             hash
         )
