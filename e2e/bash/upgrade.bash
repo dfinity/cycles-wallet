@@ -31,7 +31,7 @@ teardown() {
         assert_command_fail dfx canister --no-wallet call "$WALLET" get_managed_canister_events "(record { canister = principal \"$CANISTER\" })"
         assert_command dfx canister --no-wallet call "$WALLET" get_events '(null)'
         # CanisterCreated = 1205528161; cycles = 2190693645; canister = 2631180839
-        assert_match "1_205_528_161 = record {[[:space:]]+2_190_693_645 = 1_000_000_000 : nat64;[[:space:]]+2_631_180_839 = principal \"$CANISTER\""
+        assert_match "1_205_528_161 = record \\{[[:space:]]+2_190_693_645 = 1_000_000_000 : nat64;[[:space:]]+2_631_180_839 = principal \"$CANISTER\""
     )
     # ^ reset DFX_WALLET_WASM
     assert_command [ -n "$DFX_WALLET_WASM" ]
@@ -40,8 +40,8 @@ teardown() {
     CANISTER=$(dfx canister id e2e_project)
     assert_command dfx canister --no-wallet call "$WALLET" get_events '(null)'
     # CanisterCreated = 1205528161; cycles = 2190693645; canister = 2631180839
-    assert_match "1_205_528_161 = record {[[:space:]]+2_190_693_645 = 1_000_000_000 : nat64;[[:space:]]+2_631_180_839 = principal \"$CANISTER\""
+    assert_match "1_205_528_161 = record \\{[[:space:]]+2_190_693_645 = 1_000_000_000 : nat64;[[:space:]]+2_631_180_839 = principal \"$CANISTER\""
     assert_command dfx canister --no-wallet call "$WALLET" get_managed_canister_events "(record { canister = principal \"$CANISTER\" })"
     # Created = 3736853960; cycles = 2190693645
-    assert_match "3_736_853_960 = record {[[:space:]]+2_190_693_645 = 1_000_000_000 : nat64"
+    assert_match "3_736_853_960 = record \\{[[:space:]]+2_190_693_645 = 1_000_000_000 : nat64"
 }
