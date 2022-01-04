@@ -35,7 +35,13 @@ teardown() {
     )
     # ^ reset DFX_WALLET_WASM
     assert_command [ -n "$DFX_WALLET_WASM" ]
+    assert_command dfx canister info "$(dfx identity get-wallet)"
+    assert_match "Module hash: 0x([0-9a-f]+)"
+    HASH=${BASH_REMATCH[1]}
+    assert_command [ -n "$HASH" ]
     assert_command dfx wallet upgrade
+    assert_command dfx canister info "$(dfx identity get-wallet)"
+    assert_not_match "$HASH"
     WALLET=$(dfx identity get-wallet)
     CANISTER=$(dfx canister id e2e_project)
     assert_command dfx canister --no-wallet call "$WALLET" get_events '(null)'
