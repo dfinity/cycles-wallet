@@ -13,7 +13,7 @@ mod events;
 
 use crate::address::{AddressBook, AddressEntry, Role};
 use crate::events::EventBuffer;
-use events::{record, Event, EventKind};
+use events::{record, Event, EventKind, ManagedList};
 
 const WALLET_API_VERSION: &str = "0.2.0";
 
@@ -44,6 +44,7 @@ struct StableStorage {
     name: Option<String>,
     chart: Vec<ChartTick>,
     wasm_module: Option<serde_bytes::ByteBuf>,
+    managed: Option<ManagedList>,
 }
 
 #[pre_upgrade]
@@ -55,6 +56,7 @@ fn pre_upgrade() {
         name: storage::get::<WalletName>().0.clone(),
         chart: storage::get::<Vec<ChartTick>>().to_vec(),
         wasm_module: storage::get::<WalletWASMBytes>().0.clone(),
+        managed: Some(storage::get::<ManagedList>().clone()),
     };
     match storage::stable_save((stable,)) {
         Ok(_) => (),
@@ -88,6 +90,11 @@ fn post_upgrade() {
         let chart = storage::get_mut::<Vec<ChartTick>>();
         chart.clear();
         chart.clone_from(&storage.chart);
+        if let Some(managed) = storage.managed {
+            *storage::get_mut::<ManagedList>() = managed;
+        } else {
+            events::migrations::_1_create_managed_canister_list();
+        }
     }
 }
 
@@ -361,9 +368,14 @@ mod wallet {
         Ok(())
     }
 
+    #[derive(CandidType, Deserialize)]
+    struct ReceiveOptions {
+        memo: Option<String>,
+    }
+
     /// Receive cycles from another canister.
     #[update(name = "wallet_receive")]
-    fn receive() {
+    fn receive(options: Option<ReceiveOptions>) {
         let from = caller();
         let amount = ic_cdk::api::call::msg_cycles_available();
         if amount > 0 {
@@ -371,6 +383,7 @@ mod wallet {
             events::record(events::EventKind::CyclesReceived {
                 from,
                 amount: amount_accepted,
+                memo: options.and_then(|opts| opts.memo),
             });
             super::update_chart();
         }
@@ -415,7 +428,7 @@ mod wallet {
         let mut settings = normalize_canister_settings(args.settings)?;
         let controllers = settings
             .controllers
-            .get_or_insert_with(|| Vec::with_capacity(1));
+            .get_or_insert_with(|| Vec::with_capacity(2));
         if controllers.is_empty() {
             controllers.push(ic_cdk::api::caller());
             controllers.push(ic_cdk::api::id());
@@ -735,6 +748,45 @@ fn get_events(args: Option<GetEventsArgs>) -> &'static [Event] {
     } else {
         events::get_events(None, None)
     }
+}
+
+/***************************************************************************************************
+ * Managed canisters
+ **************************************************************************************************/
+
+#[derive(CandidType, Deserialize)]
+struct ListCanistersArgs {
+    from: Option<u32>,
+    to: Option<u32>,
+}
+
+#[query(guard = "is_custodian_or_controller")]
+fn list_managed_canisters(
+    args: ListCanistersArgs,
+) -> (Vec<&'static events::ManagedCanisterInfo>, u32) {
+    events::get_managed_canisters(args.from, args.to)
+}
+
+#[derive(CandidType, Deserialize)]
+struct GetManagedCanisterEventArgs {
+    canister: Principal,
+    from: Option<u32>,
+    to: Option<u32>,
+}
+
+#[query(guard = "is_custodian_or_controller")]
+fn get_managed_canister_events(
+    args: GetManagedCanisterEventArgs,
+) -> Option<Vec<events::ManagedCanisterEvent>> {
+    events::get_managed_canister_events(&args.canister, args.from, args.to)
+}
+
+#[update(guard = "is_custodian_or_controller")]
+fn set_short_name(
+    canister: Principal,
+    name: Option<String>,
+) -> Option<events::ManagedCanisterInfo> {
+    events::set_short_name(&canister, name)
 }
 
 /***************************************************************************************************

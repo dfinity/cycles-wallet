@@ -1034,6 +1034,7 @@ dependencies = [
  "ic-cdk-macros",
  "ic-certified-map",
  "ic-types 0.1.5",
+ "indexmap",
  "libflate",
  "num-traits",
  "serde",
