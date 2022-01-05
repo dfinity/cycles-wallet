@@ -7,6 +7,7 @@ type EventKind = variant {
   CyclesReceived: record {
     from: principal;
     amount: nat64;
+    memo: opt text;
   };
   AddressAdded: record {
     id: principal;
@@ -54,6 +55,36 @@ type AddressEntry = record {
   name: opt text;
   kind: Kind;
   role: Role;
+};
+
+type ManagedCanisterInfo = record {
+  id: principal;
+  name: opt text;
+  created_at: nat64;
+};
+
+type ManagedCanisterEventKind = variant {
+  CyclesSent: record {
+    amount: nat64;
+    refund: nat64;
+  };
+  Called: record {
+    method_name: text;
+    cycles: nat64;
+  };
+  Created: record {
+    cycles: nat64;
+  };
+};
+
+type ManagedCanisterEvent = record {
+  id: nat32;
+  timestamp: nat64;
+  kind: ManagedCanisterEventKind;
+};
+
+type ReceiveOptions = record {
+  memo: opt text;
 };
 
 type WalletResultCreate = variant {
@@ -136,7 +167,7 @@ service : {
   // Cycle Management
   wallet_balance: () -> (record { amount: nat64 }) query;
   wallet_send: (record { canister: principal; amount: nat64 }) -> (WalletResult);
-  wallet_receive: () -> ();  // Endpoint for receiving cycles.
+  wallet_receive: (opt ReceiveOptions) -> ();  // Endpoint for receiving cycles.
 
   // Managing canister
   wallet_create_canister: (CreateCanisterArgs) -> (WalletResultCreate);
@@ -161,8 +192,15 @@ service : {
   remove_address: (address: principal) -> (WalletResult);
 
   // Events
+  // If `from` is not specified, it will start 20 from the end; if `to` is not specified, it will stop at the end
   get_events: (opt record { from: opt nat32; to: opt nat32; }) -> (vec Event) query;
   get_chart: (opt record { count: opt nat32; precision: opt nat64; } ) -> (vec record { nat64; nat64; }) query;
+
+  // Managed canisters
+  list_managed_canisters: (record { from: opt nat32; to: opt nat32; }) -> (vec ManagedCanisterInfo, nat32) query;
+  // If `from` is not specified, it will start 20 from the end; if `to` is not specified, it will stop at the end
+  get_managed_canister_events: (record { canister: principal; from: opt nat32; to: opt nat32; }) -> (opt vec ManagedCanisterEvent) query;
+  set_short_name: (principal, opt text) -> (opt ManagedCanisterInfo);
 
   // Assets
   http_request: (request: HttpRequest) -> (HttpResponse) query;

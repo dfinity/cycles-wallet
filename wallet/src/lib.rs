@@ -13,7 +13,7 @@ mod events;
 
 use crate::address::{AddressBook, AddressEntry, Role};
 use crate::events::EventBuffer;
-use events::{record, Event, EventKind};
+use events::{record, Event, EventKind, ManagedList};
 
 const WALLET_API_VERSION: &str = "0.2.0";
 
@@ -44,6 +44,7 @@ struct StableStorage {
     name: Option<String>,
     chart: Vec<ChartTick>,
     wasm_module: Option<serde_bytes::ByteBuf>,
+    managed: Option<ManagedList>,
 }
 
 #[pre_upgrade]
@@ -55,6 +56,7 @@ fn pre_upgrade() {
         name: storage::get::<WalletName>().0.clone(),
         chart: storage::get::<Vec<ChartTick>>().to_vec(),
         wasm_module: storage::get::<WalletWASMBytes>().0.clone(),
+        managed: Some(storage::get::<ManagedList>().clone()),
     };
     match storage::stable_save((stable,)) {
         Ok(_) => (),
@@ -88,6 +90,11 @@ fn post_upgrade() {
         let chart = storage::get_mut::<Vec<ChartTick>>();
         chart.clear();
         chart.clone_from(&storage.chart);
+        if let Some(managed) = storage.managed {
+            *storage::get_mut::<ManagedList>() = managed;
+        } else {
+            events::migrations::_1_create_managed_canister_list();
+        }
     }
 }
 
@@ -330,15 +337,13 @@ mod wallet {
     /// Send cycles to another canister.
     #[update(guard = "is_custodian_or_controller", name = "wallet_send")]
     async fn send(args: SendCyclesArgs) -> Result<(), String> {
-        match api::call::call_with_payment(args.canister.clone(), "wallet_receive", (), args.amount)
-            .await
-        {
+        match api::call::call_with_payment(args.canister, "wallet_receive", (), args.amount).await {
             Ok(x) => {
                 let refund = api::call::msg_cycles_refunded();
                 events::record(events::EventKind::CyclesSent {
                     to: args.canister,
                     amount: args.amount,
-                    refund: refund,
+                    refund,
                 });
                 super::update_chart();
                 x
@@ -348,7 +353,7 @@ mod wallet {
                 events::record(events::EventKind::CyclesSent {
                     to: args.canister,
                     amount: args.amount,
-                    refund: refund,
+                    refund,
                 });
                 let call_error =
                     format!("An error happened during the call: {}: {}", code as u8, msg);
@@ -363,9 +368,14 @@ mod wallet {
         Ok(())
     }
 
+    #[derive(CandidType, Deserialize)]
+    struct ReceiveOptions {
+        memo: Option<String>,
+    }
+
     /// Receive cycles from another canister.
     #[update(name = "wallet_receive")]
-    fn receive() {
+    fn receive(options: Option<ReceiveOptions>) {
         let from = caller();
         let amount = ic_cdk::api::call::msg_cycles_available();
         if amount > 0 {
@@ -373,6 +383,7 @@ mod wallet {
             events::record(events::EventKind::CyclesReceived {
                 from,
                 amount: amount_accepted,
+                memo: options.and_then(|opts| opts.memo),
             });
             super::update_chart();
         }
@@ -415,8 +426,10 @@ mod wallet {
     #[update(guard = "is_custodian_or_controller", name = "wallet_create_canister")]
     async fn create_canister(mut args: CreateCanisterArgs) -> Result<CreateResult, String> {
         let mut settings = normalize_canister_settings(args.settings)?;
-        let controllers = settings.controllers.get_or_insert_with(|| Vec::with_capacity(1));
-        if controllers.len() == 0 {
+        let controllers = settings
+            .controllers
+            .get_or_insert_with(|| Vec::with_capacity(2));
+        if controllers.is_empty() {
             controllers.push(ic_cdk::api::caller());
             controllers.push(ic_cdk::api::id());
         }
@@ -471,7 +484,7 @@ mod wallet {
         };
 
         events::record(events::EventKind::CanisterCreated {
-            canister: create_result.canister_id.clone(),
+            canister: create_result.canister_id,
             cycles: args.cycles,
         });
         Ok(create_result)
@@ -485,12 +498,7 @@ mod wallet {
             // assumption: settings are normalized (settings.controller is never present)
             if let Some(controllers) = args.settings.controllers.as_ref() {
                 for controller in controllers {
-                    match api::call::call(
-                        args.canister_id.clone(),
-                        "add_controller",
-                        (controller.clone(),),
-                    )
-                    .await
+                    match api::call::call(args.canister_id, "add_controller", (*controller,)).await
                     {
                         Ok(x) => x,
                         Err((code, msg)) => {
@@ -503,7 +511,7 @@ mod wallet {
                 }
             }
 
-            match api::call::call(args.canister_id.clone(), "remove_controller", (id(),)).await {
+            match api::call::call(args.canister_id, "remove_controller", (id(),)).await {
                 Ok(x) => x,
                 Err((code, msg)) => {
                     return Err(format!(
@@ -549,7 +557,7 @@ mod wallet {
 
         let install_config = CanisterInstall {
             mode: InstallMode::Install,
-            canister_id: canister_id.clone(),
+            canister_id: *canister_id,
             wasm_module: wasm_module.clone(),
             arg: b" ".to_vec(),
         };
@@ -571,18 +579,12 @@ mod wallet {
         };
 
         events::record(events::EventKind::WalletDeployed {
-            canister: canister_id.clone(),
+            canister: *canister_id,
         });
 
         // Store wallet wasm
         let store_args = WalletStoreWASMArgs { wasm_module };
-        match api::call::call(
-            canister_id.clone(),
-            "wallet_store_wallet_wasm",
-            (store_args,),
-        )
-        .await
-        {
+        match api::call::call(*canister_id, "wallet_store_wallet_wasm", (store_args,)).await {
             Ok(x) => x,
             Err((code, msg)) => {
                 return Err(format!(
@@ -621,7 +623,7 @@ mod wallet {
         if args.settings.controller.is_some() || args.settings.controllers.is_some() {
             update_settings_call(
                 UpdateSettingsArgs {
-                    canister_id: create_result.canister_id.clone(),
+                    canister_id: create_result.canister_id,
                     settings: normalize_canister_settings(args.settings)?,
                 },
                 true,
@@ -675,14 +677,7 @@ mod wallet {
             return Err("Attempted to call forward on self. This is not allowed. Call this method via a different custodian.".to_string());
         }
 
-        match api::call::call_raw(
-            args.canister.clone(),
-            &args.method_name,
-            args.args,
-            args.cycles,
-        )
-        .await
-        {
+        match api::call::call_raw(args.canister, &args.method_name, args.args, args.cycles).await {
             Ok(x) => {
                 events::record(events::EventKind::CanisterCalled {
                     canister: args.canister,
@@ -753,6 +748,45 @@ fn get_events(args: Option<GetEventsArgs>) -> &'static [Event] {
     } else {
         events::get_events(None, None)
     }
+}
+
+/***************************************************************************************************
+ * Managed canisters
+ **************************************************************************************************/
+
+#[derive(CandidType, Deserialize)]
+struct ListCanistersArgs {
+    from: Option<u32>,
+    to: Option<u32>,
+}
+
+#[query(guard = "is_custodian_or_controller")]
+fn list_managed_canisters(
+    args: ListCanistersArgs,
+) -> (Vec<&'static events::ManagedCanisterInfo>, u32) {
+    events::get_managed_canisters(args.from, args.to)
+}
+
+#[derive(CandidType, Deserialize)]
+struct GetManagedCanisterEventArgs {
+    canister: Principal,
+    from: Option<u32>,
+    to: Option<u32>,
+}
+
+#[query(guard = "is_custodian_or_controller")]
+fn get_managed_canister_events(
+    args: GetManagedCanisterEventArgs,
+) -> Option<Vec<events::ManagedCanisterEvent>> {
+    events::get_managed_canister_events(&args.canister, args.from, args.to)
+}
+
+#[update(guard = "is_custodian_or_controller")]
+fn set_short_name(
+    canister: Principal,
+    name: Option<String>,
+) -> Option<events::ManagedCanisterInfo> {
+    events::set_short_name(&canister, name)
 }
 
 /***************************************************************************************************
