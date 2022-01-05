@@ -29,6 +29,7 @@ function Canisters(props: Props) {
     false
   );
   const [dialogDialogOpen, setDialogDialogOpen] = React.useState(false);
+
   function handleWalletCreateDialogOpen() {
     setWalletCreateDialogOpen(true);
   }

@@ -77,6 +77,7 @@ export function CreateCanisterDialog(props: {
     walletPrincipal,
   ]);
   const [count, setCount] = React.useState(0);
+  const [canisterName, setName] = React.useState("Anonymous Canister");
   const classes = useStyles();
 
   React.useEffect(() => {
@@ -159,6 +160,12 @@ export function CreateCanisterDialog(props: {
     closeDialogDialog();
   }
 
+  function handleNameChange(
+    ev: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+  ) {
+    setName(ev.target.value);
+  }
+
   return (
     <Dialog
       open={open}
@@ -171,59 +178,67 @@ export function CreateCanisterDialog(props: {
         {"Create a new Canister"}
       </DialogTitle>
       <DialogContent>
-        <div>
-          <DialogContentText>
-            Create a canister. If the controller field is left empty, the
-            controller will be this wallet canister.
-          </DialogContentText>
-          <FormControl className={classes.formControl}>
-            <div style={{ display: "flex" }}>
-              <TextField
-                label="Controller"
-                value={controllers[0]}
-                style={{ margin: "8px 0 24px" }}
-                fullWidth
-                disabled={loading}
-                onChange={(event) => handleInputChange(0, event)}
-                error={error[0]}
-                autoFocus
-                InputLabelProps={{ shrink: true }}
-              />
-              <Button onClick={increaseInput}>
-                <AddIcon />
-              </Button>
-            </div>
-            {controllers.slice(1).map((field: string, idx: number) => {
-              const index: number = idx + 1;
-              return (
-                <div
-                  key={index}
-                  style={{ display: "flex", marginBottom: "10px" }}
-                >
-                  <TextField
-                    style={{ width: "95%" }}
-                    label="Controller"
-                    value={field}
-                    disabled={loading}
-                    onChange={(event) => handleInputChange(index, event)}
-                    error={error[index]}
-                    autoFocus
-                    InputLabelProps={{ shrink: true }}
-                  />
-                  <Button onClick={() => deleteInput(index)}>
-                    <Cancel />
-                  </Button>
-                </div>
-              );
-            })}
-            <CycleSlider
-              balance={balance}
-              cycles={cycles}
-              setCycles={setCycles}
-              loading={loading}
+        <DialogContentText>
+          Create a canister. If the controller field is left empty, the
+          controller will be this wallet canister.
+        </DialogContentText>
+        <TextField
+          label="Custom Name of Canister"
+          value={canisterName}
+          style={{ margin: "8px 20px 20px 0" }}
+          fullWidth
+          disabled={loading}
+          onChange={handleNameChange}
+          autoFocus
+          variant="filled"
+        />
+        <FormControl className={classes.formControl}>
+          <div style={{ display: "flex" }}>
+            <TextField
+              label="Controller"
+              value={controllers[0]}
+              style={{ margin: "8px 0 24px" }}
+              fullWidth
+              disabled={loading}
+              onChange={(event) => handleInputChange(0, event)}
+              error={error[0]}
+              autoFocus
+              InputLabelProps={{ shrink: true }}
             />
-          </FormControl>
-        </div>
+            <Button onClick={increaseInput}>
+              <AddIcon />
+            </Button>
+          </div>
+          {controllers.slice(1).map((field: string, idx: number) => {
+            const index: number = idx + 1;
+            return (
+              <div
+                key={index}
+                style={{ display: "flex", marginBottom: "10px" }}
+              >
+                <TextField
+                  style={{ width: "95%" }}
+                  label="Controller"
+                  value={field}
+                  disabled={loading}
+                  onChange={(event) => handleInputChange(index, event)}
+                  error={error[index]}
+                  autoFocus
+                  InputLabelProps={{ shrink: true }}
+                />
+                <Button onClick={() => deleteInput(index)}>
+                  <Cancel />
+                </Button>
+              </div>
+            );
+          })}
+          <CycleSlider
+            balance={balance}
+            cycles={cycles}
+            setCycles={setCycles}
+            loading={loading}
+          />
+        </FormControl>
       </DialogContent>
       <DialogActions>
         <PlainButton onClick={handleClose} color="primary" disabled={loading}>
