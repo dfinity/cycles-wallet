@@ -35,6 +35,56 @@ function Canisters(props: Props) {
   }
   const { canisters, refreshEvents } = props;
 
+  const listCanisters = canisters
+    ? canisters.map((canister) => {
+        if (!("CanisterCreated" in canister.kind)) {
+          //step needed?
+          return {};
+        }
+        let kind = canister["kind"];
+        return {
+          id: canister.id,
+          principal: kind.CanisterCreated.canister.toString(),
+          timestamp: canister.timestamp,
+          cycles: format_cycles(kind.CanisterCreated.cycles),
+          name: "Anonymous Canister",
+        };
+      })
+    : [];
+
+  const [canisterWithNames, updateNames] = React.useState(listCanisters);
+
+  function updateName(inputName: string, canisterPrincipal: string) {
+    let index = listCanisters.findIndex(
+      (c) => c?.principal === canisterPrincipal
+    );
+    if (index === undefined) {
+      console.error("No created canisters exist to update name");
+    }
+    if (index === -1) {
+      console.error(
+        "Name change incomplete. No matching canister by principal",
+        canisterPrincipal,
+        "exists"
+      );
+    }
+    let copy = canisterWithNames;
+    copy[index].name = inputName;
+    updateNames((prev) => {
+      console.log("previous");
+      console.log(prev);
+      return copy;
+    });
+  }
+
+  React.useEffect(() => {
+    console.log("render on useEffect after canisters change");
+    updateNames(listCanisters);
+  }, [canisters]);
+
+  console.log("list canisters", listCanisters);
+  console.log("canister with names", canisterWithNames);
+
   return (
     <Grid className="canisters">
       <CreateDialog
@@ -68,6 +118,8 @@ function Canisters(props: Props) {
         close={() => setCanisterCreateDialogOpen(false)}
         refreshEvents={refreshEvents}
         closeDialogDialog={() => setDialogDialogOpen(false)}
+        updateName={updateName}
+        canisterList={canisters}
       />
 
       <CreateWalletDialog
@@ -110,21 +162,16 @@ function Canisters(props: Props) {
       </p>
       <React.Suspense fallback={<CircularProgress />}>
         <List className="events-list">
-          {canisters?.map((canister) => {
-            if (!("CanisterCreated" in canister.kind)) {
+          {canisterWithNames?.map((canister) => {
+            if (!canister || Object.entries(canister).length === 0) {
               return null;
             }
-            const principal = canister.kind["CanisterCreated"]
-              .canister as Principal;
-            const value = format_cycles(
-              canister.kind["CanisterCreated"].cycles
-            );
             return (
               <ListItem key={canister.id} className="flex column">
-                <h4>{"Anonymous Canister"}</h4>
+                <h4>{canister.name}</h4>
                 <div className="flex row wrap">
-                  <p>{principal.toString()}</p>
-                  <p>{value}</p>
+                  <p>{canister.principal}</p>
+                  <p>{canister.cycles}</p>
                 </div>
               </ListItem>
             );

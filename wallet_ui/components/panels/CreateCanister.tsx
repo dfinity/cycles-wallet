@@ -16,6 +16,8 @@ import { PlainButton, PrimaryButton } from "../Buttons";
 import CycleSlider from "../CycleSlider";
 import AddIcon from "@material-ui/icons/Add";
 import Cancel from "@material-ui/icons/Cancel";
+import { ClosedCaption, Update } from "@material-ui/icons";
+import type { Event } from "../../canister/wallet/wallet";
 
 const useStyles = makeStyles((theme) => ({
   wrapper: {
@@ -64,8 +66,17 @@ export function CreateCanisterDialog(props: {
   close: (err?: any) => void;
   refreshEvents: Function;
   closeDialogDialog: Function;
+  updateName: Function;
+  canisterList: Event[] | undefined;
 }) {
-  const { open, close, refreshEvents, closeDialogDialog } = props;
+  const {
+    open,
+    close,
+    refreshEvents,
+    closeDialogDialog,
+    updateName,
+    canisterList,
+  } = props;
 
   const [loading, setLoading] = React.useState(false);
   const [controller, setController] = React.useState(walletPrincipal);
@@ -141,7 +152,6 @@ export function CreateCanisterDialog(props: {
 
     Wallet.create_canister(args).then(
       (resultCanisterId) => {
-        console.log("result canister id is:", resultCanisterId);
         setLoading(false);
         setCanisterId(resultCanisterId);
         refreshEvents();
@@ -165,6 +175,10 @@ export function CreateCanisterDialog(props: {
   ) {
     setName(ev.target.value);
   }
+  // React.useEffect(() => {
+  //   console.log('update name to', canisterName, 'with principal', canisterId?.toString());
+  //   updateName(canisterName, canisterId?.toString());
+  // }, [canisterList])
 
   return (
     <Dialog
