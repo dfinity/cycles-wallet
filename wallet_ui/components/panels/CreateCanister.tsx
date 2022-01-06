@@ -67,16 +67,8 @@ export function CreateCanisterDialog(props: {
   refreshEvents: Function;
   closeDialogDialog: Function;
   updateName: Function;
-  canisterList: Event[] | undefined;
 }) {
-  const {
-    open,
-    close,
-    refreshEvents,
-    closeDialogDialog,
-    updateName,
-    canisterList,
-  } = props;
+  const { open, close, refreshEvents, closeDialogDialog, updateName } = props;
 
   const [loading, setLoading] = React.useState(false);
   const [controller, setController] = React.useState(walletPrincipal);
@@ -175,6 +167,7 @@ export function CreateCanisterDialog(props: {
   ) {
     setName(ev.target.value);
   }
+
   // React.useEffect(() => {
   //   console.log('update name to', canisterName, 'with principal', canisterId?.toString());
   //   updateName(canisterName, canisterId?.toString());

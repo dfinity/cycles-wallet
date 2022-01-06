@@ -19,10 +19,13 @@ import {
   ActorSubclass,
   AnonymousIdentity,
 } from "@dfinity/agent";
-import type { _SERVICE, CreateCanisterArgs } from "../declarations/wallet/wallet.did";
+import type {
+  _SERVICE,
+  CreateCanisterArgs,
+} from "../declarations/wallet/wallet.did";
 import factory, { Event } from "./wallet";
 import { authClient } from "../utils/authClient";
-import { Principal } from "@dfinity/principal"
+import { Principal } from "@dfinity/principal";
 import { createActor } from "../declarations/wallet";
 export * from "./wallet";
 
@@ -87,7 +90,7 @@ async function getWalletCanister(): Promise<ActorSubclass<_SERVICE>> {
   });
 
   // Fetch root key if not on IC mainnet
-  if(!window.location.host.endsWith("ic0.app")){
+  if (!window.location.host.endsWith("ic0.app")) {
     agent.fetchRootKey();
   }
 
@@ -138,14 +141,14 @@ function precisionToNanoseconds(precision: ChartPrecision) {
 
 export const Wallet = {
   getGeneratedActor: async () => {
-    const identity = await authClient.getIdentity() ?? new AnonymousIdentity();
-    return createActor(await getWalletId() || "", {
+    const identity =
+      (await authClient.getIdentity()) ?? new AnonymousIdentity();
+    return createActor((await getWalletId()) || "", {
       agentOptions: {
-        identity
-      }
+        identity,
+      },
     });
   },
-
   async name(): Promise<string> {
     return (await (await getWalletCanister()).name())[0] || "";
   },
@@ -189,17 +192,17 @@ export const Wallet = {
     controllers: Principal[];
     cycles: number;
   }): Promise<Principal> {
-    if(p.controllers.length < 1) {
+    if (p.controllers.length < 1) {
       throw new Error("Canister must be created with at least one controller");
     }
-    const settings: CreateCanisterArgs['settings'] = {
+    const settings: CreateCanisterArgs["settings"] = {
       compute_allocation: [],
       freezing_threshold: [],
       memory_allocation: [],
       // Prefer storing single controller as controllers
       controller: [],
       controllers: [p.controllers],
-    }
+    };
 
     const result = await (await getWalletCanister()).wallet_create_canister({
       settings,

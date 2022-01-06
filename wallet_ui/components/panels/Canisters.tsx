@@ -119,7 +119,6 @@ function Canisters(props: Props) {
         refreshEvents={refreshEvents}
         closeDialogDialog={() => setDialogDialogOpen(false)}
         updateName={updateName}
-        canisterList={canisters}
       />
 
       <CreateWalletDialog

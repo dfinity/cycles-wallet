@@ -19,6 +19,7 @@ export default ({ IDL }) => {
     CyclesReceived: IDL.Record({
       from: IDL.Principal,
       amount: IDL.Nat64,
+      memo: IDL.Opt(IDL.Text),
     }),
     CanisterCreated: IDL.Record({
       cycles: IDL.Nat64,
