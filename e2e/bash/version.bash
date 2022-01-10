@@ -1,7 +1,7 @@
 #!/usr/bin/env bats
 
-# shellcheck disable=SC1090
-source "$BATS_SUPPORT"/load.bash
+# shellcheck source=/dev/null
+source "$BATS_SUPPORT/load.bash"
 
 load util/assertions
 

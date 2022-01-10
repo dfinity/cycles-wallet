@@ -5,6 +5,7 @@ use std::fs;
 use std::fs::File;
 use std::io::Write;
 use std::path::{Path, PathBuf};
+use std::process::Command;
 
 fn hash_file(path: &Path) -> [u8; 32] {
     let bytes = fs::read(path)
@@ -16,14 +17,23 @@ fn hash_file(path: &Path) -> [u8; 32] {
 
 fn main() {
     let out_dir = env::var("OUT_DIR").unwrap();
-    let pwd = env::var("CARGO_MANIFEST_DIR").unwrap();
-
+    let location = Command::new(env::var("CARGO").unwrap())
+        .args(&["locate-project", "--workspace", "--message-format=plain"])
+        .output()
+        .expect("Could not locate project");
+    assert!(location.status.success(), "Could not locate project");
+    let pwd = String::from_utf8(location.stdout).expect("Could not locate project");
+    let pwd = Path::new(pwd.trim()).parent().unwrap();
     let getting_out_dir: PathBuf = PathBuf::from(out_dir.clone())
         .strip_prefix(pwd)
         .unwrap()
         .components()
         .map(|_| "..")
         .collect();
+    println!(
+        "cargo:rustc-env=DIST_DIR={}/dist/",
+        getting_out_dir.to_str().unwrap()
+    );
     let loader_path = Path::new(&out_dir).join("assets.rs");
     eprintln!("cargo:rerun-if-changed={}", loader_path.to_string_lossy());
     let mut f = File::create(&loader_path).unwrap();
@@ -36,7 +46,7 @@ pub fn for_each_asset(mut f: impl FnMut(&'static str, Vec<(String, String)>, &'s
     )
     .unwrap();
 
-    for entry in std::fs::read_dir("../dist").unwrap() {
+    for entry in std::fs::read_dir(pwd.join("dist")).unwrap() {
         let entry = entry.unwrap();
         let path = entry.path();
         let filename = path.file_name().unwrap().to_str().unwrap();
@@ -77,12 +87,11 @@ pub fn for_each_asset(mut f: impl FnMut(&'static str, Vec<(String, String)>, &'s
         let hash = hash_file(&path);
         writeln!(
             f,
-            "  f(\"{}\", vec![(\"Content-Type\".to_string(), \"{}\".to_string()){},(\"Cache-Control\".to_string(), \"max-age=600\".to_string())], &include_bytes!(\"{}/{}\")[..], &{:?});",
+            r#"  f("{}", vec![("Content-Type".to_string(), "{}".to_string()){},("Cache-Control".to_string(), "max-age=600".to_string())], &include_bytes!(concat!(env!("DIST_DIR"), "{}"))[..], &{:?});"#,
             url_path,
             file_type,
-            if gzipped { ",(\"Content-Encoding\".to_string(), \"gzip\".to_string())" } else { "" },
-            getting_out_dir.to_str().unwrap(),
-            path.display(),
+            if gzipped { r#",("Content-Encoding".to_string(), "gzip".to_string())"# } else { "" },
+            filename,
             hash
         )
         .unwrap();

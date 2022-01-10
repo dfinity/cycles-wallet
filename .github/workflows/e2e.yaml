@@ -25,7 +25,7 @@ jobs:
           path: |
             ~/.cargo/registry
             ~/.cargo/git
-            ./wallet/target
+            ./target
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}-${{ matrix.rust }}-1
       - name: Install Rust
         run: |
@@ -49,6 +49,6 @@ jobs:
 
       - name: Run e2e tests vs dfx ${{ matrix.dfx }}
         run: |
-          export DFX_WALLET_WASM=$GITHUB_WORKSPACE/wallet/target/wasm32-unknown-unknown/release/wallet-opt.wasm
+          export DFX_WALLET_WASM=$GITHUB_WORKSPACE/target/wasm32-unknown-unknown/release/wallet-opt.wasm
           bats e2e/bash/*.bash
 
