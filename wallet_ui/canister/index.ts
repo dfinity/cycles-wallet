@@ -22,6 +22,7 @@ import {
 import type {
   _SERVICE,
   CreateCanisterArgs,
+  ManagedCanisterInfo,
 } from "../declarations/wallet/wallet.did";
 import factory, { Event } from "./wallet";
 import { authClient } from "../utils/authClient";
@@ -238,6 +239,25 @@ export const Wallet = {
     await (await getWalletCanister()).wallet_send({
       canister: p.canister,
       amount: BigInt(p.amount),
+    });
+  },
+  async update_canister_name(
+    pr: string,
+    n: string
+  ): Promise<ManagedCanisterInfo[] | undefined> {
+    return this.getGeneratedActor().then((actor) => {
+      return actor.set_short_name(Principal.fromText(pr), [n]);
+    });
+  },
+  async list_managed_canisters(): Promise<[ManagedCanisterInfo[], number]> {
+    const optFrom: [] | [number] = [0];
+    const optTo: [] | [number] = [];
+    const args = {
+      from: optFrom,
+      to: optTo,
+    };
+    return this.getGeneratedActor().then((actor) => {
+      return actor.list_managed_canisters(args);
     });
   },
 };

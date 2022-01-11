@@ -66,9 +66,17 @@ export function CreateCanisterDialog(props: {
   close: (err?: any) => void;
   refreshEvents: Function;
   closeDialogDialog: Function;
-  updateName: Function;
+  setName: Function;
+  nameAdded: Function;
 }) {
-  const { open, close, refreshEvents, closeDialogDialog, updateName } = props;
+  const {
+    open,
+    close,
+    refreshEvents,
+    closeDialogDialog,
+    setName,
+    nameAdded,
+  } = props;
 
   const [loading, setLoading] = React.useState(false);
   const [controller, setController] = React.useState(walletPrincipal);
@@ -80,7 +88,7 @@ export function CreateCanisterDialog(props: {
     walletPrincipal,
   ]);
   const [count, setCount] = React.useState(0);
-  const [canisterName, setName] = React.useState("Anonymous Canister");
+  const [canisterName, setCanisterName] = React.useState("Anonymous Canister");
   const classes = useStyles();
 
   React.useEffect(() => {
@@ -147,6 +155,10 @@ export function CreateCanisterDialog(props: {
         setLoading(false);
         setCanisterId(resultCanisterId);
         refreshEvents();
+        if (canisterName !== "Anonymous Canister") {
+          setName(resultCanisterId.toText(), canisterName);
+          nameAdded();
+        }
       },
       (err) => {
         console.error(err);
@@ -165,13 +177,8 @@ export function CreateCanisterDialog(props: {
   function handleNameChange(
     ev: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
   ) {
-    setName(ev.target.value);
+    setCanisterName(ev.target.value);
   }
-
-  // React.useEffect(() => {
-  //   console.log('update name to', canisterName, 'with principal', canisterId?.toString());
-  //   updateName(canisterName, canisterId?.toString());
-  // }, [canisterList])
 
   return (
     <Dialog

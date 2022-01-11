@@ -131,11 +131,10 @@ export function Dashboard(props: { open: boolean; onOpenToggle: () => void }) {
   };
 
   React.useEffect(() => {
-    () =>
-      Wallet.getGeneratedActor().then((actor) => {
-        const canisters = actor.list_managed_canisters({ to: [], from: [] });
-        console.log(canisters);
-      });
+    Wallet.getGeneratedActor().then((actor) => {
+      const canisters = actor.list_managed_canisters({ to: [], from: [0] });
+      console.log("from generated actor", canisters);
+    });
   }, []);
 
   React.useEffect(() => {
