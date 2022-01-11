@@ -19,6 +19,7 @@ import { Wallet } from "../../canister";
 interface Props {
   canisters?: EventList["canisters"];
   refreshEvents: Function;
+  managedCanisters: Array<object> | undefined;
 }
 
 function Canisters(props: Props) {
@@ -33,16 +34,13 @@ function Canisters(props: Props) {
 
   const [dialogDialogOpen, setDialogDialogOpen] = React.useState(false);
   const [list, updateList] = React.useState<any[]>([]);
-  const [managedCanisters, updateManagedCan] = React.useState<object[] | any[]>(
-    [{ id: "", name: null }]
-  );
   const [namesAdded, addNameCount] = React.useState(0);
-  const [test, increment] = React.useState(0);
 
   function handleWalletCreateDialogOpen() {
     setWalletCreateDialogOpen(true);
   }
-  const { canisters, refreshEvents } = props;
+
+  const { canisters, refreshEvents, managedCanisters } = props;
 
   function listCanisters() {
     if (canisters) {
@@ -64,22 +62,6 @@ function Canisters(props: Props) {
     }
   }
 
-  function checkManagedCanisters(scope: any) {
-    Wallet.list_managed_canisters().then((r) => {
-      const managed_can = r[0];
-      const result = managed_can
-        .map((c) => {
-          return {
-            id: c.id.toString(),
-            name: c.name[0],
-          };
-        })
-        .reverse();
-      console.log("scope:", scope, "checkManagedCanisters", result);
-      updateManagedCan(result);
-    });
-  }
-
   function setName(canisterPrincipal: string, inputName: string) {
     Wallet.update_canister_name(canisterPrincipal, inputName).then(
       (r) => {
@@ -92,6 +74,7 @@ function Canisters(props: Props) {
   }
 
   function updateNames(inputList: Array<any>, context: string) {
+    console.log("inputList", inputList);
     //error if inputList and list state length is not same
     let indexes: number[] = [];
     inputList.forEach((ea, ind) => {
@@ -100,11 +83,12 @@ function Canisters(props: Props) {
       }
     });
     updateList((prev) => {
-      let result = prev;
+      let result = list;
       console.log("from context", context, "here is list", prev);
       console.log("indexes", indexes);
       indexes.forEach((ind) => {
         if (result.length > 0) {
+          console.log("at index", ind, ":", result[ind]);
           result[ind].name = inputList[ind].name;
         }
       });
@@ -114,16 +98,15 @@ function Canisters(props: Props) {
 
   React.useEffect(() => {
     listCanisters();
-    increment((prev) => prev + 1);
-    checkManagedCanisters("canisters");
+    console.log("canisters dependency array");
   }, [canisters]);
 
   React.useEffect(() => {
     console.log("managed canisters dependency array");
-    if (managedCanisters[0].id.length > 0) {
+    if (managedCanisters !== undefined) {
+      console.log("managedCanisters are", managedCanisters);
       updateNames(managedCanisters, "useEffect");
     }
-    increment((prev) => prev + 1);
   }, [managedCanisters]);
 
   return (
@@ -194,7 +177,6 @@ function Canisters(props: Props) {
         style={{ fontWeight: "bold" }}
       >
         Canisters
-        {test.toString()}
       </Typography>
       <p
         className={css`

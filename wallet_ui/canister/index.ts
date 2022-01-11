@@ -30,7 +30,7 @@ import { Principal } from "@dfinity/principal";
 import { createActor } from "../declarations/wallet";
 export * from "./wallet";
 
-function convertIdlEventMap(idlEvent: any): Event {
+export function convertIdlEventMap(idlEvent: any): Event {
   return {
     id: idlEvent.id,
     timestamp: idlEvent.timestamp / BigInt(1000000),

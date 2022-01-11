@@ -19,7 +19,7 @@ import DialogContent from "@material-ui/core/DialogContent";
 import DialogContentText from "@material-ui/core/DialogContentText";
 import DialogActions from "@material-ui/core/DialogActions";
 import Button from "@material-ui/core/Button";
-import { Wallet } from "../../canister";
+import { Wallet, convertIdlEventMap } from "../../canister";
 import type { Event } from "../../canister/wallet/wallet";
 import Canisters from "../panels/Canisters";
 import { PrimaryButton } from "../Buttons";
@@ -110,6 +110,12 @@ export function Dashboard(props: { open: boolean; onOpenToggle: () => void }) {
   const classes = useStyles();
 
   const [events, setEvents] = useState<EventList>();
+  const [action, setAction] = useState<object[]>([]);
+  const [managedCanisters, updateManagedCan] = useState<object[] | undefined>();
+  const reduceStart: EventList = {
+    canisters: [],
+    transactions: [],
+  };
 
   const refreshEvents = async () => {
     const events = await Wallet.events();
@@ -130,21 +136,28 @@ export function Dashboard(props: { open: boolean; onOpenToggle: () => void }) {
     setEvents(sortedEvents);
   };
 
-  React.useEffect(() => {
-    Wallet.getGeneratedActor().then((actor) => {
-      const canisters = actor.list_managed_canisters({ to: [], from: [0] });
-      console.log("from generated actor", canisters);
+  function checkManagedCanisters() {
+    Wallet.list_managed_canisters().then((r) => {
+      const managed_can = r[0];
+      const result = managed_can
+        .map((c) => {
+          return {
+            id: c.id.toString(),
+            name: c.name[0],
+          };
+        })
+        .reverse();
+      updateManagedCan(result);
     });
-  }, []);
+  }
 
   React.useEffect(() => {
     refreshEvents();
   }, []);
 
-  const reduceStart: EventList = {
-    canisters: [],
-    transactions: [],
-  };
+  React.useEffect(() => {
+    checkManagedCanisters();
+  }, [action]);
 
   function handleWalletCreateDialogClose(maybeErr?: any) {
     setWalletCreateDialogOpen(false);
@@ -239,6 +252,7 @@ export function Dashboard(props: { open: boolean; onOpenToggle: () => void }) {
                   <Canisters
                     canisters={events?.canisters}
                     refreshEvents={refreshEvents}
+                    managedCanisters={managedCanisters}
                   />
                 }
               </Paper>
