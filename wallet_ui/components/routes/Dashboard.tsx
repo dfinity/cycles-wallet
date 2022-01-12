@@ -248,13 +248,13 @@ export function Dashboard(props: { open: boolean; onOpenToggle: () => void }) {
             {/* Canisters */}
             <Grid item xs={12}>
               <Paper className={classes.paper}>
-                {
+                {events?.canisters && managedCanisters && (
                   <Canisters
                     canisters={events?.canisters}
                     refreshEvents={refreshEvents}
                     managedCanisters={managedCanisters}
                   />
-                }
+                )}
               </Paper>
             </Grid>
 
