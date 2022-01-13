@@ -19,6 +19,7 @@ import { Wallet } from "../../canister";
 interface Props {
   canisters: EventList["canisters"];
   refreshEvents: Function;
+  updateN: Function;
   managedCanisters: Array<object>;
 }
 
@@ -36,15 +37,18 @@ function Canisters(props: Props) {
   const [list, updateList] = React.useState<any[]>([]);
   const [namesAdded, addNameCount] = React.useState(0);
   const isFirstRender = React.useRef(true);
+  // const extractCanisters = React.useMemo(() => listCanisters(), [canisters]);
+  const prevList = React.useRef<any[]>([]);
+  const [workable, updateWork] = React.useState(false);
 
   function handleWalletCreateDialogOpen() {
     setWalletCreateDialogOpen(true);
   }
 
-  const { canisters, refreshEvents, managedCanisters } = props;
+  const { canisters, refreshEvents, updateN, managedCanisters } = props;
 
   function listCanisters() {
-    if (canisters) {
+    if (list.length === 0) {
       const newList = canisters.map((canister) => {
         if (!("CanisterCreated" in canister.kind)) {
           //step needed?
@@ -60,13 +64,64 @@ function Canisters(props: Props) {
         };
       });
       return updateList(newList);
+    } else {
+      updateList((p) => {
+        let result = p;
+        let diff = canisters.length - p.length;
+        if (diff > 0) {
+          //for each new canister, convert and save to result
+          for (let i = 0; i < diff; i++) {
+            const canister = canisters[i];
+            let kind = canisters[i]["kind"];
+            if ("CanisterCreated" in kind) {
+              //step needed?
+              result.unshift({
+                id: canister.id,
+                principal: kind.CanisterCreated.canister.toString(),
+                timestamp: canister.timestamp,
+                cycles: format_cycles(kind.CanisterCreated.cycles),
+                name: "Anonymous Canister",
+              });
+            }
+          }
+        }
+        return result;
+      });
     }
   }
 
-  function setName(canisterPrincipal: string, inputName: string) {
+  function updateNames(inputList: Array<any>, context: string) {
+    let indexes: number[] = [];
+    inputList.forEach((ea, ind) => {
+      if (ea["name"]) {
+        indexes.push(ind);
+      }
+    });
+    //simply update last entry, add entry to array
+    updateList((p) => {
+      let result = p;
+      indexes.forEach((i) => {
+        if (result.length && result[i].name) {
+          result[i].name = inputList[i].name;
+        }
+      });
+      return result;
+    });
+  }
+
+  function setName(canisterPrincipal: string, inputName: string, cb: Function) {
     Wallet.update_canister_name(canisterPrincipal, inputName).then(
       (r) => {
         console.log("canister name set:", r);
+        if (arguments[2]) {
+          cb();
+        }
+        updateN({
+          "canister updated": canisterPrincipal,
+          name: inputName,
+          timestamp: Date.now(),
+        });
+        updateName(inputName, canisterPrincipal);
       },
       (e) => {
         console.error("Update to Name failed:", e);
@@ -74,35 +129,9 @@ function Canisters(props: Props) {
     );
   }
 
-  function updateNames(inputList: Array<any>, context: string) {
-    console.log("inputList", inputList);
-    //error if inputList and list state length is not same
-    let indexes: number[] = [];
-    inputList.forEach((ea, ind) => {
-      if (ea["name"]) {
-        indexes.push(ind);
-      }
-    });
-    updateList((prev) => {
-      let result = list;
-      console.log("from context", context, "here is list", prev);
-      console.log("indexes", indexes);
-      indexes.forEach((ind) => {
-        if (result.length > 0) {
-          console.log("at index", ind, ":", result[ind]);
-          result[ind].name = inputList[ind].name;
-        }
-      });
-      console.log("result of updateList", result);
-      return result;
-    });
-  }
-
   function updateName(inputName: string, inputPrincipal: string) {
     updateList((prev) => {
-      console.log("updateName prev:", prev);
       let result = prev;
-
       if (prev[0].principal === inputPrincipal) {
         result[0].name = inputName;
       }
@@ -120,7 +149,6 @@ function Canisters(props: Props) {
       managedCanisters[0]
     );
     listCanisters();
-    // updateNames(managedCanisters, 'from canisters');
   }, [canisters]);
 
   React.useEffect(() => {
@@ -132,10 +160,12 @@ function Canisters(props: Props) {
       managedCanisters.length,
       managedCanisters[0]
     );
+
     if (managedCanisters.length === canisters.length) {
+      console.log("length of MC and canisters =", canisters.length, "\n");
       updateNames(managedCanisters, "from managedCanisters");
     }
-  }, [managedCanisters, list, namesAdded]);
+  }, [managedCanisters]); //take out list dependency
 
   return (
     <Grid className="canisters">

@@ -111,6 +111,7 @@ export function Dashboard(props: { open: boolean; onOpenToggle: () => void }) {
 
   const [events, setEvents] = useState<EventList>();
   const [action, setAction] = useState<object[]>([]);
+  const [action2, setAction2] = useState<object[]>([]);
   const [managedCanisters, updateManagedCan] = useState<object[] | undefined>();
   const reduceStart: EventList = {
     canisters: [],
@@ -136,6 +137,10 @@ export function Dashboard(props: { open: boolean; onOpenToggle: () => void }) {
     setEvents(sortedEvents);
   };
 
+  function updateEventName(eventObj: object) {
+    setAction2((prev) => [...prev, eventObj]);
+  }
+
   function checkManagedCanisters() {
     Wallet.list_managed_canisters().then((r) => {
       const managed_can = r[0];
@@ -157,7 +162,7 @@ export function Dashboard(props: { open: boolean; onOpenToggle: () => void }) {
 
   React.useEffect(() => {
     checkManagedCanisters();
-  }, [action]);
+  }, [action2]);
 
   function handleWalletCreateDialogClose(maybeErr?: any) {
     setWalletCreateDialogOpen(false);
@@ -253,6 +258,7 @@ export function Dashboard(props: { open: boolean; onOpenToggle: () => void }) {
                     canisters={events?.canisters}
                     refreshEvents={refreshEvents}
                     managedCanisters={managedCanisters}
+                    updateN={updateEventName}
                   />
                 )}
               </Paper>
