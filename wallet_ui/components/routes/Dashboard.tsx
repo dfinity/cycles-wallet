@@ -111,7 +111,7 @@ export function Dashboard(props: { open: boolean; onOpenToggle: () => void }) {
 
   const [events, setEvents] = useState<EventList>();
 
-  React.useEffect(() => {
+  function updateEvents() {
     Wallet.events()
       .then((events) => {
         return events
@@ -135,6 +135,10 @@ export function Dashboard(props: { open: boolean; onOpenToggle: () => void }) {
           }, reduceStart);
       })
       .then(setEvents);
+  }
+
+  React.useEffect(() => {
+    updateEvents();
   }, []);
 
   const reduceStart: EventList = {

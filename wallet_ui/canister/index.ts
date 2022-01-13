@@ -1,3 +1,4 @@
+
 /**
  * This file is a HUGE proxy for the Wallet canister itself. It is used because the
  * current SDK has limitations which makes it impossible to do "the right thing" in
@@ -84,6 +85,9 @@ async function getWalletCanister(): Promise<ActorSubclass<_SERVICE>> {
   const agent = new HttpAgent({
     identity,
   });
+  agent.fetchRootKey();
+  agent.status();
+
   if (!walletId) {
     throw new Error("Need to have a wallet ID.");
   } else {
