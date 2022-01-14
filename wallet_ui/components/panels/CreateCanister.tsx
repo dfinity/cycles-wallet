@@ -138,7 +138,6 @@ export function CreateCanisterDialog(props: {
     let result = allControllers.map(ea => Principal.fromText(ea));
     const args = {result, cycles};
 
-    console.log('create argument:', args);
 
     Wallet.create_canister(args).then(
       (resultCanisterId) => {
