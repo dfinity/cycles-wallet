@@ -15,10 +15,8 @@ class AuthClientWrapper {
   async login(): Promise<Identity | undefined> {
     return new Promise(async (resolve) => {
       return await this.authClient?.login({
-        identityProvider: "http://localhost:8000?canisterId=ryjl3-tyaaa-aaaaa-aaaba-cai",
+        identityProvider: "http://localhost:8000/?canisterId=rwlgt-iiaaa-aaaaa-aaaaa-cai",
         onSuccess: async () => {
-          console.log('hello, identityProvider', this.identityProvider);
-
           resolve(await this.authClient?.getIdentity());
         },
       });
@@ -39,8 +37,8 @@ class AuthClientWrapper {
    * so that AuthClient default gets used.
    */
   private get identityProvider(): string|undefined {
-    const fromUrl = (new URLSearchParams(location.search)).get('identityProvider')
-    console.log('this is fromUrl', fromUrl);
+    const fromUrl = (new URLSearchParams(location.search)).get('identityProvider');
+
     return fromUrl || undefined;
   }
 }

@@ -1,4 +1,3 @@
-
 /**
  * This file is a HUGE proxy for the Wallet canister itself. It is used because the
  * current SDK has limitations which makes it impossible to do "the right thing" in
@@ -20,10 +19,11 @@ import {
   ActorSubclass,
   AnonymousIdentity,
 } from "@dfinity/agent";
-import _SERVICE, { CreateCanisterArgs } from "./wallet/wallet";
+import type { _SERVICE, CreateCanisterArgs } from "../declarations/wallet/wallet.did";
 import factory, { Event } from "./wallet";
 import { authClient } from "../utils/authClient";
-import {Principal} from "@dfinity/principal"
+import { Principal } from "@dfinity/principal"
+import { createActor } from "../declarations/wallet";
 export * from "./wallet";
 
 function convertIdlEventMap(idlEvent: any): Event {
@@ -85,8 +85,11 @@ async function getWalletCanister(): Promise<ActorSubclass<_SERVICE>> {
   const agent = new HttpAgent({
     identity,
   });
-  agent.fetchRootKey();
-  agent.status();
+
+  // Fetch root key if not on IC mainnet
+  if(!window.location.host.endsWith("ic0.app")){
+    agent.fetchRootKey();
+  }
 
   if (!walletId) {
     throw new Error("Need to have a wallet ID.");
@@ -134,6 +137,15 @@ function precisionToNanoseconds(precision: ChartPrecision) {
 }
 
 export const Wallet = {
+  getGeneratedActor: async () => {
+    const identity = await authClient.getIdentity() ?? new AnonymousIdentity();
+    return createActor(await getWalletId() || "", {
+      agentOptions: {
+        identity
+      }
+    });
+  },
+
   async name(): Promise<string> {
     return (await (await getWalletCanister()).name())[0] || "";
   },

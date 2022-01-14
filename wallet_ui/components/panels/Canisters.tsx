@@ -17,6 +17,7 @@ import { format_cycles } from "../../utils/cycles";
 
 interface Props {
   canisters?: EventList["canisters"];
+  update: Function;
 }
 
 function Canisters(props: Props) {
@@ -31,7 +32,7 @@ function Canisters(props: Props) {
   function handleWalletCreateDialogOpen() {
     setWalletCreateDialogOpen(true);
   }
-  const { canisters } = props;
+  const { canisters, update } = props;
 
   return (
     <Grid className="canisters">
@@ -64,6 +65,7 @@ function Canisters(props: Props) {
       <CreateCanisterDialog
         open={canisterCreateDialogOpen}
         close={() => setCanisterCreateDialogOpen(false)}
+        updateEvent={update}
       />
 
       <CreateWalletDialog

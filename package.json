@@ -5,7 +5,7 @@
   "scripts": {
     "build": "webpack",
     "start": "webpack serve --config webpack.dev.js",
-    "generate_candid": "didc bind ./wallet/src/lib.did -t ts > wallet_ui/types/declaration.d.ts",
+    "generate_candid": "dfx generate wallet",
     "presideload-ui": "npm run build",
     "test": "jest --verbose"
   },
