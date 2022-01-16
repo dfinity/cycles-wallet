@@ -51,3 +51,4 @@ jobs:
         run: |
           export DFX_WALLET_WASM=$GITHUB_WORKSPACE/target/wasm32-unknown-unknown/release/wallet-opt.wasm
           bats e2e/bash/*.bash
+

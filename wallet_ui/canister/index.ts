@@ -186,10 +186,10 @@ export const Wallet = {
     ]);
   },
   async create_canister(p: {
-    result: Principal[];
+    controllers: Principal[];
     cycles: number;
   }): Promise<Principal> {
-    if(p.result.length < 1) {
+    if(p.controllers.length < 1) {
       throw new Error("Canister must be created with at least one controller");
     }
     const settings: CreateCanisterArgs['settings'] = {
@@ -198,7 +198,7 @@ export const Wallet = {
       memory_allocation: [],
       // Prefer storing single controller as controllers
       controller: [],
-      controllers: [p.result],
+      controllers: [p.controllers],
     }
 
     const result = await (await getWalletCanister()).wallet_create_canister({
