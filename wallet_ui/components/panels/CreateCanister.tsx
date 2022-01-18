@@ -14,8 +14,8 @@ import TextField from "@material-ui/core/TextField";
 import { getWalletId, Principal, Wallet } from "../../canister";
 import { PlainButton, PrimaryButton } from "../Buttons";
 import CycleSlider from "../CycleSlider";
-import AddIcon from '@material-ui/icons/Add';
-import Cancel from '@material-ui/icons/Cancel';
+import AddIcon from "@material-ui/icons/Add";
+import Cancel from "@material-ui/icons/Cancel";
 
 const useStyles = makeStyles((theme) => ({
   wrapper: {
@@ -72,7 +72,9 @@ export function CreateCanisterDialog(props: {
   const [balance, setBalance] = React.useState(0);
   const [canisterId, setCanisterId] = React.useState<Principal | undefined>();
   const [error, setError] = React.useState([false]);
-  const [controllersState, setControllers] = React.useState<string[] | []>([walletPrincipal]);
+  const [controllersState, setControllers] = React.useState<string[] | []>([
+    walletPrincipal,
+  ]);
   const [count, setCount] = React.useState(0);
   const classes = useStyles();
 
@@ -87,27 +89,30 @@ export function CreateCanisterDialog(props: {
   }
   function increaseInput() {
     setCount(count + 1);
-    setControllers(prev => [...prev, ""]);
+    setControllers((prev) => [...prev, ""]);
   }
 
-  function handleInputChange(ind: number, ev: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) {
-    const newInput = controllersState.map((controller : string, i : number) => {
-      if(ind === i) {
+  function handleInputChange(
+    ind: number,
+    ev: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+  ) {
+    const newInput = controllersState.map((controller: string, i: number) => {
+      if (ind === i) {
         return ev.target.value;
       }
       return controller;
-    })
+    });
 
     setControllers(newInput);
     try {
       Principal.fromText(ev.target.value);
-      setError(p => {
+      setError((p) => {
         let newErr = p;
         p[ind] = false;
         return newErr;
       });
     } catch {
-      setError(p => {
+      setError((p) => {
         let newErr = p;
         p[ind] = true;
         return newErr;
@@ -115,12 +120,12 @@ export function CreateCanisterDialog(props: {
     }
   }
 
-  function deleteInput(ind : number) {
-    const result = controllersState.filter((con : string, i: number) => {
+  function deleteInput(ind: number) {
+    const result = controllersState.filter((con: string, i: number) => {
       return ind !== i;
     });
     setControllers(result);
-    setError(p => p.filter((e, i) => i !== ind));
+    setError((p) => p.filter((e, i) => i !== ind));
   }
 
   function handleCycleChange(ev: React.ChangeEvent<HTMLInputElement>) {
@@ -131,22 +136,28 @@ export function CreateCanisterDialog(props: {
   function create() {
     setLoading(true);
 
-    let controllers = controllersState.filter(ea => ea.length !== 0).map(ea => Principal.fromText(ea));
-    const args = {controllers, cycles};
+    let controllers = controllersState
+      .filter((ea) => ea.length !== 0)
+      .map((ea) => Principal.fromText(ea));
+    const args = { controllers, cycles };
     //create with controller regardless?
 
     Wallet.create_canister(args).then(
       (resultCanisterId) => {
-        console.log('result canister id is:', resultCanisterId);
+        console.log("result canister id is:", resultCanisterId);
         setLoading(false);
         setCanisterId(resultCanisterId);
-        updateEvent({'created canister': resultCanisterId.toString(), 'timestamp': Date.now()});
+        updateEvent({
+          "created canister": resultCanisterId.toString(),
+          timestamp: Date.now(),
+        });
       },
       (err) => {
         console.error(err);
         setLoading(false);
         close(err);
-      })
+      }
+    );
   }
 
   function closeCreated() {
@@ -172,7 +183,7 @@ export function CreateCanisterDialog(props: {
             controller will be this wallet canister.
           </DialogContentText>
           <FormControl className={classes.formControl}>
-            <div style={{display: "flex"}}>
+            <div style={{ display: "flex" }}>
               <TextField
                 label="Controller"
                 value={controllersState[0]} //should default controller(walletId) be editable in the first place?
@@ -185,22 +196,26 @@ export function CreateCanisterDialog(props: {
                 InputLabelProps={{ shrink: true }}
               />
               <Button onClick={increaseInput}>
-                <AddIcon/>
+                <AddIcon />
               </Button>
             </div>
             {controllersState.slice(1).map((field: string, ind: number) => (
-              <div key={ind + 1} style={{display: "flex", marginBottom: "10px"}}>
-                <TextField style={{width: "95%"}}
+              <div
+                key={ind + 1}
+                style={{ display: "flex", marginBottom: "10px" }}
+              >
+                <TextField
+                  style={{ width: "95%" }}
                   label="Controller"
                   value={field}
                   disabled={loading}
-                  onChange={(event) => handleInputChange((ind + 1), event)}
+                  onChange={(event) => handleInputChange(ind + 1, event)}
                   error={error[ind + 1]}
                   autoFocus
                   InputLabelProps={{ shrink: true }}
                 />
                 <Button onClick={() => deleteInput(ind + 1)}>
-                  <Cancel/>
+                  <Cancel />
                 </Button>
               </div>
             ))}
@@ -219,7 +234,7 @@ export function CreateCanisterDialog(props: {
         </PlainButton>
         <div className={classes.wrapper}>
           <PrimaryButton
-            disabled={loading || error.some(e => e)}
+            disabled={loading || error.some((e) => e)}
             onClick={create}
             color="secondary"
             autoFocus

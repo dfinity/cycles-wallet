@@ -110,10 +110,10 @@ export function Dashboard(props: { open: boolean; onOpenToggle: () => void }) {
   const classes = useStyles();
 
   const [events, setEvents] = useState<EventList>();
-  const [action, setAction]= useState<object[]>([]);
+  const [action, setAction] = useState<object[]>([]);
 
-  function updateEvent(eventObj : object) {
-    setAction(prev => [...prev, eventObj]);
+  function updateEvent(eventObj: object) {
+    setAction((prev) => [...prev, eventObj]);
   }
 
   function updateEvents() {
@@ -144,7 +144,7 @@ export function Dashboard(props: { open: boolean; onOpenToggle: () => void }) {
 
   React.useEffect(() => {
     updateEvents();
-  }, [action]);
+  }, [events]);
 
   const reduceStart: EventList = {
     canisters: [],
@@ -240,7 +240,12 @@ export function Dashboard(props: { open: boolean; onOpenToggle: () => void }) {
             {/* Canisters */}
             <Grid item xs={12}>
               <Paper className={classes.paper}>
-                {<Canisters canisters={events?.canisters} update={updateEvent}/>}
+                {
+                  <Canisters
+                    canisters={events?.canisters}
+                    update={updateEvent}
+                  />
+                }
               </Paper>
             </Grid>
 
