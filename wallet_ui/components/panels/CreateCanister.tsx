@@ -62,9 +62,10 @@ const walletPrincipal = getWalletId().toString();
 export function CreateCanisterDialog(props: {
   open: boolean;
   close: (err?: any) => void;
-  updateEvent: Function;
+  updateAction: Function;
+  closeDialogDialog: Function;
 }) {
-  const { open, close, updateEvent } = props;
+  const { open, close, updateAction, closeDialogDialog } = props;
 
   const [loading, setLoading] = React.useState(false);
   const [controller, setController] = React.useState(walletPrincipal);
@@ -147,7 +148,7 @@ export function CreateCanisterDialog(props: {
         console.log("result canister id is:", resultCanisterId);
         setLoading(false);
         setCanisterId(resultCanisterId);
-        updateEvent({
+        updateAction({
           "created canister": resultCanisterId.toString(),
           timestamp: Date.now(),
         });
@@ -163,6 +164,7 @@ export function CreateCanisterDialog(props: {
   function closeCreated() {
     close(undefined);
     setCanisterId(undefined);
+    closeDialogDialog();
   }
 
   return (

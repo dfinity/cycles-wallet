@@ -112,7 +112,7 @@ export function Dashboard(props: { open: boolean; onOpenToggle: () => void }) {
   const [events, setEvents] = useState<EventList>();
   const [action, setAction] = useState<object[]>([]);
 
-  function updateEvent(eventObj: object) {
+  function updateAction(eventObj: object) {
     setAction((prev) => [...prev, eventObj]);
   }
 
@@ -144,7 +144,7 @@ export function Dashboard(props: { open: boolean; onOpenToggle: () => void }) {
 
   React.useEffect(() => {
     updateEvents();
-  }, [events]);
+  }, [action]);
 
   const reduceStart: EventList = {
     canisters: [],
@@ -243,7 +243,7 @@ export function Dashboard(props: { open: boolean; onOpenToggle: () => void }) {
                 {
                   <Canisters
                     canisters={events?.canisters}
-                    update={updateEvent}
+                    update={updateAction}
                   />
                 }
               </Paper>

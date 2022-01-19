@@ -65,7 +65,8 @@ function Canisters(props: Props) {
       <CreateCanisterDialog
         open={canisterCreateDialogOpen}
         close={() => setCanisterCreateDialogOpen(false)}
-        updateEvent={update}
+        updateAction={update}
+        closeDialogDialog={() => setDialogDialogOpen(false)}
       />
 
       <CreateWalletDialog
@@ -112,8 +113,11 @@ function Canisters(props: Props) {
             if (!("CanisterCreated" in canister.kind)) {
               return null;
             }
-            const principal = canister.kind["CanisterCreated"].canister as Principal;
-            const value = format_cycles(canister.kind["CanisterCreated"].cycles);
+            const principal = canister.kind["CanisterCreated"]
+              .canister as Principal;
+            const value = format_cycles(
+              canister.kind["CanisterCreated"].cycles
+            );
             return (
               <ListItem key={canister.id} className="flex column">
                 <h4>{"Anonymous Canister"}</h4>
