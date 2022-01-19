@@ -110,41 +110,29 @@ export function Dashboard(props: { open: boolean; onOpenToggle: () => void }) {
   const classes = useStyles();
 
   const [events, setEvents] = useState<EventList>();
-  const [action, setAction] = useState<object[]>([]);
 
-  function updateAction(eventObj: object) {
-    setAction((prev) => [...prev, eventObj]);
-  }
-
-  function updateEvents() {
-    Wallet.events()
-      .then((events) => {
-        return events
-          .sort((a, b) => {
-            // Reverse sort on timestamp.
-            return Number(b.timestamp) - Number(a.timestamp);
-          })
-          .reduce((start, next) => {
-            const [kindField] = Object.entries(next.kind);
-            const [key, body] = Object.entries(kindField);
-            if (
-              "CanisterCreated" in next.kind ||
-              "WalletCreated" in next.kind
-            ) {
-              start.canisters.push(next);
-            } else {
-              start.transactions.push(next);
-            }
-
-            return start;
-          }, reduceStart);
+  const refreshEvents = async () => {
+    const events = await Wallet.events();
+    let sortedEvents = events
+      .sort((a, b) => {
+        // Reverse sort on timestamp.
+        return Number(b.timestamp) - Number(a.timestamp);
       })
-      .then(setEvents);
-  }
+      .reduce((start, next) => {
+        if ("CanisterCreated" in next.kind || "WalletCreated" in next.kind) {
+          start.canisters.push(next);
+        } else {
+          start.transactions.push(next);
+        }
+        return start;
+      }, reduceStart);
+
+    setEvents(sortedEvents);
+  };
 
   React.useEffect(() => {
-    updateEvents();
-  }, [action]);
+    refreshEvents();
+  }, []);
 
   const reduceStart: EventList = {
     canisters: [],
@@ -243,7 +231,7 @@ export function Dashboard(props: { open: boolean; onOpenToggle: () => void }) {
                 {
                   <Canisters
                     canisters={events?.canisters}
-                    update={updateAction}
+                    refreshEvents={refreshEvents}
                   />
                 }
               </Paper>
