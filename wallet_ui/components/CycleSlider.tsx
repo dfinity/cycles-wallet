@@ -143,6 +143,7 @@ interface Props {
 
 function CycleSlider(props: Props) {
   const { balance = 0, cycles, setCycles, loading } = props;
+  const [error, setError] = React.useState("");
 
   // TODO: Replace with dynamic value
   const cyclesSdrRate = (cycles / 1000000000000) * 0.65;
@@ -151,7 +152,13 @@ function CycleSlider(props: Props) {
   function handleSlide(e: any) {
     if (balance && e.target?.value) {
       const newValue = Math.floor((balance * e.target.value) / 1000);
-      setCycles(newValue);
+      // minimum value is 2T Cycles
+      if (newValue < 2 * 1000000000000) {
+        setError("Minimum balance to create a canister is 2T Cycles");
+      } else {
+        setError("");
+        setCycles(newValue);
+      }
     }
   }
 
@@ -201,6 +208,7 @@ function CycleSlider(props: Props) {
               style={{ margin: "0" }}
               fullWidth
               disabled={loading}
+              error={error}
               onChange={(e) => setCycles(Number(e.target.value))}
               InputProps={{
                 inputComponent: NumberFormatCustom,
