@@ -111,30 +111,27 @@ export function Dashboard(props: { open: boolean; onOpenToggle: () => void }) {
 
   const [events, setEvents] = useState<EventList>();
 
-  React.useEffect(() => {
-    Wallet.events()
-      .then((events) => {
-        return events
-          .sort((a, b) => {
-            // Reverse sort on timestamp.
-            return Number(b.timestamp) - Number(a.timestamp);
-          })
-          .reduce((start, next) => {
-            const [kindField] = Object.entries(next.kind);
-            const [key, body] = Object.entries(kindField);
-            if (
-              "CanisterCreated" in next.kind ||
-              "WalletCreated" in next.kind
-            ) {
-              start.canisters.push(next);
-            } else {
-              start.transactions.push(next);
-            }
-
-            return start;
-          }, reduceStart);
+  const refreshEvents = async () => {
+    const events = await Wallet.events();
+    let sortedEvents = events
+      .sort((a, b) => {
+        // Reverse sort on timestamp.
+        return Number(b.timestamp) - Number(a.timestamp);
       })
-      .then(setEvents);
+      .reduce((start, next) => {
+        if ("CanisterCreated" in next.kind || "WalletCreated" in next.kind) {
+          start.canisters.push(next);
+        } else {
+          start.transactions.push(next);
+        }
+        return start;
+      }, reduceStart);
+
+    setEvents(sortedEvents);
+  };
+
+  React.useEffect(() => {
+    refreshEvents();
   }, []);
 
   const reduceStart: EventList = {
@@ -231,7 +228,12 @@ export function Dashboard(props: { open: boolean; onOpenToggle: () => void }) {
             {/* Canisters */}
             <Grid item xs={12}>
               <Paper className={classes.paper}>
-                {<Canisters canisters={events?.canisters} />}
+                {
+                  <Canisters
+                    canisters={events?.canisters}
+                    refreshEvents={refreshEvents}
+                  />
+                }
               </Paper>
             </Grid>
 

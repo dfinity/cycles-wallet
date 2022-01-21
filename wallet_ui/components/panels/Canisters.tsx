@@ -1,5 +1,5 @@
 import * as React from "react";
-import type { Principal } from "@dfinity/agent";
+import type { Principal } from "@dfinity/principal";
 import CircularProgress from "@material-ui/core/CircularProgress";
 import Grid from "@material-ui/core/Grid";
 import List from "@material-ui/core/List";
@@ -17,6 +17,7 @@ import { format_cycles } from "../../utils/cycles";
 
 interface Props {
   canisters?: EventList["canisters"];
+  refreshEvents: Function;
 }
 
 function Canisters(props: Props) {
@@ -31,7 +32,7 @@ function Canisters(props: Props) {
   function handleWalletCreateDialogOpen() {
     setWalletCreateDialogOpen(true);
   }
-  const { canisters } = props;
+  const { canisters, refreshEvents } = props;
 
   return (
     <Grid className="canisters">
@@ -64,6 +65,8 @@ function Canisters(props: Props) {
       <CreateCanisterDialog
         open={canisterCreateDialogOpen}
         close={() => setCanisterCreateDialogOpen(false)}
+        refreshEvents={refreshEvents}
+        closeDialogDialog={() => setDialogDialogOpen(false)}
       />
 
       <CreateWalletDialog
@@ -110,8 +113,11 @@ function Canisters(props: Props) {
             if (!("CanisterCreated" in canister.kind)) {
               return null;
             }
-            const principal = canister.kind["CanisterCreated"].canister as Principal;
-            const value = format_cycles(canister.kind["CanisterCreated"].cycles);
+            const principal = canister.kind["CanisterCreated"]
+              .canister as Principal;
+            const value = format_cycles(
+              canister.kind["CanisterCreated"].cycles
+            );
             return (
               <ListItem key={canister.id} className="flex column">
                 <h4>{"Anonymous Canister"}</h4>

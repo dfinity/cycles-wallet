@@ -16,13 +16,14 @@
 import {
   HttpAgent,
   Actor,
-  Principal,
   ActorSubclass,
   AnonymousIdentity,
 } from "@dfinity/agent";
-import _SERVICE from "./wallet/wallet";
+import type { _SERVICE, CreateCanisterArgs } from "../declarations/wallet/wallet.did";
 import factory, { Event } from "./wallet";
 import { authClient } from "../utils/authClient";
+import { Principal } from "@dfinity/principal"
+import { createActor } from "../declarations/wallet";
 export * from "./wallet";
 
 function convertIdlEventMap(idlEvent: any): Event {
@@ -33,7 +34,7 @@ function convertIdlEventMap(idlEvent: any): Event {
   };
 }
 // Need to export the enumeration from wallet.did
-export { Principal } from "@dfinity/agent";
+export { Principal } from "@dfinity/principal";
 
 function getCanisterId(): Principal {
   // Check the query params.
@@ -84,6 +85,12 @@ async function getWalletCanister(): Promise<ActorSubclass<_SERVICE>> {
   const agent = new HttpAgent({
     identity,
   });
+
+  // Fetch root key if not on IC mainnet
+  if(!window.location.host.endsWith("ic0.app")){
+    agent.fetchRootKey();
+  }
+
   if (!walletId) {
     throw new Error("Need to have a wallet ID.");
   } else {
@@ -130,6 +137,15 @@ function precisionToNanoseconds(precision: ChartPrecision) {
 }
 
 export const Wallet = {
+  getGeneratedActor: async () => {
+    const identity = await authClient.getIdentity() ?? new AnonymousIdentity();
+    return createActor(await getWalletId() || "", {
+      agentOptions: {
+        identity
+      }
+    });
+  },
+
   async name(): Promise<string> {
     return (await (await getWalletCanister()).name())[0] || "";
   },
@@ -170,16 +186,23 @@ export const Wallet = {
     ]);
   },
   async create_canister(p: {
-    controller?: Principal;
+    controllers: Principal[];
     cycles: number;
   }): Promise<Principal> {
+    if(p.controllers.length < 1) {
+      throw new Error("Canister must be created with at least one controller");
+    }
+    const settings: CreateCanisterArgs['settings'] = {
+      compute_allocation: [],
+      freezing_threshold: [],
+      memory_allocation: [],
+      // Prefer storing single controller as controllers
+      controller: [],
+      controllers: [p.controllers],
+    }
+
     const result = await (await getWalletCanister()).wallet_create_canister({
-      settings: {
-        compute_allocation: [],
-        controller: p.controller ? [p.controller] : [],
-        freezing_threshold: [],
-        memory_allocation: [],
-      },
+      settings,
       cycles: BigInt(p.cycles),
     });
     if ("Ok" in result) {
@@ -196,6 +219,7 @@ export const Wallet = {
       settings: {
         compute_allocation: [],
         controller: p.controller ? [p.controller] : [],
+        controllers: [],
         freezing_threshold: [],
         memory_allocation: [],
       },
@@ -207,7 +231,7 @@ export const Wallet = {
       throw result.Err;
     }
   },
-  async send(p: { canister: Principal; amount: BigInt }): Promise<void> {
+  async send(p: { canister: Principal; amount: bigint }): Promise<void> {
     await (await getWalletCanister()).wallet_send({
       canister: p.canister,
       amount: BigInt(p.amount),

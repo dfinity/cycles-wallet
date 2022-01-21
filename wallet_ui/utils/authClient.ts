@@ -35,9 +35,12 @@ class AuthClientWrapper {
    * Get the internet-identity identityProvider URL to use when authenticating the end-user.
    * Use ?identityProvider if present (useful in development), otherwise return undefined
    * so that AuthClient default gets used.
+   * For development, open browser to :
+   * `http://localhost:8080/?canisterId=<wallet_canister_id>&identityProvider=http://localhost:8000/?canisterId=<internet_identity_id>`
    */
   private get identityProvider(): string|undefined {
-    const fromUrl = (new URLSearchParams(location.search)).get('identityProvider')
+    const fromUrl = (new URLSearchParams(location.search)).get('identityProvider');
+
     return fromUrl || undefined;
   }
 }

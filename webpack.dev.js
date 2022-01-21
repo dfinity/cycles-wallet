@@ -23,7 +23,7 @@ module.exports = {
   ],
   devServer: {
     port: 8080,
-    contentBase: "./wallet_ui",
+    watchFiles: "./wallet_ui",
     hot: true,
     proxy: {
       "/api": "http://localhost:8000",

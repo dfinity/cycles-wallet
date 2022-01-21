@@ -32,7 +32,7 @@ RUN rm -r ${RUSTUP_DIR} ${RUSTUP_TARBALL}
 
 # Install DFINITY SDK.
 RUN wget -O install-dfx.sh -q https://sdk.dfinity.org/install.sh
-RUN yes Y | DFX_VERSION=0.6.10 bash install-dfx.sh
+RUN yes Y | DFX_VERSION=0.8.4 bash install-dfx.sh
 RUN rm install-dfx.sh
 ENV PATH "/home/developer/bin:${PATH}"
 
