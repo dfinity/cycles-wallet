@@ -164,13 +164,15 @@ export const Wallet = {
     walletCanisterCache = null;
   },
   async events(from?: number, to?: number): Promise<Event[]> {
-    return (
-      await (await getWalletCanister()).get_events([
-        {
-          to: to ? [to] : [],
-          from: from ? [from] : [],
-        },
-      ])
+    return await (
+      await this.getGeneratedActor().then((actor) => {
+        return actor.get_events([
+          {
+            to: to ? [to] : [],
+            from: from ? [from] : [],
+          },
+        ]);
+      })
     ).map(convertIdlEventMap);
   },
   async chart(p: ChartPrecision, count?: number): Promise<[Date, number][]> {

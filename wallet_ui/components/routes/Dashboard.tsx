@@ -110,16 +110,27 @@ export function Dashboard(props: { open: boolean; onOpenToggle: () => void }) {
   const classes = useStyles();
 
   const [events, setEvents] = useState<EventList>();
-  const [action, setAction] = useState<object[]>([]);
-  const [action2, setAction2] = useState<object[]>([]);
-  const [managedCanisters, updateManagedCan] = useState<object[] | undefined>();
+
+  // const [managedCanisters, updateManagedCan] = useState<object[] | undefined>();
   const reduceStart: EventList = {
     canisters: [],
     transactions: [],
   };
+  const firstRender = React.useRef(true);
+  const renderInstance = React.useRef(0);
 
   const refreshEvents = async () => {
-    const events = await Wallet.events();
+    const events = await (
+      await Wallet.getGeneratedActor().then((actor) => {
+        return actor.get_events([
+          {
+            to: [],
+            from: [0],
+          },
+        ]);
+      })
+    ).map(convertIdlEventMap);
+
     let sortedEvents = events
       .sort((a, b) => {
         // Reverse sort on timestamp.
@@ -137,37 +148,18 @@ export function Dashboard(props: { open: boolean; onOpenToggle: () => void }) {
     setEvents(sortedEvents);
   };
 
-  function updateEventName(eventObj: object) {
-    setAction2((prev) => [...prev, eventObj]);
-  }
-
-  function checkManagedCanisters() {
-    Wallet.list_managed_canisters().then((r) => {
-      const managed_can = r[0];
-      const result = managed_can
-        .map((c) => {
-          return {
-            id: c.id.toString(),
-            name: c.name[0],
-          };
-        })
-        .reverse();
-      updateManagedCan(result);
-    });
-  }
-
   React.useEffect(() => {
     refreshEvents();
   }, []);
-
-  React.useEffect(() => {
-    checkManagedCanisters();
-  }, [action2]);
 
   function handleWalletCreateDialogClose(maybeErr?: any) {
     setWalletCreateDialogOpen(false);
     setErrorDialogContent(maybeErr);
   }
+
+  renderInstance.current++;
+
+  console.log("render Dashboard", renderInstance);
 
   return (
     <>
@@ -253,12 +245,10 @@ export function Dashboard(props: { open: boolean; onOpenToggle: () => void }) {
             {/* Canisters */}
             <Grid item xs={12}>
               <Paper className={classes.paper}>
-                {events?.canisters && managedCanisters && (
+                {events?.canisters && (
                   <Canisters
-                    canisters={events?.canisters}
+                    canisters={events.canisters}
                     refreshEvents={refreshEvents}
-                    managedCanisters={managedCanisters}
-                    updateN={updateEventName}
                   />
                 )}
               </Paper>

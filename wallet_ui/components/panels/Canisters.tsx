@@ -19,8 +19,6 @@ import { Wallet } from "../../canister";
 interface Props {
   canisters: EventList["canisters"];
   refreshEvents: Function;
-  updateN: Function;
-  managedCanisters: Array<object>;
 }
 
 function Canisters(props: Props) {
@@ -34,138 +32,96 @@ function Canisters(props: Props) {
   );
 
   const [dialogDialogOpen, setDialogDialogOpen] = React.useState(false);
-  const [list, updateList] = React.useState<any[]>([]);
-  const [namesAdded, addNameCount] = React.useState(0);
-  const isFirstRender = React.useRef(true);
-  // const extractCanisters = React.useMemo(() => listCanisters(), [canisters]);
-  const prevList = React.useRef<any[]>([]);
-  const [workable, updateWork] = React.useState(false);
+  const [list, updateList] = React.useState<any[] | undefined>();
+  const [managedCanisters, updateManagedCan] = React.useState<object[] | any>(
+    []
+  );
+  const instance = React.useRef<number>(0);
 
   function handleWalletCreateDialogOpen() {
     setWalletCreateDialogOpen(true);
   }
 
-  const { canisters, refreshEvents, updateN, managedCanisters } = props;
+  const { canisters, refreshEvents } = props;
+
+  function refreshManagedCanisters(context: string) {
+    console.log("refreshMC from", context);
+    Wallet.list_managed_canisters().then((r) => {
+      const managed_can = r[0];
+      const result = managed_can
+        .map((c) => {
+          return {
+            id: c.id.toString(),
+            name: c.name[0],
+          };
+        })
+        .reverse();
+      updateManagedCan(result);
+    });
+  }
 
   function listCanisters() {
-    if (list.length === 0) {
-      const newList = canisters.map((canister) => {
-        if (!("CanisterCreated" in canister.kind)) {
-          //step needed?
-          return null;
-        }
-        let kind = canister["kind"];
+    const result = canisters.map((canister, idx) => {
+      const kind = canister["kind"];
+      if ("CanisterCreated" in kind) {
         return {
           id: canister.id,
           principal: kind.CanisterCreated.canister.toString(),
           timestamp: canister.timestamp,
           cycles: format_cycles(kind.CanisterCreated.cycles),
-          name: "Anonymous Canister",
+          name: managedCanisters[idx].name || "Anonymous Canister",
         };
-      });
-      return updateList(newList);
-    } else {
-      updateList((p) => {
-        let result = p;
-        let diff = canisters.length - p.length;
-        if (diff > 0) {
-          //for each new canister, convert and save to result
-          for (let i = 0; i < diff; i++) {
-            const canister = canisters[i];
-            let kind = canisters[i]["kind"];
-            if ("CanisterCreated" in kind) {
-              //step needed?
-              result.unshift({
-                id: canister.id,
-                principal: kind.CanisterCreated.canister.toString(),
-                timestamp: canister.timestamp,
-                cycles: format_cycles(kind.CanisterCreated.cycles),
-                name: "Anonymous Canister",
-              });
-            }
-          }
-        }
-        return result;
-      });
-    }
-  }
-
-  function updateNames(inputList: Array<any>, context: string) {
-    let indexes: number[] = [];
-    inputList.forEach((ea, ind) => {
-      if (ea["name"]) {
-        indexes.push(ind);
       }
     });
-    //simply update last entry, add entry to array
-    updateList((p) => {
-      let result = p;
-      indexes.forEach((i) => {
-        if (result.length && result[i].name) {
-          result[i].name = inputList[i].name;
-        }
-      });
-      return result;
-    });
+    updateList(result);
   }
-
-  function setName(canisterPrincipal: string, inputName: string, cb: Function) {
-    Wallet.update_canister_name(canisterPrincipal, inputName).then(
-      (r) => {
-        console.log("canister name set:", r);
-        if (arguments[2]) {
-          cb();
+  function setName(canisterPrincipal: string, inputName: string) {
+    Wallet.update_canister_name(canisterPrincipal, inputName)
+      .then(
+        (r) => {
+          console.log("canister name set:", r);
+        },
+        (e) => {
+          console.error("Update to Name failed:", e);
         }
-        updateN({
-          "canister updated": canisterPrincipal,
-          name: inputName,
-          timestamp: Date.now(),
-        });
-        updateName(inputName, canisterPrincipal);
-      },
-      (e) => {
-        console.error("Update to Name failed:", e);
-      }
-    );
-  }
-
-  function updateName(inputName: string, inputPrincipal: string) {
-    updateList((prev) => {
-      let result = prev;
-      if (prev[0].principal === inputPrincipal) {
-        result[0].name = inputName;
-      }
-      return result;
-    });
+      )
+      .then(() => refreshManagedCanisters("from setName"));
   }
 
   React.useEffect(() => {
-    console.log(
-      "can dependency \n canisters",
-      canisters.length,
-      canisters[0],
-      "\n MC:",
-      managedCanisters.length,
-      managedCanisters[0]
-    );
-    listCanisters();
-  }, [canisters]);
+    refreshManagedCanisters("from first useEffect");
+  }, []);
 
   React.useEffect(() => {
     console.log(
       "MC dependency \n canisters",
       canisters.length,
-      canisters[0],
       "\n MC:",
-      managedCanisters.length,
-      managedCanisters[0]
+      managedCanisters.length
     );
-
-    if (managedCanisters.length === canisters.length) {
-      console.log("length of MC and canisters =", canisters.length, "\n");
-      updateNames(managedCanisters, "from managedCanisters");
+    if (
+      managedCanisters.length &&
+      managedCanisters.length === canisters.length
+    ) {
+      console.log("listCanisters called from MC dependency");
+      listCanisters();
+    } else {
+      console.log("listCanisters NOT called from MC dependency");
     }
-  }, [managedCanisters]); //take out list dependency
+  }, [managedCanisters, canisters]);
+
+  instance.current++;
+  console.log(
+    "render Canister",
+    instance.current,
+    "\n canisters",
+    canisters.length,
+    "\n Managed Canisters",
+    managedCanisters.length,
+    managedCanisters[0],
+    "\n list",
+    list?.length
+  );
 
   return (
     <Grid className="canisters">
@@ -201,10 +157,6 @@ function Canisters(props: Props) {
         refreshEvents={refreshEvents}
         closeDialogDialog={() => setDialogDialogOpen(false)}
         setName={setName}
-        nameAdded={() => {
-          console.log("name added in Create canister fired");
-          return addNameCount(namesAdded + 1);
-        }}
       />
 
       <CreateWalletDialog
@@ -247,20 +199,21 @@ function Canisters(props: Props) {
       </p>
       <React.Suspense fallback={<CircularProgress />}>
         <List className="events-list">
-          {list.map((can) => {
-            if (!can || Object.entries(can).length === 0) {
-              return null;
-            }
-            return (
-              <ListItem key={can.id} className="flex column">
-                <h4>{can.name}</h4>
-                <div className="flex row wrap">
-                  <p>{can.principal}</p>
-                  <p>{can.cycles}</p>
-                </div>
-              </ListItem>
-            );
-          })}
+          {list &&
+            list.map((can) => {
+              if (!can || Object.entries(can).length === 0) {
+                return null;
+              }
+              return (
+                <ListItem key={can.id} className="flex column">
+                  <h4>{can.name}</h4>
+                  <div className="flex row wrap">
+                    <p>{can.principal}</p>
+                    <p>{can.cycles}</p>
+                  </div>
+                </ListItem>
+              );
+            })}
         </List>
       </React.Suspense>
     </Grid>
