@@ -65,10 +65,18 @@ export function CreateCanisterDialog(props: {
   open: boolean;
   close: (err?: any) => void;
   refreshEvents: Function;
+  refreshManagedCanisters: Function;
   closeDialogDialog: Function;
   setName: Function;
 }) {
-  const { open, close, refreshEvents, closeDialogDialog, setName } = props;
+  const {
+    open,
+    close,
+    refreshEvents,
+    closeDialogDialog,
+    setName,
+    refreshManagedCanisters,
+  } = props;
 
   const [loading, setLoading] = React.useState(false);
   const [controller, setController] = React.useState(walletPrincipal);
@@ -146,10 +154,11 @@ export function CreateCanisterDialog(props: {
         setLoading(false);
         setCanisterId(resultCanisterId);
 
-        refreshEvents("after create canister, but before setName"); // not fast enough to account for setName
+        refreshEvents();
         if (canisterName !== "Anonymous Canister") {
-          setName(resultCanisterId.toText(), canisterName);
+          return setName(resultCanisterId.toText(), canisterName);
         }
+        refreshManagedCanisters("create canister w name", canisterName);
       },
       (err) => {
         console.error(err);
@@ -162,7 +171,9 @@ export function CreateCanisterDialog(props: {
   function closeCreated() {
     close(undefined);
     setCanisterId(undefined);
+    setCanisterName("Anonymous Canister");
     closeDialogDialog();
+    setCycles(0);
   }
 
   function handleNameChange(

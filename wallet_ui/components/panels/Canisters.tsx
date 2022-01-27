@@ -105,10 +105,8 @@ function Canisters(props: Props) {
     ) {
       console.log("listCanisters called from MC dependency");
       listCanisters();
-    } else {
-      console.log("listCanisters NOT called from MC dependency");
     }
-  }, [managedCanisters, canisters]);
+  }, [managedCanisters]);
 
   instance.current++;
   console.log(
@@ -155,6 +153,7 @@ function Canisters(props: Props) {
         open={canisterCreateDialogOpen}
         close={() => setCanisterCreateDialogOpen(false)}
         refreshEvents={refreshEvents}
+        refreshManagedCanisters={refreshManagedCanisters}
         closeDialogDialog={() => setDialogDialogOpen(false)}
         setName={setName}
       />
