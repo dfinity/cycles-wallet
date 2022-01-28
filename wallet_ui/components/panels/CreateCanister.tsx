@@ -147,7 +147,8 @@ export function CreateCanisterDialog(props: {
     const controllersInput = controllers
       .filter((ea) => ea.length !== 0)
       .map((ea) => Principal.fromText(ea));
-    const args = { controllers: controllersInput, cycles };
+    const inputCycles = cycles !== 0 ? cycles : 2000000000000;
+    const args = { controllers: controllersInput, cycles: inputCycles };
 
     Wallet.create_canister(args).then(
       (resultCanisterId) => {

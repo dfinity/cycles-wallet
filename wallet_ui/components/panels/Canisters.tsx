@@ -18,8 +18,13 @@ import { Wallet } from "../../canister";
 
 interface Props {
   canisters: EventList["canisters"];
-  refreshEvents: Function;
+  refreshEvents: () => Promise<void>;
 }
+
+type ManagedCanister = {
+  id: string;
+  name: string | undefined;
+};
 
 function Canisters(props: Props) {
   const [
@@ -32,8 +37,7 @@ function Canisters(props: Props) {
   );
 
   const [dialogDialogOpen, setDialogDialogOpen] = React.useState(false);
-  const [list, updateList] = React.useState<any[] | undefined>();
-  const [managedCanisters, updateManagedCan] = React.useState<object[] | any>(
+  const [managedCanisters, setManagedCan] = React.useState<ManagedCanister[]>(
     []
   );
   const instance = React.useRef<number>(0);
@@ -46,9 +50,8 @@ function Canisters(props: Props) {
 
   function refreshManagedCanisters(context: string) {
     console.log("refreshMC from", context);
-    Wallet.list_managed_canisters().then((r) => {
-      const managed_can = r[0];
-      const result = managed_can
+    Wallet.list_managed_canisters().then((result) => {
+      const mapped: ManagedCanister[] = result[0]
         .map((c) => {
           return {
             id: c.id.toString(),
@@ -56,25 +59,29 @@ function Canisters(props: Props) {
           };
         })
         .reverse();
-      updateManagedCan(result);
+      setManagedCan(mapped);
     });
   }
 
-  function listCanisters() {
-    const result = canisters.map((canister, idx) => {
+  const mappedCanisters = React.useMemo(() => {
+    return canisters.map((canister) => {
       const kind = canister["kind"];
       if ("CanisterCreated" in kind) {
+        const principal = kind.CanisterCreated.canister.toString();
         return {
           id: canister.id,
-          principal: kind.CanisterCreated.canister.toString(),
+          principal,
           timestamp: canister.timestamp,
           cycles: format_cycles(kind.CanisterCreated.cycles),
-          name: managedCanisters[idx].name || "Anonymous Canister",
+          name:
+            managedCanisters.find(
+              (managed: ManagedCanister) => managed.id == principal
+            )?.name || "Anonymous Canister",
         };
       }
     });
-    updateList(result);
-  }
+  }, [canisters, managedCanisters]);
+
   function setName(canisterPrincipal: string, inputName: string) {
     Wallet.update_canister_name(canisterPrincipal, inputName)
       .then(
@@ -92,22 +99,6 @@ function Canisters(props: Props) {
     refreshManagedCanisters("from first useEffect");
   }, []);
 
-  React.useEffect(() => {
-    console.log(
-      "MC dependency \n canisters",
-      canisters.length,
-      "\n MC:",
-      managedCanisters.length
-    );
-    if (
-      managedCanisters.length &&
-      managedCanisters.length === canisters.length
-    ) {
-      console.log("listCanisters called from MC dependency");
-      listCanisters();
-    }
-  }, [managedCanisters]);
-
   instance.current++;
   console.log(
     "render Canister",
@@ -116,9 +107,7 @@ function Canisters(props: Props) {
     canisters.length,
     "\n Managed Canisters",
     managedCanisters.length,
-    managedCanisters[0],
-    "\n list",
-    list?.length
+    managedCanisters[0]
   );
 
   return (
@@ -198,21 +187,20 @@ function Canisters(props: Props) {
       </p>
       <React.Suspense fallback={<CircularProgress />}>
         <List className="events-list">
-          {list &&
-            list.map((can) => {
-              if (!can || Object.entries(can).length === 0) {
-                return null;
-              }
-              return (
-                <ListItem key={can.id} className="flex column">
-                  <h4>{can.name}</h4>
-                  <div className="flex row wrap">
-                    <p>{can.principal}</p>
-                    <p>{can.cycles}</p>
-                  </div>
-                </ListItem>
-              );
-            })}
+          {mappedCanisters?.map((can) => {
+            if (!can || Object.entries(can).length === 0) {
+              return null;
+            }
+            return (
+              <ListItem key={can.id} className="flex column">
+                <h4>{can.name}</h4>
+                <div className="flex row wrap">
+                  <p>{can.principal}</p>
+                  <p>{can.cycles}</p>
+                </div>
+              </ListItem>
+            );
+          })}
         </List>
       </React.Suspense>
     </Grid>

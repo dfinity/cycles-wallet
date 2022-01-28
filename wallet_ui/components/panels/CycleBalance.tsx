@@ -28,10 +28,7 @@ export function CycleBalance() {
   const [cycles, setCycles] = useState<number | undefined>(undefined);
   const [first, setFirst] = useState(true);
   const [timeStamp, setTimeStamp] = useState(new Date());
-  const [refreshRate, setRefreshRate] = useLocalStorage(
-    "cycle-refresh-rate",
-    0
-  );
+  const [refreshRate, setRefreshRate] = useState(2);
   const history = useHistory();
   const classes = useStyles();
 

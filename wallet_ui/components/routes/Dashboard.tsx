@@ -110,13 +110,13 @@ export function Dashboard(props: { open: boolean; onOpenToggle: () => void }) {
   const classes = useStyles();
 
   const [events, setEvents] = useState<EventList>();
+  const [cyclesBalance, setCyclesBalance] = useState();
 
-  // const [managedCanisters, updateManagedCan] = useState<object[] | undefined>();
   const reduceStart: EventList = {
     canisters: [],
     transactions: [],
   };
-  const firstRender = React.useRef(true);
+
   const renderInstance = React.useRef(0);
 
   const refreshEvents = async () => {
@@ -131,7 +131,7 @@ export function Dashboard(props: { open: boolean; onOpenToggle: () => void }) {
       })
     ).map(convertIdlEventMap);
 
-    let sortedEvents = events
+    const sortedEvents = events
       .sort((a, b) => {
         // Reverse sort on timestamp.
         return Number(b.timestamp) - Number(a.timestamp);
