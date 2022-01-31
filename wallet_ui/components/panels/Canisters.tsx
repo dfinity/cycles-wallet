@@ -13,7 +13,7 @@ import { CreateDialog } from "./CreateDialog";
 import PlusIcon from "../icons/PlusIcon";
 import { css } from "@emotion/css";
 import { PlainButton } from "../Buttons";
-import { format_cycles } from "../../utils/cycles";
+import { format_cycles_trillion } from "../../utils/cycles";
 import { Wallet } from "../../canister";
 
 interface Props {
@@ -72,7 +72,7 @@ function Canisters(props: Props) {
           id: canister.id,
           principal,
           timestamp: canister.timestamp,
-          cycles: format_cycles(kind.CanisterCreated.cycles),
+          cycles: format_cycles_trillion(kind.CanisterCreated.cycles),
           name:
             managedCanisters.find(
               (managed: ManagedCanister) => managed.id == principal

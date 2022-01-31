@@ -4,8 +4,10 @@ import { Wallet } from "../../canister";
 import "../../css/CycleBalance.css";
 import Typography from "@material-ui/core/Typography";
 import makeStyles from "@material-ui/core/styles/makeStyles";
-import { useLocalStorage } from "../../utils/hooks";
-import { format_cycles_and_suffix } from "../../utils/cycles";
+import {
+  format_cycles_and_suffix,
+  format_cycles_trillion,
+} from "../../utils/cycles";
 import Box from "@material-ui/core/Box";
 
 const useStyles = makeStyles((theme) => ({
@@ -21,8 +23,6 @@ const useStyles = makeStyles((theme) => ({
     marginTop: theme.spacing(2),
   },
 }));
-
-const SUFFIX_LIST = " KMGTPE";
 
 export function CycleBalance() {
   const [cycles, setCycles] = useState<number | undefined>(undefined);
@@ -59,6 +59,8 @@ export function CycleBalance() {
   }
 
   const [cycles_string, suffix] = format_cycles_and_suffix(BigInt(cycles));
+  const cyclesTC = format_cycles_trillion(BigInt(cycles));
+
   return (
     <Box mb={2}>
       <Typography
@@ -80,6 +82,9 @@ export function CycleBalance() {
               {cycles_string}
             </span>
             <Typography component="span"> {suffix}C</Typography>
+            <Typography component="span" style={{ marginLeft: "10px" }}>
+              ({cyclesTC})
+            </Typography>
           </>
         )}
       </Typography>

@@ -90,6 +90,7 @@ export function CreateCanisterDialog(props: {
   const [count, setCount] = React.useState(0);
   const [canisterName, setCanisterName] = React.useState("Anonymous Canister");
   const classes = useStyles();
+  const isMinimum = cycles < 2000000000000;
 
   React.useEffect(() => {
     Wallet.balance().then((amount) => {
@@ -120,13 +121,13 @@ export function CreateCanisterDialog(props: {
     try {
       Principal.fromText(ev.target.value);
       setError((p) => {
-        let newErr = p;
+        const newErr = p;
         p[index] = false;
         return newErr;
       });
     } catch {
       setError((p) => {
-        let newErr = p;
+        const newErr = p;
         p[index] = true;
         return newErr;
       });
@@ -263,7 +264,7 @@ export function CreateCanisterDialog(props: {
         </PlainButton>
         <div className={classes.wrapper}>
           <PrimaryButton
-            disabled={loading || error.some((e) => e)}
+            disabled={loading || error.some((e) => e) || isMinimum}
             onClick={create}
             color="secondary"
             autoFocus
