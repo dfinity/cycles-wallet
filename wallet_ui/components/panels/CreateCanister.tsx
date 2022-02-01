@@ -148,7 +148,7 @@ export function CreateCanisterDialog(props: {
     const controllersInput = controllers
       .filter((ea) => ea.length !== 0)
       .map((ea) => Principal.fromText(ea));
-    const inputCycles = cycles !== 0 ? cycles : 2000000000000;
+    const inputCycles = cycles >= 2000000000000 ? cycles : 2000000000000;
     const args = { controllers: controllersInput, cycles: inputCycles };
 
     Wallet.create_canister(args).then(
@@ -197,8 +197,8 @@ export function CreateCanisterDialog(props: {
       </DialogTitle>
       <DialogContent>
         <DialogContentText>
-          Create a canister. If the controller field is left empty, the
-          controller will be this wallet canister.
+          Create a canister with option to customize name and add multiple
+          controllers. The controller by default will be this wallet canister.
         </DialogContentText>
         <TextField
           label="Custom Name of Canister"
