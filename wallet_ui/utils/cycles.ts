@@ -1,9 +1,11 @@
-export function format_cycles_trillion(cycles: bigint) {
+export function format_cycles_trillion(cycles: bigint, fixed: number) {
   const trillion = 1000000000000;
   const cyclesInTrillion = parseFloat(cycles.toString()) / trillion;
   const cycles_string =
-    cyclesInTrillion % 1 === 0 ? cyclesInTrillion : cyclesInTrillion.toFixed(2);
-  return cycles_string.toLocaleString() + " " + "TC";
+    cyclesInTrillion % 1 === 0
+      ? cyclesInTrillion
+      : cyclesInTrillion.toFixed(fixed);
+  return cycles_string.toLocaleString();
 }
 
 export function format_cycles_and_suffix(cycles: bigint) {

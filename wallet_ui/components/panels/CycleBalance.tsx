@@ -3,26 +3,23 @@ import { useHistory } from "react-router";
 import { Wallet } from "../../canister";
 import "../../css/CycleBalance.css";
 import Typography from "@material-ui/core/Typography";
-import makeStyles from "@material-ui/core/styles/makeStyles";
-import {
-  format_cycles_and_suffix,
-  format_cycles_trillion,
-} from "../../utils/cycles";
-import Box from "@material-ui/core/Box";
+import { createMuiTheme, MuiThemeProvider } from "@material-ui/core/styles";
+import { format_cycles_and_suffix } from "../../utils/cycles";
+import { Box, Tooltip } from "@material-ui/core";
 
-const useStyles = makeStyles((theme) => ({
-  depositContext: {
-    flex: 1,
+const theme = createMuiTheme({
+  overrides: {
+    MuiTooltip: {
+      tooltipPlacementRight: {
+        position: "relative",
+        left: 20,
+      },
+      tooltip: {
+        fontSize: 16,
+      },
+    },
   },
-  formControl: {
-    margin: theme.spacing(1),
-    minWidth: 120,
-    float: "right",
-  },
-  selectEmpty: {
-    marginTop: theme.spacing(2),
-  },
-}));
+});
 
 export function CycleBalance() {
   const [cycles, setCycles] = useState<number | undefined>(undefined);
@@ -30,7 +27,6 @@ export function CycleBalance() {
   const [timeStamp, setTimeStamp] = useState(new Date());
   const [refreshRate, setRefreshRate] = useState(2);
   const history = useHistory();
-  const classes = useStyles();
 
   function refreshBalance() {
     Wallet.balance().then(
@@ -59,7 +55,6 @@ export function CycleBalance() {
   }
 
   const [cycles_string, suffix] = format_cycles_and_suffix(BigInt(cycles));
-  const cyclesTC = format_cycles_trillion(BigInt(cycles));
 
   return (
     <Box mb={2}>
@@ -78,13 +73,17 @@ export function CycleBalance() {
       <Typography component="h3" variant="h4">
         {cycles_string && (
           <>
-            <span style={{ fontSize: "48px", fontWeight: "bold" }}>
-              {cycles_string}
-            </span>
-            <Typography component="span"> {suffix}C</Typography>
-            <Typography component="span" style={{ marginLeft: "10px" }}>
-              ({cyclesTC})
-            </Typography>
+            <MuiThemeProvider theme={theme}>
+              <Tooltip
+                title={cycles.toLocaleString() + " Cycles"}
+                placement="right"
+              >
+                <span style={{ fontSize: "48px", fontWeight: "bold" }}>
+                  {cycles_string}
+                </span>
+              </Tooltip>
+            </MuiThemeProvider>
+            <Typography component="span"> {suffix}C </Typography>
           </>
         )}
       </Typography>

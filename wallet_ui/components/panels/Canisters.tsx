@@ -1,5 +1,4 @@
 import * as React from "react";
-import type { Principal } from "@dfinity/principal";
 import CircularProgress from "@material-ui/core/CircularProgress";
 import Grid from "@material-ui/core/Grid";
 import List from "@material-ui/core/List";
@@ -72,7 +71,7 @@ function Canisters(props: Props) {
           id: canister.id,
           principal,
           timestamp: canister.timestamp,
-          cycles: format_cycles_trillion(kind.CanisterCreated.cycles),
+          cycles: format_cycles_trillion(kind.CanisterCreated.cycles, 2),
           name:
             managedCanisters.find(
               (managed: ManagedCanister) => managed.id == principal
@@ -196,7 +195,12 @@ function Canisters(props: Props) {
                 <h4>{can.name}</h4>
                 <div className="flex row wrap">
                   <p>{can.principal}</p>
-                  <p>{can.cycles}</p>
+                  <span style={{ display: "flex", flexDirection: "row" }}>
+                    <p style={{ fontWeight: "bold", marginRight: "7px" }}>
+                      {can.cycles}
+                    </p>
+                    TC
+                  </span>
                 </div>
               </ListItem>
             );
