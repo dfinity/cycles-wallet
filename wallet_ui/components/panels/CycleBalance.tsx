@@ -2,10 +2,9 @@ import React, { useEffect, useState } from "react";
 import { useHistory } from "react-router";
 import { Wallet } from "../../canister";
 import "../../css/CycleBalance.css";
-import Typography from "@material-ui/core/Typography";
 import { createMuiTheme, MuiThemeProvider } from "@material-ui/core/styles";
-import { format_cycles_and_suffix } from "../../utils/cycles";
-import { Box, Tooltip } from "@material-ui/core";
+import { format_cycles_trillion_fullrange } from "../../utils/cycles";
+import { Box, Tooltip, Typography } from "@material-ui/core";
 
 const theme = createMuiTheme({
   overrides: {
@@ -54,10 +53,10 @@ export function CycleBalance() {
     return <></>;
   }
 
-  const [cycles_string, suffix] = format_cycles_and_suffix(BigInt(cycles));
+  const cycles_string = format_cycles_trillion_fullrange(BigInt(cycles));
 
   return (
-    <Box mb={2}>
+    <Box m={1}>
       <Typography
         component="h2"
         variant="h5"
@@ -70,7 +69,7 @@ export function CycleBalance() {
         Current cycles in this wallet
       </Typography>
 
-      <Typography component="h3" variant="h4">
+      <Typography component="h3" variant="h4" display="inline">
         {cycles_string && (
           <>
             <MuiThemeProvider theme={theme}>
@@ -78,12 +77,18 @@ export function CycleBalance() {
                 title={cycles.toLocaleString() + " Cycles"}
                 placement="right"
               >
-                <span style={{ fontSize: "48px", fontWeight: "bold" }}>
+                <Typography
+                  component="span"
+                  style={{
+                    fontSize: "30px",
+                    fontWeight: "bold",
+                  }}
+                >
                   {cycles_string}
-                </span>
+                </Typography>
               </Tooltip>
             </MuiThemeProvider>
-            <Typography component="span"> {suffix}C </Typography>
+            <Typography component="span"> TC </Typography>
           </>
         )}
       </Typography>
