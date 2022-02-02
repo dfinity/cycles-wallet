@@ -160,7 +160,7 @@ export function CreateCanisterDialog(props: {
         if (canisterName !== "Anonymous Canister") {
           return setName(resultCanisterId.toText(), canisterName);
         }
-        refreshManagedCanisters("create canister w name", canisterName);
+        refreshManagedCanisters();
       },
       (err) => {
         console.error(err);

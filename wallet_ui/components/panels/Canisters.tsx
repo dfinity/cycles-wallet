@@ -39,7 +39,6 @@ function Canisters(props: Props) {
   const [managedCanisters, setManagedCan] = React.useState<ManagedCanister[]>(
     []
   );
-  const instance = React.useRef<number>(0);
 
   function handleWalletCreateDialogOpen() {
     setWalletCreateDialogOpen(true);
@@ -47,8 +46,7 @@ function Canisters(props: Props) {
 
   const { canisters, refreshEvents } = props;
 
-  function refreshManagedCanisters(context: string) {
-    console.log("refreshMC from", context);
+  function refreshManagedCanisters() {
     Wallet.list_managed_canisters().then((result) => {
       const mapped: ManagedCanister[] = result[0]
         .map((c) => {
@@ -91,23 +89,12 @@ function Canisters(props: Props) {
           console.error("Update to Name failed:", e);
         }
       )
-      .then(() => refreshManagedCanisters("from setName"));
+      .then(() => refreshManagedCanisters());
   }
 
   React.useEffect(() => {
-    refreshManagedCanisters("from first useEffect");
+    refreshManagedCanisters();
   }, []);
-
-  instance.current++;
-  console.log(
-    "render Canister",
-    instance.current,
-    "\n canisters",
-    canisters.length,
-    "\n Managed Canisters",
-    managedCanisters.length,
-    managedCanisters[0]
-  );
 
   return (
     <Grid className="canisters">

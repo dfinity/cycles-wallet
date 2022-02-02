@@ -108,16 +108,12 @@ export function Dashboard(props: { open: boolean; onOpenToggle: () => void }) {
   );
   const { open, onOpenToggle } = props;
   const classes = useStyles();
-
   const [events, setEvents] = useState<EventList>();
-  const [cyclesBalance, setCyclesBalance] = useState();
 
   const reduceStart: EventList = {
     canisters: [],
     transactions: [],
   };
-
-  const renderInstance = React.useRef(0);
 
   const refreshEvents = async () => {
     const events = await (
@@ -156,10 +152,6 @@ export function Dashboard(props: { open: boolean; onOpenToggle: () => void }) {
     setWalletCreateDialogOpen(false);
     setErrorDialogContent(maybeErr);
   }
-
-  renderInstance.current++;
-
-  console.log("render Dashboard", renderInstance);
 
   return (
     <>
