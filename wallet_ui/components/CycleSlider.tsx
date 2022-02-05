@@ -3,6 +3,7 @@ import { Box, InputLabel, Typography } from "@material-ui/core";
 import { css } from "@emotion/css";
 import TextField from "@material-ui/core/TextField";
 import NumberFormat from "react-number-format";
+import { xdr } from "../declarations/xdr";
 
 const thumb = css`
   border: transparent;
@@ -143,10 +144,22 @@ interface Props {
 
 function CycleSlider(props: Props) {
   const { balance = 0, cycles, setCycles, loading } = props;
+  const [xdr_permyriad_per_icp, setRate] = React.useState(BigInt(0));
 
-  // TODO: Replace with dynamic value
-  const cyclesSdrRate = (cycles / 1000000000000) * 0.65;
-  const sdrUsdRate = 0.69977;
+  const cyclesToIcp = React.useMemo(() => {
+    if (cycles === 0) {
+      return 0;
+    }
+    if (!xdr_permyriad_per_icp) { return null}
+    const MYRIAD = BigInt(10_000);
+    const TRILLION = 1_000_000_000_000;
+    const selected_cycles_in_trillion = cycles / TRILLION;
+    const xdr_per_icp = Number(xdr_permyriad_per_icp) / Number(MYRIAD);
+    const icpCost = selected_cycles_in_trillion / xdr_per_icp;
+
+    return icpCost;
+  }, [xdr_permyriad_per_icp, cycles])
+
   const error = cycles < 2000000000000;
   const message = error ? "Must be minimum of 2TC" : "";
 
@@ -156,6 +169,13 @@ function CycleSlider(props: Props) {
       setCycles(newValue);
     }
   }
+
+  React.useEffect(() => {
+    xdr.get_icp_xdr_conversion_rate().then(result => {
+      console.log(result.data.xdr_permyriad_per_icp);
+      setRate(result.data.xdr_permyriad_per_icp);
+    })
+  }, []);
 
   return (
     <fieldset
@@ -217,7 +237,8 @@ function CycleSlider(props: Props) {
             />
           </Box>
           <Box pl="12px" mb="12px" title="approximate value in US dollars">
-            ~ ${(cyclesSdrRate * sdrUsdRate).toFixed(2)}
+            {/* ~ old ${(cyclesSdrRate * sdrUsdRate).toFixed(2)} new $ */}
+            {cyclesToIcp} ICP
           </Box>
         </div>
         <div className="input-container">

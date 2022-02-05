@@ -22,8 +22,15 @@
       "candid": "wallet/src/lib.did",
       "type": "custom",
       "wasm": "target/wasm32-unknown-unknown/release/wallet-opt.wasm"
+    },
+    "xdr": {
+      "build": "true",
+      "candid": "wallet_ui/canister/xdr/canister.did",
+      "type": "custom",
+      "wasm": "target/wasm32-unknown-unknown/release/wallet-opt.wasm"
     }
   },
+  "dfx": "0.8.4",
   "networks": {
     "ic": {
       "providers": ["https://ic0.app"],
