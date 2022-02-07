@@ -1,5 +1,4 @@
 import * as React from "react";
-import type { Principal } from "@dfinity/principal";
 import CircularProgress from "@material-ui/core/CircularProgress";
 import Grid from "@material-ui/core/Grid";
 import List from "@material-ui/core/List";
@@ -13,26 +12,89 @@ import { CreateDialog } from "./CreateDialog";
 import PlusIcon from "../icons/PlusIcon";
 import { css } from "@emotion/css";
 import { PlainButton } from "../Buttons";
-import { format_cycles } from "../../utils/cycles";
+import { format_cycles_trillion } from "../../utils/cycles";
+import { Wallet } from "../../canister";
 
 interface Props {
-  canisters?: EventList["canisters"];
-  refreshEvents: Function;
+  canisters: EventList["canisters"];
+  refreshEvents: () => Promise<void>;
 }
+
+type ManagedCanister = {
+  id: string;
+  name: string | undefined;
+};
 
 function Canisters(props: Props) {
   const [
     canisterCreateDialogOpen,
     setCanisterCreateDialogOpen,
   ] = React.useState(false);
+
   const [walletCreateDialogOpen, setWalletCreateDialogOpen] = React.useState(
     false
   );
+
   const [dialogDialogOpen, setDialogDialogOpen] = React.useState(false);
+  const [managedCanisters, setManagedCan] = React.useState<ManagedCanister[]>(
+    []
+  );
+
   function handleWalletCreateDialogOpen() {
     setWalletCreateDialogOpen(true);
   }
+
   const { canisters, refreshEvents } = props;
+
+  function refreshManagedCanisters() {
+    Wallet.list_managed_canisters().then((result) => {
+      const mapped: ManagedCanister[] = result[0]
+        .map((c) => {
+          return {
+            id: c.id.toString(),
+            name: c.name[0],
+          };
+        })
+        .reverse();
+      setManagedCan(mapped);
+    });
+  }
+
+  const mappedCanisters = React.useMemo(() => {
+    return canisters.map((canister) => {
+      const kind = canister["kind"];
+      if ("CanisterCreated" in kind) {
+        const principal = kind.CanisterCreated.canister.toString();
+        return {
+          id: canister.id,
+          principal,
+          timestamp: canister.timestamp,
+          cycles: format_cycles_trillion(kind.CanisterCreated.cycles, 2),
+          name:
+            managedCanisters.find(
+              (managed: ManagedCanister) => managed.id == principal
+            )?.name || "Anonymous Canister",
+        };
+      }
+    });
+  }, [canisters, managedCanisters]);
+
+  function setName(canisterPrincipal: string, inputName: string) {
+    Wallet.update_canister_name(canisterPrincipal, inputName)
+      .then(
+        (r) => {
+          console.log("canister name set:", r);
+        },
+        (e) => {
+          console.error("Update to Name failed:", e);
+        }
+      )
+      .then(() => refreshManagedCanisters());
+  }
+
+  React.useEffect(() => {
+    refreshManagedCanisters();
+  }, []);
 
   return (
     <Grid className="canisters">
@@ -66,7 +128,9 @@ function Canisters(props: Props) {
         open={canisterCreateDialogOpen}
         close={() => setCanisterCreateDialogOpen(false)}
         refreshEvents={refreshEvents}
+        refreshManagedCanisters={refreshManagedCanisters}
         closeDialogDialog={() => setDialogDialogOpen(false)}
+        setName={setName}
       />
 
       <CreateWalletDialog
@@ -109,21 +173,21 @@ function Canisters(props: Props) {
       </p>
       <React.Suspense fallback={<CircularProgress />}>
         <List className="events-list">
-          {canisters?.map((canister) => {
-            if (!("CanisterCreated" in canister.kind)) {
+          {mappedCanisters?.map((can) => {
+            if (!can || Object.entries(can).length === 0) {
               return null;
             }
-            const principal = canister.kind["CanisterCreated"]
-              .canister as Principal;
-            const value = format_cycles(
-              canister.kind["CanisterCreated"].cycles
-            );
             return (
-              <ListItem key={canister.id} className="flex column">
-                <h4>{"Anonymous Canister"}</h4>
+              <ListItem key={can.id} className="flex column">
+                <h4>{can.name}</h4>
                 <div className="flex row wrap">
-                  <p>{principal.toString()}</p>
-                  <p>{value}</p>
+                  <p>{can.principal}</p>
+                  <span style={{ display: "flex", flexDirection: "row" }}>
+                    <p style={{ fontWeight: "bold", marginRight: "7px" }}>
+                      {can.cycles}
+                    </p>
+                    TC
+                  </span>
                 </div>
               </ListItem>
             );

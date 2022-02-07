@@ -147,6 +147,8 @@ function CycleSlider(props: Props) {
   // TODO: Replace with dynamic value
   const cyclesSdrRate = (cycles / 1000000000000) * 0.65;
   const sdrUsdRate = 0.69977;
+  const error = cycles < 2000000000000;
+  const message = error ? "Must be minimum of 2TC" : "";
 
   function handleSlide(e: any) {
     if (balance && e.target?.value) {
@@ -201,10 +203,17 @@ function CycleSlider(props: Props) {
               style={{ margin: "0" }}
               fullWidth
               disabled={loading}
-              onChange={(e) => setCycles(Number(e.target.value))}
+              onChange={(e) => {
+                setCycles(Number(e.target.value));
+                //checkMinimum();
+              }}
               InputProps={{
                 inputComponent: NumberFormatCustom,
               }}
+              helperText={
+                `${(cycles / 1000000000000).toFixed(2)} TC ` + message
+              }
+              error={error}
             />
           </Box>
           <Box pl="12px" mb="12px" title="approximate value in US dollars">

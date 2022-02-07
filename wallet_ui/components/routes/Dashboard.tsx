@@ -19,7 +19,7 @@ import DialogContent from "@material-ui/core/DialogContent";
 import DialogContentText from "@material-ui/core/DialogContentText";
 import DialogActions from "@material-ui/core/DialogActions";
 import Button from "@material-ui/core/Button";
-import { Wallet } from "../../canister";
+import { Wallet, convertIdlEventMap } from "../../canister";
 import type { Event } from "../../canister/wallet/wallet";
 import Canisters from "../panels/Canisters";
 import { PrimaryButton } from "../Buttons";
@@ -108,12 +108,26 @@ export function Dashboard(props: { open: boolean; onOpenToggle: () => void }) {
   );
   const { open, onOpenToggle } = props;
   const classes = useStyles();
-
   const [events, setEvents] = useState<EventList>();
 
+  const reduceStart: EventList = {
+    canisters: [],
+    transactions: [],
+  };
+
   const refreshEvents = async () => {
-    const events = await Wallet.events();
-    let sortedEvents = events
+    const events = await (
+      await Wallet.getGeneratedActor().then((actor) => {
+        return actor.get_events([
+          {
+            to: [],
+            from: [0],
+          },
+        ]);
+      })
+    ).map(convertIdlEventMap);
+
+    const sortedEvents = events
       .sort((a, b) => {
         // Reverse sort on timestamp.
         return Number(b.timestamp) - Number(a.timestamp);
@@ -133,11 +147,6 @@ export function Dashboard(props: { open: boolean; onOpenToggle: () => void }) {
   React.useEffect(() => {
     refreshEvents();
   }, []);
-
-  const reduceStart: EventList = {
-    canisters: [],
-    transactions: [],
-  };
 
   function handleWalletCreateDialogClose(maybeErr?: any) {
     setWalletCreateDialogOpen(false);
@@ -228,12 +237,12 @@ export function Dashboard(props: { open: boolean; onOpenToggle: () => void }) {
             {/* Canisters */}
             <Grid item xs={12}>
               <Paper className={classes.paper}>
-                {
+                {events?.canisters && (
                   <Canisters
-                    canisters={events?.canisters}
+                    canisters={events.canisters}
                     refreshEvents={refreshEvents}
                   />
-                }
+                )}
               </Paper>
             </Grid>
 

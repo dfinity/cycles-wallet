@@ -19,14 +19,18 @@ import {
   ActorSubclass,
   AnonymousIdentity,
 } from "@dfinity/agent";
-import type { _SERVICE, CreateCanisterArgs } from "../declarations/wallet/wallet.did";
+import type {
+  _SERVICE,
+  CreateCanisterArgs,
+  ManagedCanisterInfo,
+} from "../declarations/wallet/wallet.did";
 import factory, { Event } from "./wallet";
 import { authClient } from "../utils/authClient";
-import { Principal } from "@dfinity/principal"
+import { Principal } from "@dfinity/principal";
 import { createActor } from "../declarations/wallet";
 export * from "./wallet";
 
-function convertIdlEventMap(idlEvent: any): Event {
+export function convertIdlEventMap(idlEvent: any): Event {
   return {
     id: idlEvent.id,
     timestamp: idlEvent.timestamp / BigInt(1000000),
@@ -87,7 +91,7 @@ async function getWalletCanister(): Promise<ActorSubclass<_SERVICE>> {
   });
 
   // Fetch root key if not on IC mainnet
-  if(!window.location.host.endsWith("ic0.app")){
+  if (!window.location.host.endsWith("ic0.app")) {
     agent.fetchRootKey();
   }
 
@@ -138,14 +142,14 @@ function precisionToNanoseconds(precision: ChartPrecision) {
 
 export const Wallet = {
   getGeneratedActor: async () => {
-    const identity = await authClient.getIdentity() ?? new AnonymousIdentity();
-    return createActor(await getWalletId() || "", {
+    const identity =
+      (await authClient.getIdentity()) ?? new AnonymousIdentity();
+    return createActor((await getWalletId()) || "", {
       agentOptions: {
-        identity
-      }
+        identity,
+      },
     });
   },
-
   async name(): Promise<string> {
     return (await (await getWalletCanister()).name())[0] || "";
   },
@@ -160,13 +164,15 @@ export const Wallet = {
     walletCanisterCache = null;
   },
   async events(from?: number, to?: number): Promise<Event[]> {
-    return (
-      await (await getWalletCanister()).get_events([
-        {
-          to: to ? [to] : [],
-          from: from ? [from] : [],
-        },
-      ])
+    return await (
+      await this.getGeneratedActor().then((actor) => {
+        return actor.get_events([
+          {
+            to: to ? [to] : [],
+            from: from ? [from] : [],
+          },
+        ]);
+      })
     ).map(convertIdlEventMap);
   },
   async chart(p: ChartPrecision, count?: number): Promise<[Date, number][]> {
@@ -189,17 +195,17 @@ export const Wallet = {
     controllers: Principal[];
     cycles: number;
   }): Promise<Principal> {
-    if(p.controllers.length < 1) {
+    if (p.controllers.length < 1) {
       throw new Error("Canister must be created with at least one controller");
     }
-    const settings: CreateCanisterArgs['settings'] = {
+    const settings: CreateCanisterArgs["settings"] = {
       compute_allocation: [],
       freezing_threshold: [],
       memory_allocation: [],
       // Prefer storing single controller as controllers
       controller: [],
       controllers: [p.controllers],
-    }
+    };
 
     const result = await (await getWalletCanister()).wallet_create_canister({
       settings,
@@ -235,6 +241,25 @@ export const Wallet = {
     await (await getWalletCanister()).wallet_send({
       canister: p.canister,
       amount: BigInt(p.amount),
+    });
+  },
+  async update_canister_name(
+    pr: string,
+    n: string
+  ): Promise<ManagedCanisterInfo[] | undefined> {
+    return this.getGeneratedActor().then((actor) => {
+      return actor.set_short_name(Principal.fromText(pr), [n]);
+    });
+  },
+  async list_managed_canisters(): Promise<[ManagedCanisterInfo[], number]> {
+    const optFrom: [] | [number] = [0];
+    const optTo: [] | [number] = [];
+    const args = {
+      from: optFrom,
+      to: optTo,
+    };
+    return this.getGeneratedActor().then((actor) => {
+      return actor.list_managed_canisters(args);
     });
   },
 };

@@ -16,6 +16,8 @@ import { PlainButton, PrimaryButton } from "../Buttons";
 import CycleSlider from "../CycleSlider";
 import AddIcon from "@material-ui/icons/Add";
 import Cancel from "@material-ui/icons/Cancel";
+import { ClosedCaption, Update } from "@material-ui/icons";
+import type { Event } from "../../canister/wallet/wallet";
 
 const useStyles = makeStyles((theme) => ({
   wrapper: {
@@ -63,9 +65,18 @@ export function CreateCanisterDialog(props: {
   open: boolean;
   close: (err?: any) => void;
   refreshEvents: Function;
+  refreshManagedCanisters: Function;
   closeDialogDialog: Function;
+  setName: Function;
 }) {
-  const { open, close, refreshEvents, closeDialogDialog } = props;
+  const {
+    open,
+    close,
+    refreshEvents,
+    closeDialogDialog,
+    setName,
+    refreshManagedCanisters,
+  } = props;
 
   const [loading, setLoading] = React.useState(false);
   const [controller, setController] = React.useState(walletPrincipal);
@@ -77,7 +88,9 @@ export function CreateCanisterDialog(props: {
     walletPrincipal,
   ]);
   const [count, setCount] = React.useState(0);
+  const [canisterName, setCanisterName] = React.useState("Anonymous Canister");
   const classes = useStyles();
+  const isMinimum = cycles < 2000000000000;
 
   React.useEffect(() => {
     Wallet.balance().then((amount) => {
@@ -108,13 +121,13 @@ export function CreateCanisterDialog(props: {
     try {
       Principal.fromText(ev.target.value);
       setError((p) => {
-        let newErr = p;
+        const newErr = p;
         p[index] = false;
         return newErr;
       });
     } catch {
       setError((p) => {
-        let newErr = p;
+        const newErr = p;
         p[index] = true;
         return newErr;
       });
@@ -135,15 +148,19 @@ export function CreateCanisterDialog(props: {
     const controllersInput = controllers
       .filter((ea) => ea.length !== 0)
       .map((ea) => Principal.fromText(ea));
-    const args = { controllers: controllersInput, cycles };
-    //create with controller regardless?
+    const inputCycles = cycles >= 2000000000000 ? cycles : 2000000000000;
+    const args = { controllers: controllersInput, cycles: inputCycles };
 
     Wallet.create_canister(args).then(
       (resultCanisterId) => {
-        console.log("result canister id is:", resultCanisterId);
         setLoading(false);
         setCanisterId(resultCanisterId);
+
         refreshEvents();
+        if (canisterName !== "Anonymous Canister") {
+          return setName(resultCanisterId.toText(), canisterName);
+        }
+        refreshManagedCanisters();
       },
       (err) => {
         console.error(err);
@@ -156,7 +173,15 @@ export function CreateCanisterDialog(props: {
   function closeCreated() {
     close(undefined);
     setCanisterId(undefined);
+    setCanisterName("Anonymous Canister");
     closeDialogDialog();
+    setCycles(0);
+  }
+
+  function handleNameChange(
+    ev: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+  ) {
+    setCanisterName(ev.target.value);
   }
 
   return (
@@ -171,59 +196,67 @@ export function CreateCanisterDialog(props: {
         {"Create a new Canister"}
       </DialogTitle>
       <DialogContent>
-        <div>
-          <DialogContentText>
-            Create a canister. If the controller field is left empty, the
-            controller will be this wallet canister.
-          </DialogContentText>
-          <FormControl className={classes.formControl}>
-            <div style={{ display: "flex" }}>
-              <TextField
-                label="Controller"
-                value={controllers[0]}
-                style={{ margin: "8px 0 24px" }}
-                fullWidth
-                disabled={loading}
-                onChange={(event) => handleInputChange(0, event)}
-                error={error[0]}
-                autoFocus
-                InputLabelProps={{ shrink: true }}
-              />
-              <Button onClick={increaseInput}>
-                <AddIcon />
-              </Button>
-            </div>
-            {controllers.slice(1).map((field: string, idx: number) => {
-              const index: number = idx + 1;
-              return (
-                <div
-                  key={index}
-                  style={{ display: "flex", marginBottom: "10px" }}
-                >
-                  <TextField
-                    style={{ width: "95%" }}
-                    label="Controller"
-                    value={field}
-                    disabled={loading}
-                    onChange={(event) => handleInputChange(index, event)}
-                    error={error[index]}
-                    autoFocus
-                    InputLabelProps={{ shrink: true }}
-                  />
-                  <Button onClick={() => deleteInput(index)}>
-                    <Cancel />
-                  </Button>
-                </div>
-              );
-            })}
-            <CycleSlider
-              balance={balance}
-              cycles={cycles}
-              setCycles={setCycles}
-              loading={loading}
+        <DialogContentText>
+          Create a canister with option to customize name and add multiple
+          controllers. The controller by default will be this wallet canister.
+        </DialogContentText>
+        <TextField
+          label="Custom Name of Canister"
+          value={canisterName}
+          style={{ margin: "8px 20px 20px 0" }}
+          fullWidth
+          disabled={loading}
+          onChange={handleNameChange}
+          autoFocus
+          variant="filled"
+        />
+        <FormControl className={classes.formControl}>
+          <div style={{ display: "flex" }}>
+            <TextField
+              label="Controller"
+              value={controllers[0]}
+              style={{ margin: "8px 0 24px" }}
+              fullWidth
+              disabled={loading}
+              onChange={(event) => handleInputChange(0, event)}
+              error={error[0]}
+              autoFocus
+              InputLabelProps={{ shrink: true }}
             />
-          </FormControl>
-        </div>
+            <Button onClick={increaseInput}>
+              <AddIcon />
+            </Button>
+          </div>
+          {controllers.slice(1).map((field: string, idx: number) => {
+            const index: number = idx + 1;
+            return (
+              <div
+                key={index}
+                style={{ display: "flex", marginBottom: "10px" }}
+              >
+                <TextField
+                  style={{ width: "95%" }}
+                  label="Controller"
+                  value={field}
+                  disabled={loading}
+                  onChange={(event) => handleInputChange(index, event)}
+                  error={error[index]}
+                  autoFocus
+                  InputLabelProps={{ shrink: true }}
+                />
+                <Button onClick={() => deleteInput(index)}>
+                  <Cancel />
+                </Button>
+              </div>
+            );
+          })}
+          <CycleSlider
+            balance={balance}
+            cycles={cycles}
+            setCycles={setCycles}
+            loading={loading}
+          />
+        </FormControl>
       </DialogContent>
       <DialogActions>
         <PlainButton onClick={handleClose} color="primary" disabled={loading}>
@@ -231,7 +264,7 @@ export function CreateCanisterDialog(props: {
         </PlainButton>
         <div className={classes.wrapper}>
           <PrimaryButton
-            disabled={loading || error.some((e) => e)}
+            disabled={loading || error.some((e) => e) || isMinimum}
             onClick={create}
             color="secondary"
             autoFocus
