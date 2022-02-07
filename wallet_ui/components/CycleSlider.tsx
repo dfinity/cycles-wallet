@@ -155,7 +155,7 @@ function CycleSlider(props: Props) {
     const TRILLION = 1_000_000_000_000;
     const selected_cycles_in_trillion = cycles / TRILLION;
     const xdr_per_icp = Number(xdr_permyriad_per_icp) / Number(MYRIAD);
-    const icpCost = selected_cycles_in_trillion / xdr_per_icp;
+    const icpCost = (selected_cycles_in_trillion / xdr_per_icp).toFixed(5);
 
     return icpCost;
   }, [xdr_permyriad_per_icp, cycles])
@@ -172,7 +172,6 @@ function CycleSlider(props: Props) {
 
   React.useEffect(() => {
     xdr.get_icp_xdr_conversion_rate().then(result => {
-      console.log(result.data.xdr_permyriad_per_icp);
       setRate(result.data.xdr_permyriad_per_icp);
     })
   }, []);
@@ -225,7 +224,6 @@ function CycleSlider(props: Props) {
               disabled={loading}
               onChange={(e) => {
                 setCycles(Number(e.target.value));
-                //checkMinimum();
               }}
               InputProps={{
                 inputComponent: NumberFormatCustom,
@@ -237,7 +235,6 @@ function CycleSlider(props: Props) {
             />
           </Box>
           <Box pl="12px" mb="12px" title="approximate value in US dollars">
-            {/* ~ old ${(cyclesSdrRate * sdrUsdRate).toFixed(2)} new $ */}
             {cyclesToIcp} ICP
           </Box>
         </div>
