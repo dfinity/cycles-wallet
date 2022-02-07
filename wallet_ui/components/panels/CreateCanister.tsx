@@ -100,6 +100,8 @@ export function CreateCanisterDialog(props: {
 
   function handleClose() {
     close();
+    setCanisterName("Anonymous Canister");
+    setCycles(0);
   }
   function increaseInput() {
     setCount(count + 1);
