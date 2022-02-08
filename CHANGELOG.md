@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- Currently pulls live XDR to ICP conversion rate via declaration sourced from `nns-dapp/frontend/ts/src/canisters/cyclesMinting/canister.did`. This in turn queries the cycles minting canister on mainnet.
+- Now queries XDR to ICP conversion rate from Cycles Minting Canister (CMC). The interface can be found at `nns-dapp/frontend/ts/src/canisters/cyclesMinting/canister.did`.
 
   - The CycleSlider UI feature shows this conversion when allocating cycles to canisters.
 
