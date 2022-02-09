@@ -79,7 +79,6 @@ export function CreateCanisterDialog(props: {
   } = props;
 
   const [loading, setLoading] = React.useState(false);
-  const [controller, setController] = React.useState(walletPrincipal);
   const [cycles, setCycles] = React.useState(0);
   const [balance, setBalance] = React.useState(0);
   const [canisterId, setCanisterId] = React.useState<Principal | undefined>();
@@ -100,6 +99,9 @@ export function CreateCanisterDialog(props: {
 
   function handleClose() {
     close();
+    setCanisterName("Anonymous Canister");
+    setControllers([walletPrincipal])
+    setCycles(0);
   }
   function increaseInput() {
     setCount(count + 1);

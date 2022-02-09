@@ -7,14 +7,14 @@ export { idlFactory } from './wallet.did.js';
 export const canisterId = process.env.WALLET_CANISTER_ID;
 
 /**
- * 
+ *
  * @param {string | import("@dfinity/principal").Principal} canisterId Canister ID of Agent
  * @param {{agentOptions?: import("@dfinity/agent").HttpAgentOptions; actorOptions?: import("@dfinity/agent").ActorConfig}} [options]
  * @return {import("@dfinity/agent").ActorSubclass<import("./wallet.did.js")._SERVICE>}
  */
  export const createActor = (canisterId, options) => {
   const agent = new HttpAgent({ ...options?.agentOptions });
-  
+
   // Fetch root key for certificate validation during development
   if(process.env.NODE_ENV !== "production") {
     agent.fetchRootKey().catch(err=>{
@@ -30,9 +30,9 @@ export const canisterId = process.env.WALLET_CANISTER_ID;
     ...options?.actorOptions,
   });
 };
-  
+
 /**
  * A ready-to-use agent for the wallet canister
  * @type {import("@dfinity/agent").ActorSubclass<import("./wallet.did.js")._SERVICE>}
  */
- export const wallet = createActor(canisterId);
+export const wallet = createActor(canisterId);
