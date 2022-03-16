@@ -1,5 +1,5 @@
+use candid::{CandidType, Func, Principal};
 use ic_cdk::api::{data_certificate, set_certified_data, trap};
-use ic_cdk::export::candid::{CandidType, Func, Principal};
 use ic_cdk::*;
 use ic_cdk_macros::*;
 use ic_certified_map::{AsHashTree, Hash, RbTree};
