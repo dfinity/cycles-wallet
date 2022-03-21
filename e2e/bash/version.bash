@@ -23,6 +23,6 @@ teardown() {
 
 @test "reports the wallet API version" {
     WALLET_ID=$(dfx identity get-wallet)
-    assert_command dfx canister --no-wallet call "${WALLET_ID}" wallet_api_version "()"
+    assert_command dfx canister call "${WALLET_ID}" wallet_api_version "()"
     assert_eq '("0.2.0")'
 }
