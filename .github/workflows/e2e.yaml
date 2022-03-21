@@ -13,7 +13,7 @@ jobs:
         os: [ macos-latest, ubuntu-latest ]
         rust: [ '1.52.1' ]
         # only dfx >= 0.8.3 lets us query multiple controllers
-        dfx: [ '0.8.4' ]
+        dfx: [ '0.9.2' ]
     env:
       DFX_VERSION: ${{ matrix.dfx }}
 
@@ -50,5 +50,6 @@ jobs:
       - name: Run e2e tests vs dfx ${{ matrix.dfx }}
         run: |
           export DFX_WALLET_WASM=$GITHUB_WORKSPACE/target/wasm32-unknown-unknown/release/wallet-opt.wasm
+          export assets=$GITHUB_WORKSPACE/e2e/assets
           bats e2e/bash/*.bash
 
