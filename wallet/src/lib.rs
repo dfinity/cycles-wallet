@@ -48,7 +48,7 @@ fn init() {
 }
 
 /// Until the stable storage works better in the ic-cdk, this does the job just fine.
-#[derive(CandidType, Deserialize, Default)]
+#[derive(CandidType, Deserialize)]
 struct StableStorage {
     address_book: Vec<AddressEntry>,
     events: EventBuffer,
@@ -56,6 +56,19 @@ struct StableStorage {
     chart: Vec<ChartTick>,
     wasm_module: Option<serde_bytes::ByteBuf>,
     managed: Option<ManagedList>,
+}
+
+impl Default for StableStorage {
+    fn default() -> Self {
+        Self {
+            address_book: vec![],
+            chart: vec![],
+            events: Default::default(),
+            name: None,
+            wasm_module: None,
+            managed: Some(Default::default()),
+        }
+    }
 }
 
 const VERSION: u32 = 2;

@@ -21,7 +21,7 @@ teardown() {
     rm -rf "$DFX_CONFIG_ROOT"
 }
 
-@test "upgrading v0->v1 correctly migrates events" {
+@test "upgrading v0->current correctly migrates events" {
     (
         export DFX_WALLET_WASM=$assets/wallet-v0.wasm
         WALLET=$(dfx identity get-wallet)
@@ -49,4 +49,33 @@ teardown() {
     assert_command dfx canister call "$WALLET" get_managed_canister_events "(record { canister = principal \"$CANISTER\" })"
     # Created = 3736853960; cycles = 2190693645
     assert_match "3_736_853_960 = record \\{[[:space:]]+2_190_693_645 = 1_000_000_000 : nat64"
+}
+
+@test "upgrading v1->current correctly migrates events" {
+    (
+        export DFX_WALLET_WASM=$assets/wallet-v1.wasm
+        WALLET=$(dfx identity get-wallet)
+        assert_command dfx deploy --with-cycles 1000000000 --wallet "$WALLET" e2e_project
+        CANISTER=$(dfx canister id e2e_project)
+        assert_command_fail dfx canister call "$WALLET" get_events128 '(null)'
+        assert_command dfx canister call "$WALLET" get_events '(null)'
+        # CanisterCreated = 1205528161; cycles = 2190693645; canister = 2631180839
+        assert_match "1_205_528_161 = record \\{[[:space:]]+2_190_693_645 = 1_000_000_000 : nat64;[[:space:]]+2_631_180_839 = principal \"$CANISTER\""
+    )
+    # ^ reset DFX_WALLET_WASM
+    assert_command [ -n "$DFX_WALLET_WASM" ]
+    assert_command dfx canister info "$(dfx identity get-wallet)"
+    assert_match "Module hash: 0x([0-9a-f]+)"
+    HASH=${BASH_REMATCH[1]}
+    assert_command [ -n "$HASH" ]
+    assert_command dfx wallet upgrade
+    assert_command dfx canister info "$(dfx identity get-wallet)"
+    assert_not_match "$HASH"
+    WALLET=$(dfx identity get-wallet)
+    CANISTER=$(dfx canister id e2e_project)
+    assert_command dfx canister call "$WALLET" get_events '(null)'
+    # CanisterCreated = 1205528161; cycles = 2190693645; canister = 2631180839
+    assert_match "1_205_528_161 = record \\{[[:space:]]+2_190_693_645 = 1_000_000_000 : nat64;[[:space:]]+2_631_180_839 = principal \"$CANISTER\""
+    assert_command dfx canister call "$WALLET" get_events128 '(null)'
+    assert_match "1_205_528_161 = record \\{[[:space:]]+2_190_693_645 = 1_000_000_000 : nat;[[:space:]]+2_631_180_839 = principal \"$CANISTER\""
 }
