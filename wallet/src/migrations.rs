@@ -15,7 +15,7 @@ use ManagedList as V2ManagedList;
 use StableStorage as V2StableStorage;
 
 pub(crate) fn migrate_from(version: u32) -> Option<StableStorage> {
-    let v2 = if version == 2 {
+    let v2 = if version != 2 {
         let (mut v1,) = storage::stable_restore::<(V1StableStorage,)>().ok()?;
         // from before versioning
         if v1.managed.is_none() {
