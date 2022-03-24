@@ -334,10 +334,24 @@ mod wallet {
         }
     }
 
+    #[derive(CandidType)]
+    struct DepositCyclesArgs {
+        canister_id: Principal,
+    }
+
     /// Send cycles to another canister.
     #[update(guard = "is_custodian_or_controller", name = "wallet_send")]
     async fn send(args: SendCyclesArgs) -> Result<(), String> {
-        match api::call::call_with_payment(args.canister, "wallet_receive", (), args.amount).await {
+        match api::call::call_with_payment(
+            Principal::management_canister(),
+            "deposit_cycles",
+            (DepositCyclesArgs {
+                canister_id: args.canister,
+            },),
+            args.amount,
+        )
+        .await
+        {
             Ok(x) => {
                 let refund = api::call::msg_cycles_refunded();
                 events::record(events::EventKind::CyclesSent {
