@@ -168,8 +168,10 @@ struct Token {}
 
 #[query]
 fn http_request(req: HttpRequest) -> HttpResponse {
-    let parts: Vec<&str> = req.url.split('?').collect();
-    let asset = parts[0];
+    let mut asset = req.url.split('?').next().unwrap_or("/");
+    if asset == "/authorize" {
+        asset = "/index.html";
+    }
     let assets = storage::get::<Assets>();
     let certificate_header = make_asset_certificate_header(&assets.hashes, asset);
     match assets.contents.get(asset) {
