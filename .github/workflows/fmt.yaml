@@ -39,5 +39,5 @@ jobs:
     if: ${{ always() }}
     steps:
     - name: Check fmt result
-      if: ${{ needs.fmt.result != 'succes' }}
+      if: ${{ needs.fmt.result != 'success' }}
       run: exit 1
