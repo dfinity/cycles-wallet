@@ -39,3 +39,13 @@ jobs:
 
       - name: Demo
         run: sh demo.sh
+
+  aggregate:
+    name: demo:required
+    runs-on: ubuntu-latest
+    if: ${{ always() }}
+    needs: demo
+    steps:
+    - name: Check demo result
+      if: ${{ needs.demo.result != 'success' }}
+      run: exit 1
