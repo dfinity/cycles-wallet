@@ -16,6 +16,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Managed canisters are now tracked, and the events that pertain to them are tracked under them.
   - Added `list_managed_canisters`, `get_managed_canister_events`, and `set_short_name` functions.
 
+- Each function that deals with a 64-bit cycle count has been paired with a 128-bit equivalent.
+
 ### Changed
 
 - `wallet_receive` now takes an optional memo parameter, for recording information about a particular transaction.
