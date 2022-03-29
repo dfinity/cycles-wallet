@@ -5,6 +5,7 @@
 #   Charlie is a custodian of Alice (but Alice is the owner of her own wallet).
 
 set -e
+trap 'dfx stop' EXIT
 
 npm install
 
@@ -14,9 +15,9 @@ dfx identity new id_alice || true
 dfx identity new id_bob || true
 dfx identity new id_charlie || true
 
-dfx --identity id_alice canister create alice --with-cycles=5000000000000
-dfx --identity id_bob canister create bob --with-cycles=2000000000000
-dfx --identity default canister create wallet --with-cycles=3000000000000
+dfx --identity id_alice canister create --no-wallet alice --with-cycles=5000000000000
+dfx --identity id_bob canister create --no-wallet bob --with-cycles=2000000000000
+dfx --identity default canister create --no-wallet wallet --with-cycles=3000000000000
 
 alice_wallet="$(dfx canister id alice)"
 bob_wallet="$(dfx canister id bob)"
@@ -77,5 +78,3 @@ eval dfx --identity id_charlie canister call alice wallet_send "'(record { canis
 echo "Alice = $(dfx --identity id_alice canister call alice wallet_balance)"
 echo "Alice^ = $(dfx --identity id_charlie canister call alice wallet_balance)"
 echo "Bob = $(dfx --identity id_bob canister call bob wallet_balance)"
-
-dfx stop
