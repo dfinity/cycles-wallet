@@ -1,11 +1,12 @@
 use crate::address::Role;
+use ic_cdk::api;
 use ic_cdk::export::candid::types::{Compound, Serializer, Type};
 use ic_cdk::export::candid::CandidType;
 use ic_cdk::export::Principal;
-use ic_cdk::{api, storage};
 use indexmap::IndexMap;
 use serde::de::{SeqAccess, Visitor};
 use serde::{Deserialize, Deserializer};
+use std::cell::RefCell;
 use std::cmp::min;
 use std::fmt::{self, Formatter};
 
@@ -15,7 +16,12 @@ pub struct EventBuffer {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Default)]
-pub struct ManagedList(IndexMap<Principal, ManagedCanister>);
+pub struct ManagedList(pub IndexMap<Principal, ManagedCanister>);
+
+thread_local! {
+    pub static EVENT_BUFFER: RefCell<EventBuffer> = Default::default();
+    pub static MANAGED_LIST: RefCell<ManagedList> = Default::default();
+}
 
 impl ManagedList {
     pub fn push(&mut self, canister: Principal, event: ManagedCanisterEventKind) {
@@ -93,11 +99,6 @@ pub enum ManagedCanisterEventKind {
 }
 
 impl EventBuffer {
-    #[inline]
-    pub fn clear(&mut self) {
-        self.events.clear();
-    }
-
     #[inline]
     pub fn push(&mut self, event: Event) {
         self.events.push(event);
@@ -186,45 +187,51 @@ pub struct Event {
 
 /// Record an event.
 pub fn record(kind: EventKind) {
-    let buffer = storage::get_mut::<EventBuffer>();
     if let Some((to, kind)) = kind.to_managed() {
-        let managed = storage::get_mut::<ManagedList>();
-        managed.push(to, kind);
+        MANAGED_LIST.with(|managed| managed.borrow_mut().push(to, kind));
     }
-    buffer.push(Event {
-        id: buffer.len(),
-        timestamp: api::time() as u64,
-        kind,
+    EVENT_BUFFER.with(|buffer| {
+        let mut buffer = buffer.borrow_mut();
+        let len = buffer.len();
+        buffer.push(Event {
+            id: len,
+            timestamp: api::time() as u64,
+            kind,
+        });
     });
 }
 
-pub fn get_events(from: Option<u32>, to: Option<u32>) -> &'static [Event] {
-    let buffer = storage::get::<EventBuffer>();
+pub fn get_events(from: Option<u32>, to: Option<u32>) -> Vec<Event> {
+    EVENT_BUFFER.with(|buffer| {
+        let buffer = buffer.borrow();
 
-    let from = from.unwrap_or_else(|| {
-        if buffer.len() <= 20 {
-            0
-        } else {
-            buffer.len() - 20
-        }
-    }) as usize;
-    let to = min(buffer.len(), to.unwrap_or(u32::MAX)) as usize;
+        let from = from.unwrap_or_else(|| {
+            if buffer.len() <= 20 {
+                0
+            } else {
+                buffer.len() - 20
+            }
+        }) as usize;
+        let to = min(buffer.len(), to.unwrap_or(u32::MAX)) as usize;
 
-    &buffer.as_slice()[from..to]
+        buffer.as_slice()[from..to].to_owned()
+    })
 }
 
 /// Return info about canisters managed by this wallet, as well as the total number of managed canisters.
 pub fn get_managed_canisters(
     from: Option<u32>,
     to: Option<u32>,
-) -> (Vec<&'static ManagedCanisterInfo>, u32) {
-    let list = storage::get::<ManagedList>();
-    let from = from.unwrap_or(0) as usize;
-    let to = min(list.0.len(), to.unwrap_or(u32::MAX) as usize);
-    (
-        (from..to).map(|n| &list.0[n].info).collect(),
-        list.0.len() as u32,
-    )
+) -> (Vec<ManagedCanisterInfo>, u32) {
+    MANAGED_LIST.with(|list| {
+        let list = list.borrow();
+        let from = from.unwrap_or(0) as usize;
+        let to = min(list.0.len(), to.unwrap_or(u32::MAX) as usize);
+        (
+            (from..to).map(|n| list.0[n].info.clone()).collect(),
+            list.0.len() as u32,
+        )
+    })
 }
 
 /// Get a list of all events related to a specific managed canister. Returns `None` if the canister is unknown.
@@ -235,23 +242,29 @@ pub fn get_managed_canister_events(
     from: Option<u32>,
     to: Option<u32>,
 ) -> Option<Vec<ManagedCanisterEvent>> {
-    let buffer = &storage::get::<ManagedList>().0.get(canister)?.events;
-    let from = from.unwrap_or_else(|| {
-        if buffer.len() <= 20 {
-            0
-        } else {
-            buffer.len() as u32 - 20
-        }
-    }) as usize;
-    let to = min(buffer.len() as u32, to.unwrap_or(u32::MAX)) as usize;
-    Some(buffer[from..to].to_owned())
+    MANAGED_LIST.with(|buffer| {
+        let buffer = buffer.borrow();
+        let buffer = &buffer.0.get(canister)?.events;
+        let from = from.unwrap_or_else(|| {
+            if buffer.len() <= 20 {
+                0
+            } else {
+                buffer.len() as u32 - 20
+            }
+        }) as usize;
+        let to = min(buffer.len() as u32, to.unwrap_or(u32::MAX)) as usize;
+        Some(buffer[from..to].to_owned())
+    })
 }
 
 /// Changes the recorded short name of a canister. Returns the updated info, or `None` if this canister isn't known.
 pub fn set_short_name(canister: &Principal, name: Option<String>) -> Option<ManagedCanisterInfo> {
-    let canister = storage::get_mut::<ManagedList>().0.get_mut(canister)?;
-    canister.info.name = name;
-    Some(canister.info.clone())
+    MANAGED_LIST.with(|list| {
+        let mut list = list.borrow_mut();
+        let canister = list.0.get_mut(canister)?;
+        canister.info.name = name;
+        Some(canister.info.clone())
+    })
 }
 
 /// Migration functions to run on `#[post_upgrade]`.
@@ -261,13 +274,16 @@ pub mod migrations {
     ///
     /// Call during `#[post_upgrade]`, after the event list is deserialized, if the canister list can't be deserialized.
     pub fn _1_create_managed_canister_list() {
-        let managed = storage::get_mut::<ManagedList>();
-        let events = storage::get_mut::<EventBuffer>();
-        for event in events.as_slice() {
-            if let Some((to, kind)) = event.kind.to_managed() {
-                managed.push_with_timestamp(to, kind, event.timestamp);
-            }
-        }
+        MANAGED_LIST.with(|managed| {
+            EVENT_BUFFER.with(|events| {
+                let mut managed = managed.borrow_mut();
+                for event in events.borrow().as_slice() {
+                    if let Some((to, kind)) = event.kind.to_managed() {
+                        managed.push_with_timestamp(to, kind, event.timestamp);
+                    }
+                }
+            })
+        });
     }
 }
 

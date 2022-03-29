@@ -6,14 +6,17 @@ use ic_certified_map::{AsHashTree, Hash, RbTree};
 use serde::{Deserialize, Serialize};
 use serde_bytes::{ByteBuf, Bytes};
 use std::borrow::Cow;
+use std::cell::RefCell;
 use std::collections::HashMap;
+use std::mem;
+use std::thread::LocalKey;
 
 mod address;
 mod events;
 
-use crate::address::{AddressBook, AddressEntry, Role};
-use crate::events::EventBuffer;
-use events::{record, Event, EventKind, ManagedList};
+use crate::address::{AddressEntry, Role, ADDRESS_BOOK};
+use crate::events::{EventBuffer, EVENT_BUFFER};
+use events::{migrations, record, Event, EventKind, ManagedList, MANAGED_LIST};
 
 const WALLET_API_VERSION: &str = "0.2.0";
 
@@ -29,6 +32,11 @@ impl Default for WalletWASMBytes {
 #[derive(Default)]
 struct WalletName(pub(crate) Option<String>);
 
+thread_local! {
+    static WALLET_NAME: RefCell<WalletName> = Default::default();
+    static WALLET_WASM_BYTES: RefCell<WalletWASMBytes> = Default::default();
+}
+
 /// Initialize this canister.
 #[init]
 fn init() {
@@ -37,7 +45,7 @@ fn init() {
 }
 
 /// Until the stable storage works better in the ic-cdk, this does the job just fine.
-#[derive(CandidType, Deserialize)]
+#[derive(CandidType, Deserialize, Default)]
 struct StableStorage {
     address_book: Vec<AddressEntry>,
     events: EventBuffer,
@@ -49,14 +57,17 @@ struct StableStorage {
 
 #[pre_upgrade]
 fn pre_upgrade() {
-    let address_book = storage::get::<AddressBook>();
+    fn local_take<T: Default>(key: &'static LocalKey<RefCell<T>>) -> T {
+        key.with(|cell| mem::take(&mut *cell.borrow_mut()))
+    }
+    let address_book = local_take(&ADDRESS_BOOK);
     let stable = StableStorage {
         address_book: address_book.iter().cloned().collect(),
-        events: storage::get::<EventBuffer>().clone(),
-        name: storage::get::<WalletName>().0.clone(),
-        chart: storage::get::<Vec<ChartTick>>().to_vec(),
-        wasm_module: storage::get::<WalletWASMBytes>().0.clone(),
-        managed: Some(storage::get::<ManagedList>().clone()),
+        events: local_take(&EVENT_BUFFER),
+        name: local_take(&WALLET_NAME).0,
+        chart: local_take(&CHART_TICKS),
+        wasm_module: local_take(&WALLET_WASM_BYTES).0,
+        managed: Some(local_take(&MANAGED_LIST)),
     };
     match storage::stable_save((stable,)) {
         Ok(_) => (),
@@ -73,31 +84,35 @@ fn pre_upgrade() {
 fn post_upgrade() {
     init();
     if let Ok((storage,)) = storage::stable_restore::<(StableStorage,)>() {
-        let event_buffer = storage::get_mut::<events::EventBuffer>();
-        let address_book = storage::get_mut::<AddressBook>();
+        let StableStorage {
+            address_book,
+            events,
+            name,
+            chart,
+            wasm_module,
+            managed,
+        } = storage;
+        EVENT_BUFFER.with(|events0| *events0.borrow_mut() = events);
+        ADDRESS_BOOK.with(|address_book0| {
+            let mut address_book0 = address_book0.borrow_mut();
+            for entry in address_book.into_iter() {
+                address_book0.insert(entry)
+            }
+        });
 
-        event_buffer.clear();
-        event_buffer.clone_from(&storage.events);
+        WALLET_NAME.with(|name0| name0.borrow_mut().0 = name);
 
-        for entry in storage.address_book.into_iter() {
-            address_book.insert(entry)
-        }
+        WALLET_WASM_BYTES.with(|bytes0| bytes0.borrow_mut().0 = wasm_module);
 
-        storage::get_mut::<WalletName>().0 = storage.name;
-
-        storage::get_mut::<WalletWASMBytes>().0 = storage.wasm_module;
-
-        let chart = storage::get_mut::<Vec<ChartTick>>();
-        chart.clear();
-        chart.clone_from(&storage.chart);
-        if let Some(managed) = storage.managed {
-            *storage::get_mut::<ManagedList>() = managed;
+        CHART_TICKS.with(|chart0| *chart0.borrow_mut() = chart);
+        if let Some(managed) = managed {
+            MANAGED_LIST.with(|list0| *list0.borrow_mut() = managed);
         } else {
-            events::migrations::_1_create_managed_canister_list();
+            migrations::_1_create_managed_canister_list();
         }
     }
 }
-
+/*  */
 /***************************************************************************************************
  * Wallet API Version
  **************************************************************************************************/
@@ -111,12 +126,12 @@ fn wallet_api_version() -> String {
  **************************************************************************************************/
 #[query(guard = "is_custodian_or_controller")]
 fn name() -> Option<String> {
-    storage::get::<WalletName>().0.clone()
+    WALLET_NAME.with(|name| name.borrow().0.clone())
 }
 
 #[update(guard = "is_controller")]
 fn set_name(name: String) {
-    storage::get_mut::<WalletName>().0 = Some(name);
+    WALLET_NAME.with(|wallet_name| wallet_name.borrow_mut().0 = Some(name));
     update_chart();
 }
 
@@ -128,6 +143,10 @@ include!(concat!(env!("OUT_DIR"), "/assets.rs"));
 struct Assets {
     contents: HashMap<&'static str, (Vec<HeaderField>, &'static [u8])>,
     hashes: AssetHashes,
+}
+
+thread_local! {
+    static ASSETS: RefCell<Assets> = Default::default();
 }
 
 impl Default for Assets {
@@ -172,27 +191,29 @@ fn http_request(req: HttpRequest) -> HttpResponse {
     if asset == "/authorize" {
         asset = "/index.html";
     }
-    let assets = storage::get::<Assets>();
-    let certificate_header = make_asset_certificate_header(&assets.hashes, asset);
-    match assets.contents.get(asset) {
-        Some((headers, value)) => {
-            let mut headers = headers.clone();
-            headers.push(certificate_header);
+    ASSETS.with(|assets| {
+        let assets = assets.borrow();
+        let certificate_header = make_asset_certificate_header(&assets.hashes, asset);
+        match assets.contents.get(asset) {
+            Some((headers, value)) => {
+                let mut headers = headers.clone();
+                headers.push(certificate_header);
 
-            HttpResponse {
-                status_code: 200,
-                headers,
-                body: Cow::Borrowed(Bytes::new(value)),
-                streaming_strategy: None,
+                HttpResponse {
+                    status_code: 200,
+                    headers,
+                    body: Cow::Borrowed(Bytes::new(value)),
+                    streaming_strategy: None,
+                }
             }
+            None => HttpResponse {
+                status_code: 404,
+                headers: vec![certificate_header],
+                body: Cow::Owned(ByteBuf::from(format!("Asset {} not found.", asset))),
+                streaming_strategy: None,
+            },
         }
-        None => HttpResponse {
-            status_code: 404,
-            headers: vec![certificate_header],
-            body: Cow::Owned(ByteBuf::from(format!("Asset {} not found.", asset))),
-            streaming_strategy: None,
-        },
-    }
+    })
 }
 
 fn make_asset_certificate_header(asset_hashes: &AssetHashes, asset_name: &str) -> (String, String) {
@@ -215,17 +236,20 @@ fn make_asset_certificate_header(asset_hashes: &AssetHashes, asset_name: &str) -
 }
 
 fn init_assets() {
-    let assets = storage::get_mut::<Assets>();
-    for_each_asset(|name, headers, contents, hash| {
-        if name == "/index.html" {
-            assets.hashes.insert("/", *hash);
-            assets.contents.insert("/", (headers.clone(), contents));
-        }
-        assets.hashes.insert(name, *hash);
-        assets.contents.insert(name, (headers, contents));
+    ASSETS.with(|assets| {
+        let mut assets = assets.borrow_mut();
+        for_each_asset(|name, headers, contents, hash| {
+            if name == "/index.html" {
+                assets.hashes.insert("/", *hash);
+                assets.contents.insert("/", (headers.clone(), contents));
+            }
+            assets.hashes.insert(name, *hash);
+            assets.contents.insert(name, (headers, contents));
+        });
+        let full_tree_hash =
+            ic_certified_map::labeled_hash(b"http_assets", &assets.hashes.root_hash());
+        set_certified_data(&full_tree_hash);
     });
-    let full_tree_hash = ic_certified_map::labeled_hash(b"http_assets", &assets.hashes.root_hash());
-    set_certified_data(&full_tree_hash);
 }
 
 /***************************************************************************************************
@@ -234,11 +258,8 @@ fn init_assets() {
 
 /// Get the controller of this canister.
 #[query(guard = "is_custodian_or_controller")]
-fn get_controllers() -> Vec<&'static Principal> {
-    storage::get_mut::<AddressBook>()
-        .controllers()
-        .map(|e| &e.id)
-        .collect()
+fn get_controllers() -> Vec<Principal> {
+    ADDRESS_BOOK.with(|book| book.borrow().controllers().map(|e| e.id).collect())
 }
 
 /// Set the controller (transfer of ownership).
@@ -251,24 +272,25 @@ fn add_controller(controller: Principal) {
 /// Remove a controller. This is equivalent to moving the role to a regular user.
 #[update(guard = "is_controller")]
 fn remove_controller(controller: Principal) -> Result<(), String> {
-    if !storage::get::<AddressBook>().is_controller(&controller) {
-        return Err(format!(
-            "Cannot remove {} because it is not a controller.",
-            controller.to_text()
-        ));
-    }
-    if storage::get::<AddressBook>().controllers().count() > 1 {
-        let book = storage::get_mut::<AddressBook>();
-
-        if let Some(mut entry) = book.take(&controller) {
-            entry.role = Role::Contact;
-            book.insert(entry);
+    ADDRESS_BOOK.with(|book| {
+        let mut book = book.borrow_mut();
+        if !book.is_controller(&controller) {
+            return Err(format!(
+                "Cannot remove {} because it is not a controller.",
+                controller.to_text()
+            ));
         }
-        update_chart();
-        Ok(())
-    } else {
-        Err("The wallet must have at least one controller.".to_string())
-    }
+        if book.controllers().count() > 1 {
+            if let Some(mut entry) = book.take(&controller) {
+                entry.role = Role::Contact;
+                book.insert(entry);
+            }
+            update_chart();
+            Ok(())
+        } else {
+            Err("The wallet must have at least one controller.".to_string())
+        }
+    })
 }
 
 /***************************************************************************************************
@@ -277,11 +299,8 @@ fn remove_controller(controller: Principal) -> Result<(), String> {
 
 /// Get the custodians of this canister.
 #[query(guard = "is_custodian_or_controller")]
-fn get_custodians() -> Vec<&'static Principal> {
-    storage::get::<AddressBook>()
-        .custodians()
-        .map(|e| &e.id)
-        .collect()
+fn get_custodians() -> Vec<Principal> {
+    ADDRESS_BOOK.with(|book| book.borrow().custodians().map(|e| e.id).collect())
 }
 
 /// Authorize a custodian.
@@ -294,7 +313,7 @@ fn authorize(custodian: Principal) {
 /// Deauthorize a custodian.
 #[update(guard = "is_controller")]
 fn deauthorize(custodian: Principal) -> Result<(), String> {
-    if storage::get::<AddressBook>().is_custodian(&custodian) {
+    if ADDRESS_BOOK.with(|book| book.borrow().is_custodian(&custodian)) {
         remove_address(custodian)?;
         update_chart();
         Ok(())
@@ -307,10 +326,10 @@ fn deauthorize(custodian: Principal) -> Result<(), String> {
 }
 
 mod wallet {
-    use crate::{events, is_custodian_or_controller};
+    use crate::{events, is_custodian_or_controller, WALLET_WASM_BYTES};
     use ic_cdk::export::candid::{CandidType, Nat};
     use ic_cdk::export::Principal;
-    use ic_cdk::{api, caller, id, storage};
+    use ic_cdk::{api, caller, id};
     use ic_cdk_macros::*;
     use serde::Deserialize;
 
@@ -614,14 +633,12 @@ mod wallet {
 
     #[update(guard = "is_custodian_or_controller", name = "wallet_create_wallet")]
     async fn create_wallet(args: CreateCanisterArgs) -> Result<CreateResult, String> {
-        let wallet_bytes = storage::get::<super::WalletWASMBytes>();
-        let wasm_module = match &wallet_bytes.0 {
+        let wasm_module = WALLET_WASM_BYTES.with(|wallet_bytes| match &wallet_bytes.borrow().0 {
+            Some(o) => o.clone().into_vec(),
             None => {
                 ic_cdk::trap("No wasm module stored.");
             }
-            Some(o) => o,
-        };
-
+        });
         let args_without_controller = CreateCanisterArgs {
             cycles: args.cycles,
             settings: CanisterSettings {
@@ -633,7 +650,7 @@ mod wallet {
 
         let create_result = create_canister_call(args_without_controller).await?;
 
-        install_wallet(&create_result.canister_id, wasm_module.clone().into_vec()).await?;
+        install_wallet(&create_result.canister_id, wasm_module).await?;
 
         // Set controller
         if args.settings.controller.is_some() || args.settings.controllers.is_some() {
@@ -658,8 +675,9 @@ mod wallet {
 
     #[update(guard = "is_controller", name = "wallet_store_wallet_wasm")]
     async fn store_wallet_wasm(args: WalletStoreWASMArgs) {
-        let wallet_bytes = storage::get_mut::<super::WalletWASMBytes>();
-        wallet_bytes.0 = Some(serde_bytes::ByteBuf::from(args.wasm_module));
+        WALLET_WASM_BYTES.with(|wallet_bytes| {
+            wallet_bytes.borrow_mut().0 = Some(serde_bytes::ByteBuf::from(args.wasm_module))
+        });
         super::update_chart();
     }
 
@@ -693,7 +711,7 @@ mod wallet {
             return Err("Attempted to call forward on self. This is not allowed. Call this method via a different custodian.".to_string());
         }
 
-        match api::call::call_raw(args.canister, &args.method_name, args.args, args.cycles).await {
+        match api::call::call_raw(args.canister, &args.method_name, &args.args, args.cycles).await {
             Ok(x) => {
                 events::record(events::EventKind::CanisterCalled {
                     canister: args.canister,
@@ -718,7 +736,7 @@ mod wallet {
 // Address book
 #[update(guard = "is_controller")]
 fn add_address(address: AddressEntry) {
-    storage::get_mut::<AddressBook>().insert(address.clone());
+    ADDRESS_BOOK.with(|book| book.borrow_mut().insert(address.clone()));
     record(EventKind::AddressAdded {
         id: address.id,
         name: address.name,
@@ -728,24 +746,24 @@ fn add_address(address: AddressEntry) {
 }
 
 #[query(guard = "is_custodian_or_controller")]
-fn list_addresses() -> Vec<&'static AddressEntry> {
-    storage::get::<AddressBook>().iter().collect()
+fn list_addresses() -> Vec<AddressEntry> {
+    ADDRESS_BOOK.with(|book| book.borrow().iter().cloned().collect())
 }
 
 #[update(guard = "is_controller")]
 fn remove_address(address: Principal) -> Result<(), String> {
-    if storage::get::<AddressBook>().is_controller(&address)
-        && storage::get::<AddressBook>().controllers().count() == 1
-    {
-        Err("The wallet must have at least one controller.".to_string())
-    } else {
-        storage::get_mut::<AddressBook>().remove(&address);
-        record(EventKind::AddressRemoved { id: address });
-        update_chart();
-        Ok(())
-    }
+    ADDRESS_BOOK.with(|book| {
+        let mut book = book.borrow_mut();
+        if book.is_controller(&address) && book.controllers().count() == 1 {
+            Err("The wallet must have at least one controller.".to_string())
+        } else {
+            book.remove(&address);
+            record(EventKind::AddressRemoved { id: address });
+            update_chart();
+            Ok(())
+        }
+    })
 }
-
 /***************************************************************************************************
  * Events
  **************************************************************************************************/
@@ -758,7 +776,7 @@ struct GetEventsArgs {
 
 /// Return the recent events observed by this canister.
 #[query(guard = "is_custodian_or_controller")]
-fn get_events(args: Option<GetEventsArgs>) -> &'static [Event] {
+fn get_events(args: Option<GetEventsArgs>) -> Vec<Event> {
     if let Some(GetEventsArgs { from, to }) = args {
         events::get_events(from, to)
     } else {
@@ -777,9 +795,7 @@ struct ListCanistersArgs {
 }
 
 #[query(guard = "is_custodian_or_controller")]
-fn list_managed_canisters(
-    args: ListCanistersArgs,
-) -> (Vec<&'static events::ManagedCanisterInfo>, u32) {
+fn list_managed_canisters(args: ListCanistersArgs) -> (Vec<events::ManagedCanisterInfo>, u32) {
     events::get_managed_canisters(args.from, args.to)
 }
 
@@ -814,6 +830,10 @@ struct ChartTick {
     cycles: u64,
 }
 
+thread_local! {
+    static CHART_TICKS: RefCell<Vec<ChartTick>> = Default::default();
+}
+
 #[derive(CandidType, Deserialize)]
 struct GetChartArgs {
     count: Option<u32>,
@@ -822,39 +842,40 @@ struct GetChartArgs {
 
 #[query(guard = "is_custodian_or_controller")]
 fn get_chart(args: Option<GetChartArgs>) -> Vec<(u64, u64)> {
-    let chart = storage::get_mut::<Vec<ChartTick>>();
+    CHART_TICKS.with(|chart| {
+        let chart = chart.borrow();
 
-    let GetChartArgs { count, precision } = args.unwrap_or(GetChartArgs {
-        count: None,
-        precision: None,
-    });
-    let take = count.unwrap_or(100).max(1000);
-    // Precision is in nanoseconds. This is an hour.
-    let precision = precision.unwrap_or(60 * 60 * 1_000_000);
+        let GetChartArgs { count, precision } = args.unwrap_or(GetChartArgs {
+            count: None,
+            precision: None,
+        });
+        let take = count.unwrap_or(100).max(1000);
+        // Precision is in nanoseconds. This is an hour.
+        let precision = precision.unwrap_or(60 * 60 * 1_000_000);
 
-    let mut last_tick = u64::MAX;
-    #[allow(clippy::unnecessary_filter_map)]
-    chart
-        .iter()
-        .rev()
-        .filter_map(|tick| {
-            if tick.timestamp >= last_tick {
-                None
-            } else {
-                last_tick = tick.timestamp - precision;
-                Some(tick)
-            }
-        })
-        .take(take as usize)
-        .map(|tick| (tick.timestamp, tick.cycles))
-        .collect()
+        let mut last_tick = u64::MAX;
+        #[allow(clippy::unnecessary_filter_map)]
+        chart
+            .iter()
+            .rev()
+            .filter_map(|tick| {
+                if tick.timestamp >= last_tick {
+                    None
+                } else {
+                    last_tick = tick.timestamp - precision;
+                    Some(tick)
+                }
+            })
+            .take(take as usize)
+            .map(|tick| (tick.timestamp, tick.cycles))
+            .collect()
+    })
 }
 
 fn update_chart() {
-    let chart = storage::get_mut::<Vec<ChartTick>>();
     let timestamp = api::time();
     let cycles = api::canister_balance();
-    chart.push(ChartTick { timestamp, cycles });
+    CHART_TICKS.with(|chart| chart.borrow_mut().push(ChartTick { timestamp, cycles }));
 }
 
 /***************************************************************************************************
@@ -863,7 +884,7 @@ fn update_chart() {
 
 /// Check if the caller is the initializer.
 fn is_controller() -> Result<(), String> {
-    if storage::get::<AddressBook>().is_controller(&caller()) {
+    if ADDRESS_BOOK.with(|book| book.borrow().is_controller(&caller())) {
         Ok(())
     } else {
         Err("Only the controller can call this method.".to_string())
@@ -873,7 +894,9 @@ fn is_controller() -> Result<(), String> {
 /// Check if the caller is a custodian.
 fn is_custodian_or_controller() -> Result<(), String> {
     let caller = &caller();
-    if storage::get::<AddressBook>().is_controller_or_custodian(caller) || &api::id() == caller {
+    if ADDRESS_BOOK.with(|book| book.borrow().is_controller_or_custodian(caller))
+        || &api::id() == caller
+    {
         Ok(())
     } else {
         Err("Only a controller or custodian can call this method.".to_string())

@@ -1,6 +1,7 @@
 use ic_cdk::export::candid::CandidType;
 use ic_cdk::export::Principal;
 use serde::Deserialize;
+use std::cell::RefCell;
 use std::cmp::Ordering;
 use std::collections::BTreeSet;
 use std::fmt::Formatter;
@@ -85,6 +86,10 @@ impl AddressEntry {
 /// The address book for this wallet.
 #[derive(Default, Clone)]
 pub struct AddressBook(BTreeSet<AddressEntry>);
+
+thread_local! {
+    pub static ADDRESS_BOOK: RefCell<AddressBook> = Default::default();
+}
 
 impl AddressBook {
     #[inline]
