@@ -84,7 +84,14 @@ fn pre_upgrade() {
 fn post_upgrade() {
     init();
     if let Ok((storage,)) = storage::stable_restore::<(StableStorage,)>() {
-        let StableStorage { address_book, events, name, chart, wasm_module, managed } = storage;
+        let StableStorage {
+            address_book,
+            events,
+            name,
+            chart,
+            wasm_module,
+            managed,
+        } = storage;
         EVENT_BUFFER.with(|events0| *events0.borrow_mut() = events);
         ADDRESS_BOOK.with(|address_book0| {
             let mut address_book0 = address_book0.borrow_mut();
