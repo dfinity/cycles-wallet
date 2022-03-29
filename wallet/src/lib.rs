@@ -71,7 +71,7 @@ impl Default for StableStorage {
     }
 }
 
-const VERSION: u32 = 2;
+const STABLE_VERSION: u32 = 2;
 
 #[pre_upgrade]
 fn pre_upgrade() {
@@ -87,7 +87,7 @@ fn pre_upgrade() {
         wasm_module: local_take(&WALLET_WASM_BYTES).0,
         managed: Some(local_take(&MANAGED_LIST)),
     };
-    match storage::stable_save((stable, Some(VERSION))) {
+    match storage::stable_save((stable, Some(STABLE_VERSION))) {
         Ok(_) => (),
         Err(candid_err) => {
             ic_cdk::trap(&format!(
@@ -108,7 +108,7 @@ fn post_upgrade() {
         chart,
         wasm_module,
         managed,
-    } = if let Ok((storage, Some(VERSION))) =
+    } = if let Ok((storage, Some(STABLE_VERSION))) =
         storage::stable_restore::<(StableStorage, Option<u32>)>()
     {
         storage
