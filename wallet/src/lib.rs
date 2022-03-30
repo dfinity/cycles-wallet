@@ -1,4 +1,4 @@
-use candid::{CandidType, Func, Principal};
+use candid::{CandidType, Func, Principal, Reserved};
 use ic_cdk::api::{data_certificate, set_certified_data, trap};
 use ic_cdk::*;
 use ic_cdk_macros::*;
@@ -8,15 +8,18 @@ use serde_bytes::{ByteBuf, Bytes};
 use std::borrow::Cow;
 use std::cell::RefCell;
 use std::collections::HashMap;
+use std::convert::TryInto;
 use std::mem;
 use std::thread::LocalKey;
 
 mod address;
 mod events;
+/// Migration functions to run on `#[post_upgrade]`.
+mod migrations;
 
 use crate::address::{AddressEntry, Role, ADDRESS_BOOK};
-use crate::events::{EventBuffer, EVENT_BUFFER};
-use events::{migrations, record, Event, EventKind, ManagedList, MANAGED_LIST};
+use crate::events::{EventBuffer, ManagedCanisterEvent, ManagedCanisterEventKind, EVENT_BUFFER};
+use events::{record, Event, EventKind, ManagedList, MANAGED_LIST};
 
 const WALLET_API_VERSION: &str = "0.2.0";
 
@@ -45,7 +48,7 @@ fn init() {
 }
 
 /// Until the stable storage works better in the ic-cdk, this does the job just fine.
-#[derive(CandidType, Deserialize, Default)]
+#[derive(CandidType, Deserialize)]
 struct StableStorage {
     address_book: Vec<AddressEntry>,
     events: EventBuffer,
@@ -54,6 +57,21 @@ struct StableStorage {
     wasm_module: Option<serde_bytes::ByteBuf>,
     managed: Option<ManagedList>,
 }
+
+impl Default for StableStorage {
+    fn default() -> Self {
+        Self {
+            address_book: vec![],
+            chart: vec![],
+            events: Default::default(),
+            name: None,
+            wasm_module: None,
+            managed: Some(Default::default()),
+        }
+    }
+}
+
+const STABLE_VERSION: u32 = 2;
 
 #[pre_upgrade]
 fn pre_upgrade() {
@@ -69,7 +87,7 @@ fn pre_upgrade() {
         wasm_module: local_take(&WALLET_WASM_BYTES).0,
         managed: Some(local_take(&MANAGED_LIST)),
     };
-    match storage::stable_save((stable,)) {
+    match storage::stable_save((stable, Some(STABLE_VERSION))) {
         Ok(_) => (),
         Err(candid_err) => {
             ic_cdk::trap(&format!(
@@ -83,36 +101,38 @@ fn pre_upgrade() {
 #[post_upgrade]
 fn post_upgrade() {
     init();
-    if let Ok((storage,)) = storage::stable_restore::<(StableStorage,)>() {
-        let StableStorage {
-            address_book,
-            events,
-            name,
-            chart,
-            wasm_module,
-            managed,
-        } = storage;
-        EVENT_BUFFER.with(|events0| *events0.borrow_mut() = events);
-        ADDRESS_BOOK.with(|address_book0| {
-            let mut address_book0 = address_book0.borrow_mut();
-            for entry in address_book.into_iter() {
-                address_book0.insert(entry)
-            }
-        });
-
-        WALLET_NAME.with(|name0| name0.borrow_mut().0 = name);
-
-        WALLET_WASM_BYTES.with(|bytes0| bytes0.borrow_mut().0 = wasm_module);
-
-        CHART_TICKS.with(|chart0| *chart0.borrow_mut() = chart);
-        if let Some(managed) = managed {
-            MANAGED_LIST.with(|list0| *list0.borrow_mut() = managed);
-        } else {
-            migrations::_1_create_managed_canister_list();
+    let StableStorage {
+        address_book,
+        events,
+        name,
+        chart,
+        wasm_module,
+        managed,
+    } = if let Ok((storage, Some(STABLE_VERSION))) =
+        storage::stable_restore::<(StableStorage, Option<u32>)>()
+    {
+        storage
+    } else if let Ok((_, version)) = storage::stable_restore::<(Reserved, Option<u32>)>() {
+        migrations::migrate_from(version.unwrap_or(1)).unwrap_or_default()
+    } else {
+        return;
+    };
+    EVENT_BUFFER.with(|events0| *events0.borrow_mut() = events);
+    ADDRESS_BOOK.with(|address_book0| {
+        let mut address_book0 = address_book0.borrow_mut();
+        for entry in address_book.into_iter() {
+            address_book0.insert(entry)
         }
-    }
+    });
+
+    WALLET_NAME.with(|name0| name0.borrow_mut().0 = name);
+
+    WALLET_WASM_BYTES.with(|bytes0| bytes0.borrow_mut().0 = wasm_module);
+
+    CHART_TICKS.with(|chart0| *chart0.borrow_mut() = chart);
+    MANAGED_LIST.with(|list0| *list0.borrow_mut() = managed.unwrap());
 }
-/*  */
+
 /***************************************************************************************************
  * Wallet API Version
  **************************************************************************************************/
@@ -332,26 +352,36 @@ mod wallet {
     use ic_cdk::{api, caller, id};
     use ic_cdk_macros::*;
     use serde::Deserialize;
+    use std::convert::TryInto;
 
     /***************************************************************************************************
      * Cycle Management
      **************************************************************************************************/
     #[derive(CandidType)]
-    struct BalanceResult {
-        amount: u64,
+    struct BalanceResult<TCycles> {
+        amount: TCycles,
     }
 
     #[derive(CandidType, Deserialize)]
-    struct SendCyclesArgs {
+    struct SendCyclesArgs<TCycles> {
         canister: Principal,
-        amount: u64,
+        amount: TCycles,
     }
 
     /// Return the cycle balance of this canister.
     #[query(guard = "is_custodian_or_controller", name = "wallet_balance")]
-    fn balance() -> BalanceResult {
+    fn balance() -> BalanceResult<u64> {
         BalanceResult {
-            amount: api::canister_balance(),
+            amount: api::canister_balance128()
+                .try_into()
+                .expect("Balance exceeded a 64-bit value; call `wallet_balance128`"),
+        }
+    }
+
+    #[query(guard = "is_custodian_or_controller", name = "wallet_balance128")]
+    fn balance128() -> BalanceResult<u128> {
+        BalanceResult {
+            amount: api::canister_balance128(),
         }
     }
 
@@ -362,8 +392,16 @@ mod wallet {
 
     /// Send cycles to another canister.
     #[update(guard = "is_custodian_or_controller", name = "wallet_send")]
-    async fn send(args: SendCyclesArgs) -> Result<(), String> {
-        match api::call::call_with_payment(
+    async fn send(SendCyclesArgs { canister, amount }: SendCyclesArgs<u64>) -> Result<(), String> {
+        send128(SendCyclesArgs {
+            canister,
+            amount: amount as u128,
+        })
+        .await
+    }
+    #[update(guard = "is_custodian_or_controller", name = "wallet_send128")]
+    async fn send128(args: SendCyclesArgs<u128>) -> Result<(), String> {
+        match api::call::call_with_payment128(
             Principal::management_canister(),
             "deposit_cycles",
             (DepositCyclesArgs {
@@ -374,7 +412,7 @@ mod wallet {
         .await
         {
             Ok(x) => {
-                let refund = api::call::msg_cycles_refunded();
+                let refund = api::call::msg_cycles_refunded128();
                 events::record(events::EventKind::CyclesSent {
                     to: args.canister,
                     amount: args.amount,
@@ -384,7 +422,7 @@ mod wallet {
                 x
             }
             Err((code, msg)) => {
-                let refund = api::call::msg_cycles_refunded();
+                let refund = api::call::msg_cycles_refunded128();
                 events::record(events::EventKind::CyclesSent {
                     to: args.canister,
                     amount: args.amount,
@@ -412,9 +450,9 @@ mod wallet {
     #[update(name = "wallet_receive")]
     fn receive(options: Option<ReceiveOptions>) {
         let from = caller();
-        let amount = ic_cdk::api::call::msg_cycles_available();
+        let amount = ic_cdk::api::call::msg_cycles_available128();
         if amount > 0 {
-            let amount_accepted = ic_cdk::api::call::msg_cycles_accept(amount);
+            let amount_accepted = ic_cdk::api::call::msg_cycles_accept128(amount);
             events::record(events::EventKind::CyclesReceived {
                 from,
                 amount: amount_accepted,
@@ -442,8 +480,8 @@ mod wallet {
     }
 
     #[derive(CandidType, Clone, Deserialize)]
-    struct CreateCanisterArgs {
-        cycles: u64,
+    struct CreateCanisterArgs<TCycles> {
+        cycles: TCycles,
         settings: CanisterSettings,
     }
 
@@ -459,7 +497,22 @@ mod wallet {
     }
 
     #[update(guard = "is_custodian_or_controller", name = "wallet_create_canister")]
-    async fn create_canister(mut args: CreateCanisterArgs) -> Result<CreateResult, String> {
+    async fn create_canister(
+        CreateCanisterArgs { cycles, settings }: CreateCanisterArgs<u64>,
+    ) -> Result<CreateResult, String> {
+        create_canister128(CreateCanisterArgs {
+            cycles: cycles as u128,
+            settings,
+        })
+        .await
+    }
+    #[update(
+        guard = "is_custodian_or_controller",
+        name = "wallet_create_canister128"
+    )]
+    async fn create_canister128(
+        mut args: CreateCanisterArgs<u128>,
+    ) -> Result<CreateResult, String> {
         let mut settings = normalize_canister_settings(args.settings)?;
         let controllers = settings
             .controllers
@@ -492,7 +545,7 @@ mod wallet {
         }
     }
 
-    async fn create_canister_call(args: CreateCanisterArgs) -> Result<CreateResult, String> {
+    async fn create_canister_call(args: CreateCanisterArgs<u128>) -> Result<CreateResult, String> {
         #[derive(CandidType)]
         struct In {
             settings: Option<CanisterSettings>,
@@ -501,7 +554,7 @@ mod wallet {
             settings: Some(normalize_canister_settings(args.settings)?),
         };
 
-        let (create_result,): (CreateResult,) = match api::call::call_with_payment(
+        let (create_result,): (CreateResult,) = match api::call::call_with_payment128(
             Principal::management_canister(),
             "create_canister",
             (in_arg,),
@@ -632,7 +685,17 @@ mod wallet {
     }
 
     #[update(guard = "is_custodian_or_controller", name = "wallet_create_wallet")]
-    async fn create_wallet(args: CreateCanisterArgs) -> Result<CreateResult, String> {
+    async fn create_wallet(
+        CreateCanisterArgs { cycles, settings }: CreateCanisterArgs<u64>,
+    ) -> Result<CreateResult, String> {
+        create_wallet128(CreateCanisterArgs {
+            cycles: cycles as u128,
+            settings,
+        })
+        .await
+    }
+    #[update(guard = "is_custodian_or_controller", name = "wallet_create_wallet128")]
+    async fn create_wallet128(args: CreateCanisterArgs<u128>) -> Result<CreateResult, String> {
         let wasm_module = WALLET_WASM_BYTES.with(|wallet_bytes| match &wallet_bytes.borrow().0 {
             Some(o) => o.clone().into_vec(),
             None => {
@@ -690,12 +753,12 @@ mod wallet {
      * Call Forwarding
      **************************************************************************************************/
     #[derive(CandidType, Deserialize)]
-    struct CallCanisterArgs {
+    struct CallCanisterArgs<TCycles> {
         canister: Principal,
         method_name: String,
         #[serde(with = "serde_bytes")]
         args: Vec<u8>,
-        cycles: u64,
+        cycles: TCycles,
     }
 
     #[derive(CandidType, Deserialize)]
@@ -706,12 +769,32 @@ mod wallet {
 
     /// Forward a call to another canister.
     #[update(guard = "is_custodian_or_controller", name = "wallet_call")]
-    async fn call(args: CallCanisterArgs) -> Result<CallResult, String> {
+    async fn call(
+        CallCanisterArgs {
+            canister,
+            method_name,
+            args,
+            cycles,
+        }: CallCanisterArgs<u64>,
+    ) -> Result<CallResult, String> {
+        call128(CallCanisterArgs {
+            canister,
+            method_name,
+            args,
+            cycles: cycles as u128,
+        })
+        .await
+    }
+
+    #[update(guard = "is_custodian_or_controller", name = "wallet_call128")]
+    async fn call128(args: CallCanisterArgs<u128>) -> Result<CallResult, String> {
         if api::id() == caller() {
             return Err("Attempted to call forward on self. This is not allowed. Call this method via a different custodian.".to_string());
         }
 
-        match api::call::call_raw(args.canister, &args.method_name, &args.args, args.cycles).await {
+        match api::call::call_raw128(args.canister, &args.method_name, &args.args, args.cycles)
+            .await
+        {
             Ok(x) => {
                 events::record(events::EventKind::CanisterCalled {
                     canister: args.canister,
@@ -776,12 +859,70 @@ struct GetEventsArgs {
 
 /// Return the recent events observed by this canister.
 #[query(guard = "is_custodian_or_controller")]
-fn get_events(args: Option<GetEventsArgs>) -> Vec<Event> {
+fn get_events128(args: Option<GetEventsArgs>) -> Vec<Event> {
     if let Some(GetEventsArgs { from, to }) = args {
         events::get_events(from, to)
     } else {
         events::get_events(None, None)
     }
+}
+
+#[query(guard = "is_custodian_or_controller")]
+fn get_events(args: Option<GetEventsArgs>) -> Vec<migrations::v1::V1Event> {
+    use migrations::v1::*;
+    let events = get_events128(args);
+    events
+        .into_iter()
+        .map(
+            |Event {
+                 id,
+                 timestamp,
+                 kind,
+             }| {
+                let kind = match kind {
+                    EventKind::AddressAdded { id, name, role } => {
+                        V1EventKind::AddressAdded { id, name, role }
+                    }
+                    EventKind::AddressRemoved { id } => V1EventKind::AddressRemoved { id },
+                    EventKind::CanisterCalled {
+                        canister,
+                        cycles,
+                        method_name,
+                    } => V1EventKind::CanisterCalled {
+                        canister,
+                        cycles: cycles.try_into().expect("`CanisterCalled` event exceeded a 64-bit cycle count; call `get_events128`"),
+                        method_name,
+                    },
+                    EventKind::CanisterCreated { canister, cycles } => {
+                        V1EventKind::CanisterCreated {
+                            canister,
+                            cycles: cycles.try_into().expect("`CanisterCreated` event exceeded a 64-bit cycle count; call `get_events128`"),
+                        }
+                    }
+                    EventKind::CyclesReceived { amount, from, memo } => {
+                        V1EventKind::CyclesReceived {
+                            amount: amount.try_into().expect("`CyclesReceived` event exceeded a 64-bit cycle count; call `get_events128`"),
+                            from,
+                            memo,
+                        }
+                    }
+                    EventKind::CyclesSent { amount, refund, to } => V1EventKind::CyclesSent {
+                        amount: amount.try_into().expect("`CyclesSent` event exceeded a 64-bit `amount` cycle count; call `get_events128`"),
+                        refund: refund.try_into().expect("`CyclesSent` event exceeded a 64-bit `refund` cycle count; call `get_events128`"),
+                        to,
+                    },
+                    EventKind::WalletDeployed { canister } => {
+                        V1EventKind::WalletDeployed { canister }
+                    }
+                };
+                V1Event {
+                    id,
+                    timestamp,
+                    kind,
+                }
+            },
+        )
+        .collect()
 }
 
 /***************************************************************************************************
@@ -807,10 +948,56 @@ struct GetManagedCanisterEventArgs {
 }
 
 #[query(guard = "is_custodian_or_controller")]
-fn get_managed_canister_events(
+fn get_managed_canister_events128(
     args: GetManagedCanisterEventArgs,
 ) -> Option<Vec<events::ManagedCanisterEvent>> {
     events::get_managed_canister_events(&args.canister, args.from, args.to)
+}
+
+#[query(guard = "is_custodian_or_controller")]
+fn get_managed_canister_events(
+    args: GetManagedCanisterEventArgs,
+) -> Option<Vec<migrations::v1::V1ManagedCanisterEvent>> {
+    use migrations::v1::*;
+    let events = get_managed_canister_events128(args);
+    events.map(|events| {
+        events
+            .into_iter()
+            .map(
+                |ManagedCanisterEvent {
+                     id,
+                     timestamp,
+                     kind,
+                 }| {
+                    let kind = match kind {
+                        ManagedCanisterEventKind::Called {
+                            cycles,
+                            method_name,
+                        } => V1ManagedCanisterEventKind::Called {
+                            cycles: cycles.try_into().expect("`Called` event exceeded a 64-bit cycle count; call `get_managed_canister_events128`"),
+                            method_name,
+                        },
+                        ManagedCanisterEventKind::Created { cycles } => {
+                            V1ManagedCanisterEventKind::Created {
+                                cycles: cycles.try_into().expect("`Created` event exceeded a 64-bit cycle count; call `get_managed_canister_events128`"),
+                            }
+                        }
+                        ManagedCanisterEventKind::CyclesSent { amount, refund } => {
+                            V1ManagedCanisterEventKind::CyclesSent {
+                                amount: amount.try_into().expect("`CyclesSent` event exceeded a 64-bit `amount` cycle count; call `get_managed_canister_events128`"),
+                                refund: refund.try_into().expect("`CyclesSent` event exceeded a 64-bit `refund` cycle count; call `get_managed_canister_events128`"),
+                            }
+                        }
+                    };
+                    V1ManagedCanisterEvent {
+                        id,
+                        timestamp,
+                        kind,
+                    }
+                },
+            )
+            .collect()
+    })
 }
 
 #[update(guard = "is_custodian_or_controller")]
@@ -825,7 +1012,7 @@ fn set_short_name(
  * Charts
  **************************************************************************************************/
 #[derive(Clone, CandidType, Deserialize)]
-struct ChartTick {
+pub struct ChartTick {
     timestamp: u64,
     cycles: u64,
 }
