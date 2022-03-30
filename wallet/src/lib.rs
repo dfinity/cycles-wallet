@@ -352,6 +352,7 @@ mod wallet {
     use ic_cdk::{api, caller, id};
     use ic_cdk_macros::*;
     use serde::Deserialize;
+    use std::convert::TryInto;
 
     /***************************************************************************************************
      * Cycle Management
@@ -371,7 +372,9 @@ mod wallet {
     #[query(guard = "is_custodian_or_controller", name = "wallet_balance")]
     fn balance() -> BalanceResult<u64> {
         BalanceResult {
-            amount: api::canister_balance(),
+            amount: api::canister_balance128()
+                .try_into()
+                .expect("Balance exceeded a 64-bit value; call `wallet_balance128`"),
         }
     }
 
