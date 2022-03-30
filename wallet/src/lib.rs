@@ -887,25 +887,25 @@ fn get_events(args: Option<GetEventsArgs>) -> Vec<migrations::v1::V1Event> {
                         method_name,
                     } => V1EventKind::CanisterCalled {
                         canister,
-                        cycles: cycles.try_into().unwrap(),
+                        cycles: cycles.try_into().expect("`CanisterCalled` event exceeded a 64-bit cycle count; call `get_events128`"),
                         method_name,
                     },
                     EventKind::CanisterCreated { canister, cycles } => {
                         V1EventKind::CanisterCreated {
                             canister,
-                            cycles: cycles.try_into().unwrap(),
+                            cycles: cycles.try_into().expect("`CanisterCreated` event exceeded a 64-bit cycle count; call `get_events128`"),
                         }
                     }
                     EventKind::CyclesReceived { amount, from, memo } => {
                         V1EventKind::CyclesReceived {
-                            amount: amount.try_into().unwrap(),
+                            amount: amount.try_into().expect("`CyclesReceived` event exceeded a 64-bit cycle count; call `get_events128`"),
                             from,
                             memo,
                         }
                     }
                     EventKind::CyclesSent { amount, refund, to } => V1EventKind::CyclesSent {
-                        amount: amount.try_into().unwrap(),
-                        refund: refund.try_into().unwrap(),
+                        amount: amount.try_into().expect("`CyclesSent` event exceeded a 64-bit `amount` cycle count; call `get_events128`"),
+                        refund: refund.try_into().expect("`CyclesSent` event exceeded a 64-bit `refund` cycle count; call `get_events128`"),
                         to,
                     },
                     EventKind::WalletDeployed { canister } => {
@@ -971,18 +971,18 @@ fn get_managed_canister_events(
                             cycles,
                             method_name,
                         } => V1ManagedCanisterEventKind::Called {
-                            cycles: cycles.try_into().unwrap(),
+                            cycles: cycles.try_into().expect("`Called` event exceeded a 64-bit cycle count; call `get_managed_canister_events128`"),
                             method_name,
                         },
                         ManagedCanisterEventKind::Created { cycles } => {
                             V1ManagedCanisterEventKind::Created {
-                                cycles: cycles.try_into().unwrap(),
+                                cycles: cycles.try_into().expect("`Created` event exceeded a 64-bit cycle count; call `get_managed_canister_events128`"),
                             }
                         }
                         ManagedCanisterEventKind::CyclesSent { amount, refund } => {
                             V1ManagedCanisterEventKind::CyclesSent {
-                                amount: amount.try_into().unwrap(),
-                                refund: refund.try_into().unwrap(),
+                                amount: amount.try_into().expect("`CyclesSent` event exceeded a 64-bit `amount` cycle count; call `get_managed_canister_events128`"),
+                                refund: refund.try_into().expect("`CyclesSent` event exceeded a 64-bit `refund` cycle count; call `get_managed_canister_events128`"),
                             }
                         }
                     };
