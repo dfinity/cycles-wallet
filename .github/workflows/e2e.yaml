@@ -1,4 +1,4 @@
-name: build
+name: e2e
 on:
   push:
     branches:
@@ -7,6 +7,7 @@ on:
 
 jobs:
   test:
+    name: Run e2e tests
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
@@ -53,3 +54,12 @@ jobs:
           export assets=$GITHUB_WORKSPACE/e2e/assets
           bats e2e/bash/*.bash
 
+  aggregate:
+    name: e2e:required
+    runs-on: ubuntu-latest
+    if: ${{ always() }}
+    needs: test
+    steps:
+    - name: Check e2e result
+      if: ${{ needs.test.result != 'success' }}
+      run: exit 1
