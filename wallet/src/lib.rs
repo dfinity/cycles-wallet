@@ -3,8 +3,10 @@ use ic_cdk::api::{data_certificate, set_certified_data, trap};
 use ic_cdk::*;
 use ic_cdk_macros::*;
 use ic_certified_map::{AsHashTree, Hash, RbTree};
+use lazy_static::lazy_static;
 use serde::{Deserialize, Serialize};
 use serde_bytes::{ByteBuf, Bytes};
+use sha2::Digest;
 use std::borrow::Cow;
 use std::cell::RefCell;
 use std::collections::HashMap;
@@ -217,6 +219,7 @@ fn http_request(req: HttpRequest) -> HttpResponse {
         match assets.contents.get(asset) {
             Some((headers, value)) => {
                 let mut headers = headers.clone();
+                headers.append(&mut security_headers());
                 headers.push(certificate_header);
 
                 HttpResponse {
@@ -226,12 +229,16 @@ fn http_request(req: HttpRequest) -> HttpResponse {
                     streaming_strategy: None,
                 }
             }
-            None => HttpResponse {
-                status_code: 404,
-                headers: vec![certificate_header],
-                body: Cow::Owned(ByteBuf::from(format!("Asset {} not found.", asset))),
-                streaming_strategy: None,
-            },
+            None => {
+                let mut headers = security_headers();
+                headers.push(certificate_header);
+                HttpResponse {
+                    status_code: 404,
+                    headers,
+                    body: Cow::Owned(ByteBuf::from(format!("Asset {} not found.", asset))),
+                    streaming_strategy: None,
+                }
+            }
         }
     })
 }
@@ -253,6 +260,125 @@ fn make_asset_certificate_header(asset_hashes: &AssetHashes, asset_name: &str) -
             base64::encode(&serializer.into_inner())
         ),
     )
+}
+
+lazy_static! {
+    // The <script> tag that sets the canister ID and loads the 'index.js'
+    static ref INDEX_HTML_SETUP_JS: String = {
+        let canister_id = api::id();
+        format!(r#"var canisterId = '{}';let s = document.createElement('script');s.async = false;s.src = 'index.js';document.head.appendChild(s);"#, canister_id)
+    };
+
+    // The SRI sha256 hash of the script tag, used by the CSP policy.
+    // https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Security-Policy/script-src
+    pub static ref INDEX_HTML_SETUP_JS_SRI_HASH: String = {
+        let hash = &sha2::Sha256::digest(INDEX_HTML_SETUP_JS.as_bytes());
+        let hash = base64::encode(hash);
+        format!("sha256-{}", hash)
+    };
+}
+
+/// List of recommended security headers as per https://owasp.org/www-project-secure-headers/
+/// These headers enable browser security features (like limit access to platform apis and set
+/// iFrame policies, etc.).
+fn security_headers() -> Vec<HeaderField> {
+    let hash = INDEX_HTML_SETUP_JS_SRI_HASH.to_string();
+    vec![
+        ("X-Frame-Options".to_string(), "DENY".to_string()),
+        ("X-Content-Type-Options".to_string(), "nosniff".to_string()),
+        // Content Security Policy
+        //
+        // The sha256 hash matches the inline script in index.html. This inline script is a workaround
+        // for Firefox not supporting SRI (recommended here https://csp.withgoogle.com/docs/faq.html#static-content).
+        // This also prevents use of trusted-types. See https://bugzilla.mozilla.org/show_bug.cgi?id=1409200.
+        //
+        // script-src 'unsafe-eval' is required because agent-js uses a WebAssembly module for the
+        // validation of bls signatures.
+        // There is currently no other way to allow execution of WebAssembly modules with CSP.
+        // See https://github.com/WebAssembly/content-security-policy/blob/main/proposals/CSP.md.
+        //
+        // script-src 'unsafe-inline' https: are only there for backwards compatibility and ignored
+        // by modern browsers.
+        //
+        // style-src 'unsafe-inline' is currently required due to the way styles are handled by the
+        // application. Adding hashes would require a big restructuring of the application and build
+        // infrastructure.
+        //
+        // NOTE about `script-src`: we cannot use a normal script tag like this
+        //   <script src="index.js" integrity="sha256-..." defer></script>
+        // because Firefox does not support SRI with CSP: https://bugzilla.mozilla.org/show_bug.cgi?id=1409200
+        // Instead, we add it to the CSP policy
+        (
+            "Content-Security-Policy".to_string(),
+            format!(
+                "default-src 'none';\
+             connect-src 'self' https://ic0.app;\
+             img-src 'self' data:;\
+             script-src '{}' 'unsafe-inline' 'unsafe-eval' 'strict-dynamic' https:;\
+             base-uri 'none';\
+             frame-ancestors 'none';\
+             form-action 'none';\
+             style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;\
+             style-src-elem 'unsafe-inline' https://fonts.googleapis.com;\
+             font-src https://fonts.gstatic.com;\
+             upgrade-insecure-requests;",
+                hash
+            )
+            .to_string(),
+        ),
+        (
+            "Strict-Transport-Security".to_string(),
+            "max-age=31536000 ; includeSubDomains".to_string(),
+        ),
+        // "Referrer-Policy: no-referrer" would be more strict, but breaks local dev deployment
+        // same-origin is still ok from a security perspective
+        ("Referrer-Policy".to_string(), "same-origin".to_string()),
+        (
+            "Permissions-Policy".to_string(),
+            "accelerometer=(),\
+             ambient-light-sensor=(),\
+             autoplay=(),\
+             battery=(),\
+             camera=(),\
+             clipboard-read=(),\
+             clipboard-write=(self),\
+             conversion-measurement=(),\
+             cross-origin-isolated=(),\
+             display-capture=(),\
+             document-domain=(),\
+             encrypted-media=(),\
+             execution-while-not-rendered=(),\
+             execution-while-out-of-viewport=(),\
+             focus-without-user-activation=(),\
+             fullscreen=(),\
+             gamepad=(),\
+             geolocation=(),\
+             gyroscope=(),\
+             hid=(),\
+             idle-detection=(),\
+             interest-cohort=(),\
+             keyboard-map=(),\
+             magnetometer=(),\
+             microphone=(),\
+             midi=(),\
+             navigation-override=(),\
+             payment=(),\
+             picture-in-picture=(),\
+             publickey-credentials-get=(self),\
+             screen-wake-lock=(),\
+             serial=(),\
+             speaker-selection=(),\
+             sync-script=(),\
+             sync-xhr=(self),\
+             trust-token-redemption=(),\
+             usb=(),\
+             vertical-scroll=(),\
+             web-share=(),\
+             window-placement=(),\
+             xr-spatial-tracking=()"
+                .to_string(),
+        ),
+    ]
 }
 
 fn init_assets() {

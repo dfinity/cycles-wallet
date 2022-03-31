@@ -1051,6 +1051,7 @@ dependencies = [
  "ic-certified-map",
  "ic-types",
  "indexmap",
+ "lazy_static",
  "libflate",
  "num-traits",
  "serde",
