@@ -185,7 +185,7 @@ type HeaderField = (String, String);
 struct HttpRequest {
     method: String,
     url: String,
-    headers: Vec<(String, String)>,
+    headers: Vec<HeaderField>,
     body: ByteBuf,
 }
 
@@ -236,7 +236,7 @@ fn http_request(req: HttpRequest) -> HttpResponse {
     })
 }
 
-fn make_asset_certificate_header(asset_hashes: &AssetHashes, asset_name: &str) -> (String, String) {
+fn make_asset_certificate_header(asset_hashes: &AssetHashes, asset_name: &str) -> HeaderField {
     let certificate = data_certificate().unwrap_or_else(|| {
         trap("data certificate is only available in query calls");
     });
