@@ -2,7 +2,7 @@
 name = "wallet"
 version = "0.3.0"
 authors = ["DFINITY Stiftung <sdk@dfinity.org>"]
-edition = "2018"
+edition = "2021"
 
 [lib]
 crate-type = ["cdylib"]
