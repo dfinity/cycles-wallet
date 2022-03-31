@@ -20,7 +20,7 @@ jobs:
       - name: Install Rust
         run: |
           rustup update ${{ matrix.rust }} --no-self-update
-          rustup defaul ${{ matrix.rust }}
+          rustup default ${{ matrix.rust }}
           rustup target add wasm32-unknown-unknown
 
       - name: Install DFINITY SDK
