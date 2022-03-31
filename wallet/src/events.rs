@@ -12,7 +12,7 @@ use std::fmt::{self, Formatter};
 
 #[derive(CandidType, Clone, Default, Deserialize)]
 pub struct EventBuffer {
-    events: Vec<Event>,
+    pub events: Vec<Event>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Default)]
@@ -93,9 +93,9 @@ pub struct ManagedCanisterEvent {
 
 #[derive(Debug, Clone, PartialEq, Eq, CandidType, Deserialize)]
 pub enum ManagedCanisterEventKind {
-    CyclesSent { amount: u64, refund: u64 },
-    Called { method_name: String, cycles: u64 },
-    Created { cycles: u64 },
+    CyclesSent { amount: u128, refund: u128 },
+    Called { method_name: String, cycles: u128 },
+    Created { cycles: u128 },
 }
 
 impl EventBuffer {
@@ -120,12 +120,12 @@ impl EventBuffer {
 pub enum EventKind {
     CyclesSent {
         to: Principal,
-        amount: u64,
-        refund: u64,
+        amount: u128,
+        refund: u128,
     },
     CyclesReceived {
         from: Principal,
-        amount: u64,
+        amount: u128,
         memo: Option<String>,
     },
     AddressAdded {
@@ -138,12 +138,12 @@ pub enum EventKind {
     },
     CanisterCreated {
         canister: Principal,
-        cycles: u64,
+        cycles: u128,
     },
     CanisterCalled {
         canister: Principal,
         method_name: String,
-        cycles: u64,
+        cycles: u128,
     },
     WalletDeployed {
         canister: Principal,
@@ -265,26 +265,6 @@ pub fn set_short_name(canister: &Principal, name: Option<String>) -> Option<Mana
         canister.info.name = name;
         Some(canister.info.clone())
     })
-}
-
-/// Migration functions to run on `#[post_upgrade]`.
-pub mod migrations {
-    use super::*;
-    /// Creates the managed canister list from the event list.
-    ///
-    /// Call during `#[post_upgrade]`, after the event list is deserialized, if the canister list can't be deserialized.
-    pub fn _1_create_managed_canister_list() {
-        MANAGED_LIST.with(|managed| {
-            EVENT_BUFFER.with(|events| {
-                let mut managed = managed.borrow_mut();
-                for event in events.borrow().as_slice() {
-                    if let Some((to, kind)) = event.kind.to_managed() {
-                        managed.push_with_timestamp(to, kind, event.timestamp);
-                    }
-                }
-            })
-        });
-    }
 }
 
 impl CandidType for ManagedList {
