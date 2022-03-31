@@ -323,8 +323,7 @@ fn security_headers() -> Vec<HeaderField> {
              font-src https://fonts.gstatic.com;\
              upgrade-insecure-requests;",
                 hash
-            )
-            .to_string(),
+            ),
         ),
         (
             "Strict-Transport-Security".to_string(),
