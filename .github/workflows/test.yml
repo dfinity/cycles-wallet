@@ -12,7 +12,7 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest, macos-latest]
-        rust: ['1.52.1']
+        rust: ['1.58.1']
         node-version: ['12.x']
     steps:
     - uses: actions/checkout@v1
