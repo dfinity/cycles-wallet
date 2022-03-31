@@ -18,7 +18,7 @@ use crate::address::{AddressEntry, Role, ADDRESS_BOOK};
 use crate::events::{EventBuffer, EVENT_BUFFER};
 use events::{migrations, record, Event, EventKind, ManagedList, MANAGED_LIST};
 
-const WALLET_API_VERSION: &str = "0.2.0";
+const WALLET_API_VERSION: &str = env!("CARGO_PKG_VERSION");
 
 struct WalletWASMBytes(Option<serde_bytes::ByteBuf>);
 
