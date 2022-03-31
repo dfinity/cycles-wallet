@@ -11,6 +11,7 @@ jobs:
     strategy:
       matrix:
         node-version: [12.x]
+        rust: ['1.58.1']
 
     steps:
       - name: Checkout
@@ -18,8 +19,8 @@ jobs:
 
       - name: Install Rust
         run: |
-          rustup update 1.52.1 --no-self-update
-          rustup default 1.52.1
+          rustup update ${{ matrix.rust }} --no-self-update
+          rustup default ${{ matrix.rust }}
           rustup target add wasm32-unknown-unknown
 
       - name: Install DFINITY SDK
