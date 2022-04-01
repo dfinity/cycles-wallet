@@ -25,13 +25,8 @@ use events::{record, Event, EventKind, ManagedList, MANAGED_LIST};
 
 const WALLET_API_VERSION: &str = env!("CARGO_PKG_VERSION");
 
+#[derive(Default)]
 struct WalletWASMBytes(Option<serde_bytes::ByteBuf>);
-
-impl Default for WalletWASMBytes {
-    fn default() -> Self {
-        WalletWASMBytes(None)
-    }
-}
 
 /// The wallet (this canister's) name.
 #[derive(Default)]
@@ -162,6 +157,7 @@ fn set_name(name: String) {
  **************************************************************************************************/
 include!(concat!(env!("OUT_DIR"), "/assets.rs"));
 
+#[derive(Default)]
 struct Assets {
     contents: HashMap<&'static str, (Vec<HeaderField>, &'static [u8])>,
     hashes: AssetHashes,
@@ -169,15 +165,6 @@ struct Assets {
 
 thread_local! {
     static ASSETS: RefCell<Assets> = Default::default();
-}
-
-impl Default for Assets {
-    fn default() -> Self {
-        Self {
-            hashes: AssetHashes::default(),
-            contents: HashMap::default(),
-        }
-    }
 }
 
 type AssetHashes = RbTree<&'static str, Hash>;
