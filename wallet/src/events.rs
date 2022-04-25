@@ -47,7 +47,7 @@ impl ManagedList {
             timestamp,
         });
         if events.len() > 1000 {
-            events.truncate(1000);
+            events.drain(..events.len() - 1000);
             canister.culled = Some(events[0].id as usize);
         }
     }
@@ -202,6 +202,7 @@ pub fn record(kind: EventKind) {
     }
     EVENT_BUFFER.with(|buffer| {
         let mut buffer = buffer.borrow_mut();
+        let buffer = &mut *buffer;
         let len = buffer.len();
         buffer.push(Event {
             id: len,
@@ -209,7 +210,7 @@ pub fn record(kind: EventKind) {
             kind,
         });
         if buffer.len() > 5000 {
-            buffer.events.truncate(5000);
+            buffer.events.drain(..buffer.events.len() - 5000);
             buffer.culled = Some(buffer.events[0].id as usize);
         }
     });
