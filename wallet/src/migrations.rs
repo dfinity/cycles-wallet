@@ -105,7 +105,10 @@ pub(crate) fn _2_convert_nat64_to_nat(
             },
         )
         .collect();
-    let events = V2EventBuffer { events, culled: Some(0) };
+    let events = V2EventBuffer {
+        events,
+        culled: Some(0),
+    };
     let managed = managed
         .unwrap_or_default()
         .0
@@ -147,7 +150,14 @@ pub(crate) fn _2_convert_nat64_to_nat(
                     },
                 )
                 .collect();
-            (principal, V2ManagedCanister { info, events, culled: Some(0) })
+            (
+                principal,
+                V2ManagedCanister {
+                    info,
+                    events,
+                    culled: Some(0),
+                },
+            )
         })
         .collect();
     let managed = Some(V2ManagedList(managed));

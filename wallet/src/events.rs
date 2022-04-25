@@ -121,7 +121,10 @@ impl EventBuffer {
     #[inline]
     pub fn between(&self, Range { start, end }: Range<usize>) -> Vec<Event> {
         let base = self.culled.unwrap_or(0);
-        self.events.range(start.saturating_sub(base)..end.saturating_sub(base)).cloned().collect()
+        self.events
+            .range(start.saturating_sub(base)..end.saturating_sub(base))
+            .cloned()
+            .collect()
     }
 }
 
@@ -262,16 +265,15 @@ pub fn get_managed_canister_events(
         let canister = &buffer.0.get(canister)?;
         let buffer = &canister.events;
         let total = buffer.back().map(|event| event.id).unwrap_or(0) + 1;
-        let from = from.unwrap_or_else(|| {
-            if total <= 20 {
-                0
-            } else {
-                total - 20
-            }
-        }) as usize;
+        let from = from.unwrap_or_else(|| if total <= 20 { 0 } else { total - 20 }) as usize;
         let to = min(total, to.unwrap_or(u32::MAX)) as usize;
         let base = canister.culled.unwrap_or(0);
-        Some(buffer.range(from.saturating_sub(base)..to.saturating_sub(base)).cloned().collect())
+        Some(
+            buffer
+                .range(from.saturating_sub(base)..to.saturating_sub(base))
+                .cloned()
+                .collect(),
+        )
     })
 }
 
