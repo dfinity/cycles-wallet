@@ -15,7 +15,6 @@ use std::ops::Range;
 #[derive(CandidType, Clone, Default, Deserialize)]
 pub struct EventBuffer {
     pub events: VecDeque<Event>,
-    pub culled: Option<usize>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Default)]
@@ -48,7 +47,6 @@ impl ManagedList {
         });
         if events.len() > 1000 {
             events.drain(..events.len() - 1000);
-            canister.culled = Some(events[0].id as usize);
         }
     }
 }
@@ -57,7 +55,6 @@ impl ManagedList {
 pub struct ManagedCanister {
     pub info: ManagedCanisterInfo,
     pub events: VecDeque<ManagedCanisterEvent>,
-    pub culled: Option<usize>,
 }
 
 #[derive(Debug, Clone, Eq, CandidType, Deserialize)]
@@ -76,7 +73,6 @@ impl ManagedCanister {
                 created_at: api::time(),
             },
             events: VecDeque::new(),
-            culled: Some(0),
         }
     }
 }
@@ -120,7 +116,7 @@ impl EventBuffer {
 
     #[inline]
     pub fn between(&self, Range { start, end }: Range<usize>) -> Vec<Event> {
-        let base = self.culled.unwrap_or(0);
+        let base = self.events.front().map(|event| event.id).unwrap_or(0) as usize;
         self.events
             .range(start.saturating_sub(base)..end.saturating_sub(base))
             .cloned()
@@ -214,7 +210,6 @@ pub fn record(kind: EventKind) {
         });
         if buffer.events.len() > 10_000 {
             buffer.events.drain(..buffer.events.len() - 10_000);
-            buffer.culled = Some(buffer.events[0].id as usize);
         }
     });
 }
@@ -267,7 +262,7 @@ pub fn get_managed_canister_events(
         let total = buffer.back().map(|event| event.id).unwrap_or(0) + 1;
         let from = from.unwrap_or_else(|| if total <= 20 { 0 } else { total - 20 }) as usize;
         let to = min(total, to.unwrap_or(u32::MAX)) as usize;
-        let base = canister.culled.unwrap_or(0);
+        let base = buffer.front().map(|event| event.id).unwrap_or(0) as usize;
         Some(
             buffer
                 .range(from.saturating_sub(base)..to.saturating_sub(base))

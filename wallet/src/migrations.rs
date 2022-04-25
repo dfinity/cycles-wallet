@@ -107,7 +107,6 @@ pub(crate) fn _2_convert_nat64_to_nat(
         .collect();
     let events = V2EventBuffer {
         events,
-        culled: Some(0),
     };
     let managed = managed
         .unwrap_or_default()
@@ -155,7 +154,6 @@ pub(crate) fn _2_convert_nat64_to_nat(
                 V2ManagedCanister {
                     info,
                     events,
-                    culled: Some(0),
                 },
             )
         })
