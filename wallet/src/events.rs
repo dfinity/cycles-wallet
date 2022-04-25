@@ -114,8 +114,8 @@ impl EventBuffer {
     }
 
     #[inline]
-    pub fn len(&self) -> u32 {
-        self.events.len() as u32
+    pub fn total(&self) -> u32 {
+        self.events.back().map(|event| event.id).unwrap_or(0) + 1
     }
 
     #[inline]
@@ -203,13 +203,13 @@ pub fn record(kind: EventKind) {
     EVENT_BUFFER.with(|buffer| {
         let mut buffer = buffer.borrow_mut();
         let buffer = &mut *buffer;
-        let len = buffer.len();
+        let len = buffer.total();
         buffer.push(Event {
             id: len,
             timestamp: api::time() as u64,
             kind,
         });
-        if buffer.len() > 5000 {
+        if buffer.events.len() > 5000 {
             buffer.events.drain(..buffer.events.len() - 5000);
             buffer.culled = Some(buffer.events[0].id as usize);
         }
@@ -221,13 +221,13 @@ pub fn get_events(from: Option<u32>, to: Option<u32>) -> Vec<Event> {
         let buffer = buffer.borrow();
 
         let from = from.unwrap_or_else(|| {
-            if buffer.len() <= 20 {
+            if buffer.total() <= 20 {
                 0
             } else {
-                buffer.len() - 20
+                buffer.total() - 20
             }
         }) as usize;
-        let to = min(buffer.len(), to.unwrap_or(u32::MAX)) as usize;
+        let to = min(buffer.total(), to.unwrap_or(u32::MAX)) as usize;
 
         buffer.between(from..to)
     })
@@ -261,14 +261,15 @@ pub fn get_managed_canister_events(
         let buffer = buffer.borrow();
         let canister = &buffer.0.get(canister)?;
         let buffer = &canister.events;
+        let total = buffer.back().map(|event| event.id).unwrap_or(0) + 1;
         let from = from.unwrap_or_else(|| {
-            if buffer.len() <= 20 {
+            if total <= 20 {
                 0
             } else {
-                buffer.len() as u32 - 20
+                total - 20
             }
         }) as usize;
-        let to = min(buffer.len() as u32, to.unwrap_or(u32::MAX)) as usize;
+        let to = min(total, to.unwrap_or(u32::MAX)) as usize;
         let base = canister.culled.unwrap_or(0);
         Some(buffer.range(from.saturating_sub(base)..to.saturating_sub(base)).cloned().collect())
     })
