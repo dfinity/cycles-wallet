@@ -8,11 +8,14 @@ use serde::de::{SeqAccess, Visitor};
 use serde::{Deserialize, Deserializer};
 use std::cell::RefCell;
 use std::cmp::min;
+use std::collections::VecDeque;
 use std::fmt::{self, Formatter};
+use std::ops::Range;
 
 #[derive(CandidType, Clone, Default, Deserialize)]
 pub struct EventBuffer {
-    pub events: Vec<Event>,
+    pub events: VecDeque<Event>,
+    pub culled: Option<usize>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Default)]
@@ -33,23 +36,28 @@ impl ManagedList {
         event: ManagedCanisterEventKind,
         timestamp: u64,
     ) {
-        let events = &mut self
+        let canister = &mut self
             .0
             .entry(canister)
-            .or_insert_with(|| ManagedCanister::new(canister))
-            .events;
-        events.push(ManagedCanisterEvent {
+            .or_insert_with(|| ManagedCanister::new(canister));
+        let events = &mut canister.events;
+        events.push_back(ManagedCanisterEvent {
             kind: event,
             id: events.len() as u32,
             timestamp,
-        })
+        });
+        if events.len() > 1000 {
+            events.truncate(1000);
+            canister.culled = Some(events[0].id as usize);
+        }
     }
 }
 
 #[derive(Debug, Clone, Eq, CandidType, Deserialize)]
 pub struct ManagedCanister {
     pub info: ManagedCanisterInfo,
-    pub events: Vec<ManagedCanisterEvent>,
+    pub events: VecDeque<ManagedCanisterEvent>,
+    pub culled: Option<usize>,
 }
 
 #[derive(Debug, Clone, Eq, CandidType, Deserialize)]
@@ -67,7 +75,8 @@ impl ManagedCanister {
                 name: None,
                 created_at: api::time(),
             },
-            events: vec![],
+            events: VecDeque::new(),
+            culled: Some(0),
         }
     }
 }
@@ -101,7 +110,7 @@ pub enum ManagedCanisterEventKind {
 impl EventBuffer {
     #[inline]
     pub fn push(&mut self, event: Event) {
-        self.events.push(event);
+        self.events.push_back(event);
     }
 
     #[inline]
@@ -110,8 +119,9 @@ impl EventBuffer {
     }
 
     #[inline]
-    pub fn as_slice(&self) -> &[Event] {
-        self.events.as_slice()
+    pub fn between(&self, Range { start, end }: Range<usize>) -> Vec<Event> {
+        let base = self.culled.unwrap_or(0);
+        self.events.range(start.saturating_sub(base)..end.saturating_sub(base)).cloned().collect()
     }
 }
 
@@ -198,6 +208,10 @@ pub fn record(kind: EventKind) {
             timestamp: api::time() as u64,
             kind,
         });
+        if buffer.len() > 5000 {
+            buffer.events.truncate(5000);
+            buffer.culled = Some(buffer.events[0].id as usize);
+        }
     });
 }
 
@@ -214,7 +228,7 @@ pub fn get_events(from: Option<u32>, to: Option<u32>) -> Vec<Event> {
         }) as usize;
         let to = min(buffer.len(), to.unwrap_or(u32::MAX)) as usize;
 
-        buffer.as_slice()[from..to].to_owned()
+        buffer.between(from..to)
     })
 }
 
@@ -244,7 +258,8 @@ pub fn get_managed_canister_events(
 ) -> Option<Vec<ManagedCanisterEvent>> {
     MANAGED_LIST.with(|buffer| {
         let buffer = buffer.borrow();
-        let buffer = &buffer.0.get(canister)?.events;
+        let canister = &buffer.0.get(canister)?;
+        let buffer = &canister.events;
         let from = from.unwrap_or_else(|| {
             if buffer.len() <= 20 {
                 0
@@ -253,7 +268,8 @@ pub fn get_managed_canister_events(
             }
         }) as usize;
         let to = min(buffer.len() as u32, to.unwrap_or(u32::MAX)) as usize;
-        Some(buffer[from..to].to_owned())
+        let base = canister.culled.unwrap_or(0);
+        Some(buffer.range(from.saturating_sub(base)..to.saturating_sub(base)).cloned().collect())
     })
 }
 
