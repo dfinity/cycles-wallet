@@ -209,8 +209,8 @@ pub fn record(kind: EventKind) {
             timestamp: api::time() as u64,
             kind,
         });
-        if buffer.events.len() > 5000 {
-            buffer.events.drain(..buffer.events.len() - 5000);
+        if buffer.events.len() > 10_000 {
+            buffer.events.drain(..buffer.events.len() - 10_000);
             buffer.culled = Some(buffer.events[0].id as usize);
         }
     });
