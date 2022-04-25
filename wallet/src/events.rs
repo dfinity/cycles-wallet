@@ -20,6 +20,9 @@ pub struct EventBuffer {
 #[derive(Debug, Clone, PartialEq, Eq, Default)]
 pub struct ManagedList(pub IndexMap<Principal, ManagedCanister>);
 
+const MAX_EVENTS: usize = 10_000;
+const MAX_CANISTER_EVENTS: usize = 1_000;
+
 thread_local! {
     pub static EVENT_BUFFER: RefCell<EventBuffer> = Default::default();
     pub static MANAGED_LIST: RefCell<ManagedList> = Default::default();
@@ -45,8 +48,8 @@ impl ManagedList {
             id: events.len() as u32,
             timestamp,
         });
-        if events.len() > 1000 {
-            events.drain(..events.len() - 1000);
+        if events.len() > MAX_CANISTER_EVENTS {
+            events.drain(..events.len() - MAX_EVENTS);
         }
     }
 }
@@ -208,8 +211,8 @@ pub fn record(kind: EventKind) {
             timestamp: api::time() as u64,
             kind,
         });
-        if buffer.events.len() > 10_000 {
-            buffer.events.drain(..buffer.events.len() - 10_000);
+        if buffer.events.len() > MAX_EVENTS {
+            buffer.events.drain(..buffer.events.len() - MAX_EVENTS);
         }
     });
 }
