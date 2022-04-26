@@ -1,6 +1,5 @@
 shell:
   - 'e2e/**'
-  - '.github/**'
   - 'wallet/build.sh'
   - 'demo.sh'
 backend: &backend
