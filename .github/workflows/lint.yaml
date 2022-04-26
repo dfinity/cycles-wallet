@@ -3,8 +3,20 @@ name: Lint
 on: [pull_request]
 
 jobs:
+  filter:
+    runs-on: ubuntu-latest
+    outputs:
+      filter: ${{ steps.filter.outputs.backend == 'true' || steps.filter.outputs.workflows == 'true' }}
+    steps:
+      - uses: actions/checkout@v2
+      - uses: dorny/paths-filter@v2
+        id: filter
+        with:
+          filters: .github/filters.yml
   lint:
     name: Lint
+    needs: filter
+    if: ${{ needs.filter.outputs.filter == 'true' }}
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -55,8 +67,8 @@ jobs:
     name: lint:required
     runs-on: ubuntu-latest
     if: ${{ always() }}
-    needs: lint
+    needs: [lint, filter]
     steps:
     - name: Check lint result
-      if: ${{ needs.lint.result != 'success' }}
+      if: ${{ needs.lint.result != 'success' && needs.filter.outputs.filter == 'true' }}
       run: exit 1
