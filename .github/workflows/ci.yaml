@@ -8,7 +8,7 @@ jobs:
   filter:
     runs-on: ubuntu-latest
     outputs:
-      filter: ${{ steps.filter.outputs.demo }}
+      filter: ${{ steps.filter.outputs.demo == 'true' || steps.filter.outputs.workflows == 'true' }}
     steps:
       - uses: actions/checkout@v2
       - uses: dorny/paths-filter@v2
