@@ -6,8 +6,20 @@ on:
   pull_request:
 
 jobs:
+  filter:
+    runs-on: ubuntu-latest
+    outputs:
+      backend: ${{ steps.filter.outputs.backend }}
+    steps:
+    - uses: actions/checkout@v2
+    - uses: dorny/paths-filter@v2
+      id: filter
+      with: 
+        filters: .github/filters.yml
   test:
     name: Run built-in tests
+    needs: filter
+    if: ${{ needs.filter.outputs.backend == 'true' }}
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
@@ -51,11 +63,11 @@ jobs:
 
   aggregate:
     name: test:required
-    needs: test
+    needs: [test, filter]
     runs-on: ubuntu-latest
     if: ${{ always() }}
     steps:
     - name: Check test result
-      if: ${{ needs.test.result != 'success' }}
+      if: ${{ needs.test.result != 'success' && needs.filter.outputs.backend == 'true' }}
       run: exit 1
     

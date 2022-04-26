@@ -5,7 +5,19 @@ on:
       - main
   pull_request:
 jobs:
+  filter:
+    runs-on: ubuntu-latest
+    outputs:
+      demo: ${{ steps.filter.outputs.demo }}
+    steps:
+      - uses: actions/checkout@v2
+      - uses: dorny/paths-filter@v2
+        id: filter
+        with:
+          filters: .github/filters.yml
   demo:
+    needs: filter
+    if: ${{ needs.filter.outputs.demo == 'true' }}
     runs-on: ubuntu-latest
 
     strategy:
@@ -45,8 +57,8 @@ jobs:
     name: demo:required
     runs-on: ubuntu-latest
     if: ${{ always() }}
-    needs: demo
+    needs: [demo, filter]
     steps:
     - name: Check demo result
-      if: ${{ needs.demo.result != 'success' }}
+      if: ${{ needs.demo.result != 'success' && needs.filter.outputs.demo == 'true' }}
       run: exit 1

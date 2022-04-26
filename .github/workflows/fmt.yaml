@@ -3,8 +3,20 @@ name: Format
 on: [pull_request]
 
 jobs:
+  filter:
+    runs-on: ubuntu-latest
+    outputs:
+      backend: ${{ steps.filter.outputs.backend }}
+    steps:
+      - uses: actions/checkout@v2
+      - uses: dorny/paths-filter@v2
+        id: filter
+        with:
+          filters: .github/filters.yml
   fmt:
     name: fmt
+    needs: filter
+    if: ${{ needs.filter.outputs.backend == 'true' }}
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
@@ -35,9 +47,9 @@ jobs:
   aggregate:
     name: fmt:required
     runs-on: ubuntu-latest
-    needs: fmt
+    needs: [fmt, filter]
     if: ${{ always() }}
     steps:
     - name: Check fmt result
-      if: ${{ needs.fmt.result != 'success' }}
+      if: ${{ needs.fmt.result != 'success' && needs.filter.outputs.backend == 'true' }}
       run: exit 1

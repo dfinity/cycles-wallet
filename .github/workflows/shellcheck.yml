@@ -1,17 +1,25 @@
 name: shellcheck
 on:
   pull_request:
-    paths:
-      - 'e2e/**'
-      - '.github/**'
-      - 'wallet/build.sh'
-      - 'demo.sh'
   push:
     branches:
       - master
 
 jobs:
+  filter:
+    runs-on: ubuntu-latest
+    outputs:
+      shell: ${{ steps.filter.outputs.shell }}
+    steps:
+      - uses: actions/checkout@v2
+      - uses: dorny/paths-filter@v2
+        id: filter
+        with:
+          filters: .github/filters.yml
+
   check:
+    needs: filter
+    if: ${{ needs.filter.outputs.shell == 'true' }}
     name: Check shell scripts
     runs-on: macos-latest
     steps:
@@ -35,8 +43,8 @@ jobs:
     name: shellcheck:required
     runs-on: ubuntu-latest
     if: ${{ always() }}
-    needs: check
+    needs: [check, filter]
     steps:
     - name: Check shellcheck result
-      if: ${{ needs.check.result != 'success' }}
+      if: ${{ needs.check.result != 'success' && needs.filter.outputs.shell == 'true' }}
       run: exit 1

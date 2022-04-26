@@ -1,0 +1,22 @@
+shell:
+  - 'e2e/**'
+  - '.github/**'
+  - 'wallet/build.sh'
+  - 'demo.sh'
+backend: &backend
+  - 'wallet/**'
+  - 'Cargo.toml'
+  - 'Cargo.lock'
+frontend:
+  - 'wallet_ui/**'
+  - '*.js'
+  - '!(dfx).json'
+canister: &canister
+  - *backend
+  - 'dfx.json'
+e2e:
+  - *canister
+  - 'e2e/**'
+demo:
+  - *canister
+  - 'demo.sh'

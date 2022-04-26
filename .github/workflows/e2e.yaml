@@ -6,8 +6,20 @@ on:
   pull_request:
 
 jobs:
+  filter:
+    runs-on: ubuntu-latest
+    outputs:
+      e2e: ${{ steps.filter.outputs.e2e }}
+    steps:
+      - uses: actions/checkout@v2
+      - uses: dorny/paths-filter@v2
+        id: filter
+        with:
+          filters: .github/filters.yml
   test:
     name: Run e2e tests
+    needs: filter
+    if: ${{ needs.filter.outputs.e2e == 'true' }}
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
@@ -58,8 +70,8 @@ jobs:
     name: e2e:required
     runs-on: ubuntu-latest
     if: ${{ always() }}
-    needs: test
+    needs: [test, filter]
     steps:
     - name: Check e2e result
-      if: ${{ needs.test.result != 'success' }}
+      if: ${{ needs.test.result != 'success' && needs.filter.outputs.e2e == 'true' }}
       run: exit 1
