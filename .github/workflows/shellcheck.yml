@@ -9,7 +9,7 @@ jobs:
   filter:
     runs-on: ubuntu-latest
     outputs:
-      shell: ${{ steps.filter.outputs.shell }}
+      filter: ${{ steps.filter.outputs.shell }}
     steps:
       - uses: actions/checkout@v2
       - uses: dorny/paths-filter@v2
@@ -19,7 +19,7 @@ jobs:
 
   check:
     needs: filter
-    if: ${{ needs.filter.outputs.shell == 'true' }}
+    if: ${{ needs.filter.outputs.filter == 'true' }}
     name: Check shell scripts
     runs-on: macos-latest
     steps:
@@ -46,5 +46,5 @@ jobs:
     needs: [check, filter]
     steps:
     - name: Check shellcheck result
-      if: ${{ needs.check.result != 'success' && needs.filter.outputs.shell == 'true' }}
+      if: ${{ needs.check.result != 'success' && needs.filter.outputs.filter == 'true' }}
       run: exit 1

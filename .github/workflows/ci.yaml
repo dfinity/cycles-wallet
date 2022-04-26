@@ -8,7 +8,7 @@ jobs:
   filter:
     runs-on: ubuntu-latest
     outputs:
-      demo: ${{ steps.filter.outputs.demo }}
+      filter: ${{ steps.filter.outputs.demo }}
     steps:
       - uses: actions/checkout@v2
       - uses: dorny/paths-filter@v2
@@ -17,7 +17,7 @@ jobs:
           filters: .github/filters.yml
   demo:
     needs: filter
-    if: ${{ needs.filter.outputs.demo == 'true' }}
+    if: ${{ needs.filter.outputs.filter == 'true' }}
     runs-on: ubuntu-latest
 
     strategy:
@@ -60,5 +60,5 @@ jobs:
     needs: [demo, filter]
     steps:
     - name: Check demo result
-      if: ${{ needs.demo.result != 'success' && needs.filter.outputs.demo == 'true' }}
+      if: ${{ needs.demo.result != 'success' && needs.filter.outputs.filter == 'true' }}
       run: exit 1

@@ -9,7 +9,7 @@ jobs:
   filter:
     runs-on: ubuntu-latest
     outputs:
-      e2e: ${{ steps.filter.outputs.e2e }}
+      filter: ${{ steps.filter.outputs.e2e }}
     steps:
       - uses: actions/checkout@v2
       - uses: dorny/paths-filter@v2
@@ -19,7 +19,7 @@ jobs:
   test:
     name: Run e2e tests
     needs: filter
-    if: ${{ needs.filter.outputs.e2e == 'true' }}
+    if: ${{ needs.filter.outputs.filter == 'true' }}
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
@@ -73,5 +73,5 @@ jobs:
     needs: [test, filter]
     steps:
     - name: Check e2e result
-      if: ${{ needs.test.result != 'success' && needs.filter.outputs.e2e == 'true' }}
+      if: ${{ needs.test.result != 'success' && needs.filter.outputs.filter == 'true' }}
       run: exit 1

@@ -9,7 +9,7 @@ jobs:
   filter:
     runs-on: ubuntu-latest
     outputs:
-      backend: ${{ steps.filter.outputs.backend }}
+      filter: ${{ steps.filter.outputs.backend }}
     steps:
     - uses: actions/checkout@v2
     - uses: dorny/paths-filter@v2
@@ -19,7 +19,7 @@ jobs:
   test:
     name: Run built-in tests
     needs: filter
-    if: ${{ needs.filter.outputs.backend == 'true' }}
+    if: ${{ needs.filter.outputs.filter == 'true' }}
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
@@ -68,6 +68,6 @@ jobs:
     if: ${{ always() }}
     steps:
     - name: Check test result
-      if: ${{ needs.test.result != 'success' && needs.filter.outputs.backend == 'true' }}
+      if: ${{ needs.test.result != 'success' && needs.filter.outputs.filter == 'true' }}
       run: exit 1
     

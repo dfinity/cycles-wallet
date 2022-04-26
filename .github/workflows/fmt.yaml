@@ -6,7 +6,7 @@ jobs:
   filter:
     runs-on: ubuntu-latest
     outputs:
-      backend: ${{ steps.filter.outputs.backend }}
+      filter: ${{ steps.filter.outputs.backend }}
     steps:
       - uses: actions/checkout@v2
       - uses: dorny/paths-filter@v2
@@ -16,7 +16,7 @@ jobs:
   fmt:
     name: fmt
     needs: filter
-    if: ${{ needs.filter.outputs.backend == 'true' }}
+    if: ${{ needs.filter.outputs.filter == 'true' }}
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
@@ -51,5 +51,5 @@ jobs:
     if: ${{ always() }}
     steps:
     - name: Check fmt result
-      if: ${{ needs.fmt.result != 'success' && needs.filter.outputs.backend == 'true' }}
+      if: ${{ needs.fmt.result != 'success' && needs.filter.outputs.filter == 'true' }}
       run: exit 1
