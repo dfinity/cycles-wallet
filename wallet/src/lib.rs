@@ -189,7 +189,7 @@ enum StreamingStrategy {
     Callback { callback: Func, token: Token },
 }
 
-#[derive(Clone, Debug, CandidType, Deserialize)]
+#[derive(Copy, Clone, Debug, CandidType, Deserialize)]
 struct Token {}
 
 #[query]
