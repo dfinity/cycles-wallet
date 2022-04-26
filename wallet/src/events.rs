@@ -49,7 +49,7 @@ impl ManagedList {
             timestamp,
         });
         if events.len() > MAX_CANISTER_EVENTS {
-            events.drain(..events.len() - MAX_EVENTS);
+            events.drain(..events.len() - MAX_CANISTER_EVENTS);
         }
     }
 }
