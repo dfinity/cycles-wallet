@@ -4,7 +4,7 @@
 #   Both Alice and Bob have their own wallet
 #   Charlie is a custodian of Alice (but Alice is the owner of her own wallet).
 
-set -euo pipefail
+set -e
 trap 'dfx stop' EXIT
 
 npm install
