@@ -8,15 +8,20 @@ use serde::de::{SeqAccess, Visitor};
 use serde::{Deserialize, Deserializer};
 use std::cell::RefCell;
 use std::cmp::min;
+use std::collections::VecDeque;
 use std::fmt::{self, Formatter};
+use std::ops::Range;
 
 #[derive(CandidType, Clone, Default, Deserialize)]
 pub struct EventBuffer {
-    pub events: Vec<Event>,
+    pub events: VecDeque<Event>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Default)]
 pub struct ManagedList(pub IndexMap<Principal, ManagedCanister>);
+
+const MAX_EVENTS: usize = 10_000;
+const MAX_CANISTER_EVENTS: usize = 1_000;
 
 thread_local! {
     pub static EVENT_BUFFER: RefCell<EventBuffer> = Default::default();
@@ -33,23 +38,26 @@ impl ManagedList {
         event: ManagedCanisterEventKind,
         timestamp: u64,
     ) {
-        let events = &mut self
+        let canister = &mut self
             .0
             .entry(canister)
-            .or_insert_with(|| ManagedCanister::new(canister))
-            .events;
-        events.push(ManagedCanisterEvent {
+            .or_insert_with(|| ManagedCanister::new(canister));
+        let events = &mut canister.events;
+        events.push_back(ManagedCanisterEvent {
             kind: event,
             id: events.len() as u32,
             timestamp,
-        })
+        });
+        if events.len() > MAX_CANISTER_EVENTS {
+            events.drain(..events.len() - MAX_CANISTER_EVENTS);
+        }
     }
 }
 
 #[derive(Debug, Clone, Eq, CandidType, Deserialize)]
 pub struct ManagedCanister {
     pub info: ManagedCanisterInfo,
-    pub events: Vec<ManagedCanisterEvent>,
+    pub events: VecDeque<ManagedCanisterEvent>,
 }
 
 #[derive(Debug, Clone, Eq, CandidType, Deserialize)]
@@ -67,7 +75,7 @@ impl ManagedCanister {
                 name: None,
                 created_at: api::time(),
             },
-            events: vec![],
+            events: VecDeque::new(),
         }
     }
 }
@@ -101,17 +109,21 @@ pub enum ManagedCanisterEventKind {
 impl EventBuffer {
     #[inline]
     pub fn push(&mut self, event: Event) {
-        self.events.push(event);
+        self.events.push_back(event);
     }
 
     #[inline]
-    pub fn len(&self) -> u32 {
-        self.events.len() as u32
+    pub fn total(&self) -> u32 {
+        self.events.back().map(|event| event.id).unwrap_or(0) + 1
     }
 
     #[inline]
-    pub fn as_slice(&self) -> &[Event] {
-        self.events.as_slice()
+    pub fn between(&self, Range { start, end }: Range<usize>) -> Vec<Event> {
+        let base = self.events.front().map(|event| event.id).unwrap_or(0) as usize;
+        self.events
+            .range(start.saturating_sub(base)..end.saturating_sub(base))
+            .cloned()
+            .collect()
     }
 }
 
@@ -192,12 +204,16 @@ pub fn record(kind: EventKind) {
     }
     EVENT_BUFFER.with(|buffer| {
         let mut buffer = buffer.borrow_mut();
-        let len = buffer.len();
+        let buffer = &mut *buffer;
+        let len = buffer.total();
         buffer.push(Event {
             id: len,
             timestamp: api::time() as u64,
             kind,
         });
+        if buffer.events.len() > MAX_EVENTS {
+            buffer.events.drain(..buffer.events.len() - MAX_EVENTS);
+        }
     });
 }
 
@@ -206,15 +222,15 @@ pub fn get_events(from: Option<u32>, to: Option<u32>) -> Vec<Event> {
         let buffer = buffer.borrow();
 
         let from = from.unwrap_or_else(|| {
-            if buffer.len() <= 20 {
+            if buffer.total() <= 20 {
                 0
             } else {
-                buffer.len() - 20
+                buffer.total() - 20
             }
         }) as usize;
-        let to = min(buffer.len(), to.unwrap_or(u32::MAX)) as usize;
+        let to = min(buffer.total(), to.unwrap_or(u32::MAX)) as usize;
 
-        buffer.as_slice()[from..to].to_owned()
+        buffer.between(from..to)
     })
 }
 
@@ -244,16 +260,18 @@ pub fn get_managed_canister_events(
 ) -> Option<Vec<ManagedCanisterEvent>> {
     MANAGED_LIST.with(|buffer| {
         let buffer = buffer.borrow();
-        let buffer = &buffer.0.get(canister)?.events;
-        let from = from.unwrap_or_else(|| {
-            if buffer.len() <= 20 {
-                0
-            } else {
-                buffer.len() as u32 - 20
-            }
-        }) as usize;
-        let to = min(buffer.len() as u32, to.unwrap_or(u32::MAX)) as usize;
-        Some(buffer[from..to].to_owned())
+        let canister = &buffer.0.get(canister)?;
+        let buffer = &canister.events;
+        let total = buffer.back().map(|event| event.id).unwrap_or(0) + 1;
+        let from = from.unwrap_or_else(|| if total <= 20 { 0 } else { total - 20 }) as usize;
+        let to = min(total, to.unwrap_or(u32::MAX)) as usize;
+        let base = buffer.front().map(|event| event.id).unwrap_or(0) as usize;
+        Some(
+            buffer
+                .range(from.saturating_sub(base)..to.saturating_sub(base))
+                .cloned()
+                .collect(),
+        )
     })
 }
 
