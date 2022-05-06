@@ -301,7 +301,7 @@ fn security_headers() -> Vec<HeaderField> {
                 "default-src 'none';\
              connect-src 'self' https://ic0.app;\
              img-src 'self' data:;\
-             script-src '{}' 'unsafe-inline' 'unsafe-eval' 'strict-dynamic' https:;\
+             script-src '{}' 'unsafe-eval' 'strict-dynamic' https:;\
              base-uri 'none';\
              frame-ancestors 'none';\
              form-action 'none';\
