@@ -307,7 +307,7 @@ fn security_headers() -> Vec<HeaderField> {
              form-action 'none';\
              style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;\
              style-src-elem 'unsafe-inline' https://fonts.googleapis.com;\
-             font-src https://fonts.gstatic.com;\
+             font-src https://fonts.gstatic.com data:;\
              upgrade-insecure-requests;",
                 hash
             ),
