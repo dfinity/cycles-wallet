@@ -4,6 +4,7 @@ use ic_cdk::*;
 use ic_cdk_macros::*;
 use ic_certified_map::{AsHashTree, Hash, RbTree};
 use lazy_static::lazy_static;
+use regex::Regex;
 use serde::{Deserialize, Serialize};
 use serde_bytes::{ByteBuf, Bytes};
 use sha2::Digest;
@@ -250,18 +251,29 @@ fn make_asset_certificate_header(asset_hashes: &AssetHashes, asset_name: &str) -
 }
 
 lazy_static! {
-    // The <script> tag that sets the canister ID and loads the 'index.js'
-    static ref INDEX_HTML_SETUP_JS: String = {
-        let canister_id = api::id();
-        format!(r#"var canisterId = '{}';let s = document.createElement('script');s.async = false;s.src = 'index.js';document.head.appendChild(s);"#, canister_id)
+    static ref INDEX_HTML_STR: String = {
+        let index_html = include_str!("../../dist/index.html");
+        let re = Regex::new("<script src=\"(?P<name>\\S+)\"></script>").unwrap();
+        let replacement = "<script>var s=document.createElement('script');s.src=\"$name\";document.head.appendChild(s);</script>";
+        let processed = re.replace_all(index_html, replacement);
+        processed.to_string()
     };
-
-    // The SRI sha256 hash of the script tag, used by the CSP policy.
-    // https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Security-Policy/script-src
-    pub static ref INDEX_HTML_SETUP_JS_SRI_HASH: String = {
-        let hash = &sha2::Sha256::digest(INDEX_HTML_SETUP_JS.as_bytes());
-        let hash = base64::encode(hash);
-        format!("sha256-{}", hash)
+    static ref INDEX_HTML_STR_HASH: [u8; 32] = {
+        let bytes = INDEX_HTML_STR.as_bytes();
+        let mut hasher = sha2::Sha256::new();
+        hasher.update(&bytes);
+        hasher.finalize().into()
+    };
+    static ref INDEX_HTML_JS_HASHES: String = {
+        let re = Regex::new("<script>(.*?)</script>").unwrap();
+        let mut res = String::new();
+        for cap in re.captures_iter(&*INDEX_HTML_STR) {
+            let s = &cap[1];
+            let hash = &sha2::Sha256::digest(s.as_bytes());
+            let hash = base64::encode(hash);
+            res.push_str(&format!("'sha256-{hash}' "));
+        }
+        res
     };
 }
 
@@ -269,7 +281,7 @@ lazy_static! {
 /// These headers enable browser security features (like limit access to platform apis and set
 /// iFrame policies, etc.).
 fn security_headers() -> Vec<HeaderField> {
-    let hash = INDEX_HTML_SETUP_JS_SRI_HASH.to_string();
+    let hashes = INDEX_HTML_JS_HASHES.to_string();
     vec![
         ("X-Frame-Options".to_string(), "DENY".to_string()),
         ("X-Content-Type-Options".to_string(), "nosniff".to_string()),
@@ -301,7 +313,7 @@ fn security_headers() -> Vec<HeaderField> {
                 "default-src 'none';\
              connect-src 'self' https://ic0.app;\
              img-src 'self' data:;\
-             script-src '{}' 'unsafe-eval' 'strict-dynamic' https:;\
+             script-src {} 'unsafe-eval' 'strict-dynamic' https:;\
              base-uri 'none';\
              frame-ancestors 'none';\
              form-action 'none';\
@@ -309,7 +321,7 @@ fn security_headers() -> Vec<HeaderField> {
              style-src-elem 'unsafe-inline' https://fonts.googleapis.com;\
              font-src https://fonts.gstatic.com data:;\
              upgrade-insecure-requests;",
-                hash
+                hashes
             ),
         ),
         (
@@ -372,8 +384,10 @@ fn init_assets() {
         let mut assets = assets.borrow_mut();
         for_each_asset(|name, headers, contents, hash| {
             if name == "/index.html" {
-                assets.hashes.insert("/", *hash);
-                assets.contents.insert("/", (headers.clone(), contents));
+                assets.hashes.insert("/", *INDEX_HTML_STR_HASH);
+                assets
+                    .contents
+                    .insert("/", (headers.clone(), INDEX_HTML_STR.as_bytes()));
             }
             assets.hashes.insert(name, *hash);
             assets.contents.insert(name, (headers, contents));

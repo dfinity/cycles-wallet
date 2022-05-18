@@ -1054,6 +1054,7 @@ dependencies = [
  "lazy_static",
  "libflate",
  "num-traits",
+ "regex",
  "serde",
  "serde_bytes",
  "serde_cbor",
