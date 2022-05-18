@@ -296,9 +296,6 @@ fn security_headers() -> Vec<HeaderField> {
         // There is currently no other way to allow execution of WebAssembly modules with CSP.
         // See https://github.com/WebAssembly/content-security-policy/blob/main/proposals/CSP.md.
         //
-        // script-src 'unsafe-inline' https: are only there for backwards compatibility and ignored
-        // by modern browsers.
-        //
         // style-src 'unsafe-inline' is currently required due to the way styles are handled by the
         // application. Adding hashes would require a big restructuring of the application and build
         // infrastructure.
