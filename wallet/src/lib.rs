@@ -362,7 +362,6 @@ fn security_headers() -> Vec<HeaderField> {
              navigation-override=(),\
              payment=(),\
              picture-in-picture=(),\
-             publickey-credentials-get=(self),\
              screen-wake-lock=(),\
              serial=(),\
              speaker-selection=(),\
