@@ -387,7 +387,7 @@ fn init_assets() {
                 assets.hashes.insert("/index.html", *INDEX_HTML_STR_HASH);
                 assets
                     .contents
-                    .insert("/index.html", (headers.clone(), INDEX_HTML_STR.as_bytes()));
+                    .insert("/index.html", (headers, INDEX_HTML_STR.as_bytes()));
             } else {
                 assets.hashes.insert(name, *hash);
                 assets.contents.insert(name, (headers, contents));
