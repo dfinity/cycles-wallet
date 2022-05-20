@@ -384,9 +384,14 @@ fn init_assets() {
                 assets
                     .contents
                     .insert("/", (headers.clone(), INDEX_HTML_STR.as_bytes()));
+                assets.hashes.insert("/index.html", *INDEX_HTML_STR_HASH);
+                assets
+                    .contents
+                    .insert("/index.html", (headers.clone(), INDEX_HTML_STR.as_bytes()));
+            } else {
+                assets.hashes.insert(name, *hash);
+                assets.contents.insert(name, (headers, contents));
             }
-            assets.hashes.insert(name, *hash);
-            assets.contents.insert(name, (headers, contents));
         });
         let full_tree_hash =
             ic_certified_map::labeled_hash(b"http_assets", &assets.hashes.root_hash());
