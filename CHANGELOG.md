@@ -20,6 +20,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - The canister now holds 128-bit data internally and the 128-bit functions should be preferred going forward
   - `get_events` and `get_managed_canister_events` will trap if any events would be returned with cycle counts that overflow a `nat64`
 
+- Introduced Security Headers including Content Security Policy.
+
 ### Changed
 
 - `wallet_receive` now takes an optional memo parameter, for recording information about a particular transaction.
