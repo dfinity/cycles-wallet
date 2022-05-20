@@ -287,7 +287,7 @@ fn security_headers() -> Vec<HeaderField> {
         ("X-Content-Type-Options".to_string(), "nosniff".to_string()),
         // Content Security Policy
         //
-        // The sha256 hash matches the inline script in index.html. This inline script is a workaround
+        // The sha256 hash matches the inline scripts in index.html. This inline script is a workaround
         // for Firefox not supporting SRI (recommended here https://csp.withgoogle.com/docs/faq.html#static-content).
         // This also prevents use of trusted-types. See https://bugzilla.mozilla.org/show_bug.cgi?id=1409200.
         //
@@ -310,7 +310,7 @@ fn security_headers() -> Vec<HeaderField> {
                 "default-src 'none';\
              connect-src 'self' https://ic0.app;\
              img-src 'self' data:;\
-             script-src {} 'unsafe-eval' 'strict-dynamic' https:;\
+             script-src {} 'unsafe-inline' 'unsafe-eval' 'strict-dynamic' https:;\
              base-uri 'none';\
              frame-ancestors 'none';\
              form-action 'none';\
