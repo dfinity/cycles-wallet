@@ -11,7 +11,6 @@ set -e
 npm install
 npm run build
 gzip -f dist/*.js
-gzip -f dist/*.html
 
 cargo build --target wasm32-unknown-unknown --release
 

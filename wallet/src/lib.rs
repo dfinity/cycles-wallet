@@ -3,8 +3,11 @@ use ic_cdk::api::{data_certificate, set_certified_data, trap};
 use ic_cdk::*;
 use ic_cdk_macros::*;
 use ic_certified_map::{AsHashTree, Hash, RbTree};
+use lazy_static::lazy_static;
+use regex::Regex;
 use serde::{Deserialize, Serialize};
 use serde_bytes::{ByteBuf, Bytes};
+use sha2::Digest;
 use std::borrow::Cow;
 use std::cell::RefCell;
 use std::collections::HashMap;
@@ -172,7 +175,7 @@ type HeaderField = (String, String);
 struct HttpRequest {
     method: String,
     url: String,
-    headers: Vec<(String, String)>,
+    headers: Vec<HeaderField>,
     body: ByteBuf,
 }
 
@@ -204,6 +207,7 @@ fn http_request(req: HttpRequest) -> HttpResponse {
         match assets.contents.get(asset) {
             Some((headers, value)) => {
                 let mut headers = headers.clone();
+                headers.append(&mut security_headers());
                 headers.push(certificate_header);
 
                 HttpResponse {
@@ -213,17 +217,21 @@ fn http_request(req: HttpRequest) -> HttpResponse {
                     streaming_strategy: None,
                 }
             }
-            None => HttpResponse {
-                status_code: 404,
-                headers: vec![certificate_header],
-                body: Cow::Owned(ByteBuf::from(format!("Asset {} not found.", asset))),
-                streaming_strategy: None,
-            },
+            None => {
+                let mut headers = security_headers();
+                headers.push(certificate_header);
+                HttpResponse {
+                    status_code: 404,
+                    headers,
+                    body: Cow::Owned(ByteBuf::from(format!("Asset {} not found.", asset))),
+                    streaming_strategy: None,
+                }
+            }
         }
     })
 }
 
-fn make_asset_certificate_header(asset_hashes: &AssetHashes, asset_name: &str) -> (String, String) {
+fn make_asset_certificate_header(asset_hashes: &AssetHashes, asset_name: &str) -> HeaderField {
     let certificate = data_certificate().unwrap_or_else(|| {
         trap("data certificate is only available in query calls");
     });
@@ -242,16 +250,148 @@ fn make_asset_certificate_header(asset_hashes: &AssetHashes, asset_name: &str) -
     )
 }
 
+lazy_static! {
+    static ref INDEX_HTML_STR: String = {
+        let index_html = include_str!("../../dist/index.html");
+        let re = Regex::new("<script src=\"(?P<name>\\S+)\"></script>").unwrap();
+        let replacement = "<script>var s=document.createElement('script');s.src=\"$name\";document.head.appendChild(s);</script>";
+        let processed = re.replace_all(index_html, replacement);
+        processed.to_string()
+    };
+    static ref INDEX_HTML_STR_HASH: [u8; 32] = {
+        let bytes = INDEX_HTML_STR.as_bytes();
+        let mut hasher = sha2::Sha256::new();
+        hasher.update(&bytes);
+        hasher.finalize().into()
+    };
+    static ref INDEX_HTML_JS_HASHES: String = {
+        let re = Regex::new("<script>(.*?)</script>").unwrap();
+        let mut res = String::new();
+        for cap in re.captures_iter(&*INDEX_HTML_STR) {
+            let s = &cap[1];
+            let hash = &sha2::Sha256::digest(s.as_bytes());
+            let hash = base64::encode(hash);
+            res.push_str(&format!("'sha256-{hash}' "));
+        }
+        res
+    };
+}
+
+/// List of recommended security headers as per https://owasp.org/www-project-secure-headers/
+/// These headers enable browser security features (like limit access to platform apis and set
+/// iFrame policies, etc.).
+fn security_headers() -> Vec<HeaderField> {
+    let hashes = INDEX_HTML_JS_HASHES.to_string();
+    vec![
+        ("X-Frame-Options".to_string(), "DENY".to_string()),
+        ("X-Content-Type-Options".to_string(), "nosniff".to_string()),
+        // Content Security Policy
+        //
+        // The sha256 hash matches the inline scripts in index.html. This inline script is a workaround
+        // for Firefox not supporting SRI (recommended here https://csp.withgoogle.com/docs/faq.html#static-content).
+        // This also prevents use of trusted-types. See https://bugzilla.mozilla.org/show_bug.cgi?id=1409200.
+        //
+        // script-src 'unsafe-eval' is required because agent-js uses a WebAssembly module for the
+        // validation of bls signatures.
+        // There is currently no other way to allow execution of WebAssembly modules with CSP.
+        // See https://github.com/WebAssembly/content-security-policy/blob/main/proposals/CSP.md.
+        //
+        // style-src 'unsafe-inline' is currently required due to the way styles are handled by the
+        // application. Adding hashes would require a big restructuring of the application and build
+        // infrastructure.
+        //
+        // NOTE about `script-src`: we cannot use a normal script tag like this
+        //   <script src="index.js" integrity="sha256-..." defer></script>
+        // because Firefox does not support SRI with CSP: https://bugzilla.mozilla.org/show_bug.cgi?id=1409200
+        // Instead, we add it to the CSP policy
+        (
+            "Content-Security-Policy".to_string(),
+            format!(
+                "default-src 'none';\
+             connect-src 'self' https://ic0.app;\
+             img-src 'self' data:;\
+             script-src {} 'unsafe-inline' 'unsafe-eval' 'strict-dynamic' https:;\
+             base-uri 'none';\
+             frame-ancestors 'none';\
+             form-action 'none';\
+             style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;\
+             style-src-elem 'unsafe-inline' https://fonts.googleapis.com;\
+             font-src https://fonts.gstatic.com data:;\
+             upgrade-insecure-requests;",
+                hashes
+            ),
+        ),
+        (
+            "Strict-Transport-Security".to_string(),
+            "max-age=31536000 ; includeSubDomains".to_string(),
+        ),
+        // "Referrer-Policy: no-referrer" would be more strict, but breaks local dev deployment
+        // same-origin is still ok from a security perspective
+        ("Referrer-Policy".to_string(), "same-origin".to_string()),
+        (
+            "Permissions-Policy".to_string(),
+            "accelerometer=(),\
+             ambient-light-sensor=(),\
+             autoplay=(),\
+             battery=(),\
+             camera=(),\
+             clipboard-read=(),\
+             clipboard-write=(self),\
+             conversion-measurement=(),\
+             cross-origin-isolated=(),\
+             display-capture=(),\
+             document-domain=(),\
+             encrypted-media=(),\
+             execution-while-not-rendered=(),\
+             execution-while-out-of-viewport=(),\
+             focus-without-user-activation=(),\
+             fullscreen=(),\
+             gamepad=(),\
+             geolocation=(),\
+             gyroscope=(),\
+             hid=(),\
+             idle-detection=(),\
+             interest-cohort=(),\
+             keyboard-map=(),\
+             magnetometer=(),\
+             microphone=(),\
+             midi=(),\
+             navigation-override=(),\
+             payment=(),\
+             picture-in-picture=(),\
+             screen-wake-lock=(),\
+             serial=(),\
+             speaker-selection=(),\
+             sync-script=(),\
+             sync-xhr=(self),\
+             trust-token-redemption=(),\
+             usb=(),\
+             vertical-scroll=(),\
+             web-share=(),\
+             window-placement=(),\
+             xr-spatial-tracking=()"
+                .to_string(),
+        ),
+    ]
+}
+
 fn init_assets() {
     ASSETS.with(|assets| {
         let mut assets = assets.borrow_mut();
         for_each_asset(|name, headers, contents, hash| {
             if name == "/index.html" {
-                assets.hashes.insert("/", *hash);
-                assets.contents.insert("/", (headers.clone(), contents));
+                assets.hashes.insert("/", *INDEX_HTML_STR_HASH);
+                assets
+                    .contents
+                    .insert("/", (headers.clone(), INDEX_HTML_STR.as_bytes()));
+                assets.hashes.insert("/index.html", *INDEX_HTML_STR_HASH);
+                assets
+                    .contents
+                    .insert("/index.html", (headers, INDEX_HTML_STR.as_bytes()));
+            } else {
+                assets.hashes.insert(name, *hash);
+                assets.contents.insert(name, (headers, contents));
             }
-            assets.hashes.insert(name, *hash);
-            assets.contents.insert(name, (headers, contents));
         });
         let full_tree_hash =
             ic_certified_map::labeled_hash(b"http_assets", &assets.hashes.root_hash());
