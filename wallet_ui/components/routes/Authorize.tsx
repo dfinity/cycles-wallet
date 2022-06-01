@@ -119,7 +119,7 @@ export function Authorize(props: AuthorizeProps) {
   if (agentPrincipal && !agentPrincipal.isAnonymous()) {
     const canisterId = getWalletId();
     const isLocalhost = !!window.location.hostname.match(/^(.*\.)?localhost$/);
-    const canisterCallShCode = `dfx canister --no-wallet${
+    const canisterCallShCode = `dfx canister${
       isLocalhost ? "" : " --network ic"
     } call "${
       canisterId?.toText() || ""
