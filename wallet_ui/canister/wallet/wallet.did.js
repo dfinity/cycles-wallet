@@ -83,10 +83,10 @@ export default ({ IDL }) => {
         ),
       ],
       [IDL.Vec(IDL.Tuple(IDL.Nat64, IDL.Nat64))],
-      ["query"]
+      []
     ),
-    get_controllers: IDL.Func([], [IDL.Vec(IDL.Principal)], ["query"]),
-    get_custodians: IDL.Func([], [IDL.Vec(IDL.Principal)], ["query"]),
+    get_controllers: IDL.Func([], [IDL.Vec(IDL.Principal)], []),
+    get_custodians: IDL.Func([], [IDL.Vec(IDL.Principal)], []),
     get_events: IDL.Func(
       [
         IDL.Opt(
@@ -97,18 +97,14 @@ export default ({ IDL }) => {
         ),
       ],
       [IDL.Vec(Event)],
-      ["query"]
+      []
     ),
-    list_addresses: IDL.Func([], [IDL.Vec(AddressEntry)], ["query"]),
-    name: IDL.Func([], [IDL.Opt(IDL.Text)], ["query"]),
+    list_addresses: IDL.Func([], [IDL.Vec(AddressEntry)], []),
+    name: IDL.Func([], [IDL.Opt(IDL.Text)], []),
     remove_address: IDL.Func([IDL.Principal], [], []),
     remove_controller: IDL.Func([IDL.Principal], [], []),
     set_name: IDL.Func([IDL.Text], [], []),
-    wallet_balance: IDL.Func(
-      [],
-      [IDL.Record({ amount: IDL.Nat64 })],
-      ["query"]
-    ),
+    wallet_balance: IDL.Func([], [IDL.Record({ amount: IDL.Nat64 })], []),
     wallet_call: IDL.Func(
       [
         IDL.Record({
