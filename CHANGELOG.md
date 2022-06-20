@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- UI no longer uses queries, so that all requests go through consensus for added security.
+
 - Now queries XDR to ICP conversion rate from Cycles Minting Canister (CMC). The interface can be found at `nns-dapp/frontend/ts/src/canisters/cyclesMinting/canister.did`.
 
   - The CycleSlider UI feature shows this conversion when allocating cycles to canisters.
