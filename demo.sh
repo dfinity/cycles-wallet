@@ -11,9 +11,9 @@ npm install
 
 dfx start --background --clean
 
-dfx identity new id_alice || true
-dfx identity new id_bob || true
-dfx identity new id_charlie || true
+dfx identity new id_alice --disable-encryption || true
+dfx identity new id_bob --disable-encryption || true
+dfx identity new id_charlie --disable-encryption || true
 
 dfx --identity id_alice canister create --no-wallet alice --with-cycles=5000000000000
 dfx --identity id_bob canister create --no-wallet bob --with-cycles=2000000000000

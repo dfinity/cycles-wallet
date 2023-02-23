@@ -25,8 +25,8 @@ teardown() {
     # invokes:
     #  - wallet_create_canister
 
-    assert_command dfx identity new alice
-    assert_command dfx identity use alice
+    assert_command dfx identity new alice --disable-encryption
+    assert_command dfx identity use alice --disable-encryption
 
     ALICE_WALLET=$(dfx --identity alice identity get-wallet)
     ALICE_ID=$(dfx --identity alice identity get-principal)
@@ -49,8 +49,8 @@ teardown() {
     # invokes:
     #  - wallet_create_canister
 
-    assert_command dfx identity new alice
-    assert_command dfx identity use alice
+    assert_command dfx identity new alice --disable-encryption
+    assert_command dfx identity use alice --disable-encryption
 
     ALICE_WALLET=$(dfx --identity alice identity get-wallet)
     ALICE_ID=$(dfx --identity alice identity get-principal)
@@ -72,8 +72,8 @@ teardown() {
     # invokes:
     #  - wallet_create_canister
 
-    assert_command dfx identity new alice
-    assert_command dfx identity new bob
+    assert_command dfx identity new alice --disable-encryption
+    assert_command dfx identity new bob --disable-encryption
 
     assert_command dfx identity use alice
 
@@ -127,8 +127,8 @@ teardown() {
     #  - update_settings_call
     #  - update_settings_call (with controllers)
 
-    assert_command dfx identity new alice
-    assert_command dfx identity new bob
+    assert_command dfx identity new alice --disable-encryption
+    assert_command dfx identity new bob --disable-encryption
 
     WALLET_ID=$(dfx identity get-wallet)
     CREATE_RES=$(dfx canister call "${WALLET_ID}" wallet_create_wallet "(record { cycles = (2000000000000:nat64); settings = record {controllers = opt vec { principal \"$(dfx identity get-principal)\"; principal \"$(dfx --identity alice identity get-principal)\";};};})")
@@ -151,8 +151,8 @@ teardown() {
     #  - update_settings_call
     #  - update_settings_call (with controllers)
 
-    assert_command dfx identity new alice
-    assert_command dfx identity new bob
+    assert_command dfx identity new alice --disable-encryption
+    assert_command dfx identity new bob --disable-encryption
 
     WALLET_ID=$(dfx identity get-wallet)
     CREATE_RES=$(dfx canister call "${WALLET_ID}" wallet_create_wallet "(record { cycles = (2000000000000:nat64); settings = record {controllers = opt vec { principal \"$(dfx --identity alice identity get-principal)\"; principal \"$(dfx --identity bob identity get-principal)\";};};})")
