@@ -243,8 +243,8 @@ fn make_asset_certificate_header(asset_hashes: &AssetHashes, asset_name: &str) -
         "IC-Certificate".to_string(),
         format!(
             "certificate=:{}:, tree=:{}:",
-            base64::encode(&certificate),
-            base64::encode(&serializer.into_inner())
+            base64::encode(certificate),
+            base64::encode(serializer.into_inner())
         ),
     )
 }
@@ -260,13 +260,13 @@ lazy_static! {
     static ref INDEX_HTML_STR_HASH: [u8; 32] = {
         let bytes = INDEX_HTML_STR.as_bytes();
         let mut hasher = sha2::Sha256::new();
-        hasher.update(&bytes);
+        hasher.update(bytes);
         hasher.finalize().into()
     };
     static ref INDEX_HTML_JS_HASHES: String = {
         let re = Regex::new("<script>(.*?)</script>").unwrap();
         let mut res = String::new();
-        for cap in re.captures_iter(&*INDEX_HTML_STR) {
+        for cap in re.captures_iter(&INDEX_HTML_STR) {
             let s = &cap[1];
             let hash = &sha2::Sha256::digest(s.as_bytes());
             let hash = base64::encode(hash);
