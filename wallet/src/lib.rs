@@ -1,7 +1,6 @@
 use candid::{CandidType, Func, Principal, Reserved};
 use ic_cdk::api::{data_certificate, set_certified_data, trap};
 use ic_cdk::*;
-use ic_cdk_macros::*;
 use ic_certified_map::{AsHashTree, Hash, RbTree};
 use lazy_static::lazy_static;
 use regex::Regex;
@@ -477,7 +476,7 @@ mod wallet {
     use ic_cdk::export::candid::{CandidType, Nat};
     use ic_cdk::export::Principal;
     use ic_cdk::{api, caller, id};
-    use ic_cdk_macros::*;
+    use ic_cdk::*;
     use serde::Deserialize;
     use std::convert::TryInto;
 

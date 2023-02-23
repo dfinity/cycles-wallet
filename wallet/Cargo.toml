@@ -11,11 +11,9 @@ path = "src/lib.rs"
 
 [dependencies]
 base64 = "0.13.0"
-ic-types = "0.3.0"
-ic-cdk = "0.5.0"
-ic-cdk-macros = "0.5.0"
+ic-cdk = "0.7"
 ic-certified-map = "0.3.0"
-candid = "0.7.12"
+candid = "0.8"
 lazy_static = "1.4.0"
 libflate = "1"
 num-traits = "0.2.14"
