@@ -27,7 +27,6 @@ teardown() {
 
     assert_command dfx identity new alice
     assert_command dfx identity use alice
-
     ALICE_WALLET=$(dfx --identity alice identity get-wallet)
     ALICE_ID=$(dfx --identity alice identity get-principal)
 

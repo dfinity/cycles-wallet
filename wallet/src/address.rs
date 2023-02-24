@@ -112,13 +112,7 @@ impl AddressBook {
 
     #[inline]
     pub fn find(&self, id: &Principal) -> Option<&AddressEntry> {
-        for a in &self.0 {
-            if &a.id == id {
-                return Some(a);
-            }
-        }
-
-        None
+        self.0.iter().find(|&a| &a.id == id)
     }
 
     #[inline]

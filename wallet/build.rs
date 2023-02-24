@@ -18,7 +18,7 @@ fn hash_file(path: &Path) -> [u8; 32] {
 fn main() {
     let out_dir = env::var("OUT_DIR").unwrap();
     let location = Command::new(env::var("CARGO").unwrap())
-        .args(&["locate-project", "--workspace", "--message-format=plain"])
+        .args(["locate-project", "--workspace", "--message-format=plain"])
         .output()
         .expect("Could not locate project");
     assert!(location.status.success(), "Could not locate project");

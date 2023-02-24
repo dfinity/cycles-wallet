@@ -208,7 +208,7 @@ pub fn record(kind: EventKind) {
         let len = buffer.total();
         buffer.push(Event {
             id: len,
-            timestamp: api::time() as u64,
+            timestamp: api::time(),
             kind,
         });
         if buffer.events.len() > MAX_EVENTS {
@@ -263,7 +263,7 @@ pub fn get_managed_canister_events(
         let canister = &buffer.0.get(canister)?;
         let buffer = &canister.events;
         let total = buffer.back().map(|event| event.id).unwrap_or(0) + 1;
-        let from = from.unwrap_or_else(|| if total <= 20 { 0 } else { total - 20 }) as usize;
+        let from = from.unwrap_or(if total <= 20 { 0 } else { total - 20 }) as usize;
         let to = min(total, to.unwrap_or(u32::MAX)) as usize;
         let base = buffer.front().map(|event| event.id).unwrap_or(0) as usize;
         Some(
