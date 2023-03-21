@@ -14,5 +14,5 @@
     "typeRoots": ["./src/@types", "./wallet_ui/types", "./node_modules/@types"],
     "allowSyntheticDefaultImports": true
   },
-  "include": ["**/*"]
+  "include": ["wallet_ui/**/*"]
 }
