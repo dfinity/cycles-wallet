@@ -27,6 +27,3 @@ else
   echo Could not install ic-cdk-optimizer.
   false
 fi
-
-gzip -f target/wasm32-unknown-unknown/release/wallet-opt.wasm \
-    -c > target/wasm32-unknown-unknown/release/wallet-opt.wasm.gz
