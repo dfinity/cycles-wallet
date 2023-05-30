@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [UNRELEASED]
 
+## [20230530]
+
 ### Fixed
 
 Upgraded `agent-js` packages so that the wallet can work on icp0.io domain as intended.
