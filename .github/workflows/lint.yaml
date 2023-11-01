@@ -41,15 +41,10 @@ jobs:
           rustup update ${{ matrix.rust }}
           rustup default ${{ matrix.rust }}
           rustup component add clippy
-      - name: Install DFINITY SDK
-        run: |
-          DFX_VERSION=0.9.2
-          pushd /tmp
-          wget -q https://sdk.dfinity.org/install.sh
-          echo Y | DFX_VERSION=$DFX_VERSION bash install.sh
-          echo $HOME/bin >> $GITHUB_PATH
-          rm install.sh
-          popd
+      - name: Install dfx
+        uses: dfinity/setup-dfx@main
+        with:
+          dfx-version: "0.9.2"
       - name: Install Node.js ${{ matrix.node-version }}
         uses: actions/setup-node@v1
         with:
