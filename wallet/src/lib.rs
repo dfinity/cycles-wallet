@@ -473,8 +473,8 @@ fn deauthorize(custodian: Principal) -> Result<(), String> {
 
 mod wallet {
     use crate::{events, is_custodian_or_controller, WALLET_WASM_BYTES};
-    use candid::{CandidType, Nat};
     use candid::Principal;
+    use candid::{CandidType, Nat};
     use ic_cdk::*;
     use serde::Deserialize;
     use std::convert::TryInto;

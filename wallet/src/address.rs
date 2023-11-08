@@ -1,9 +1,9 @@
+use candid::{CandidType, Principal};
 use serde::Deserialize;
 use std::cell::RefCell;
 use std::cmp::Ordering;
 use std::collections::BTreeSet;
 use std::fmt::Formatter;
-use candid::{CandidType, Principal};
 
 /// The role of the address, whether it's a [Contact], [Custodian], or a [Controller]. A
 /// [Controller] is the most privileged role, and can rename the wallet, add entries to the

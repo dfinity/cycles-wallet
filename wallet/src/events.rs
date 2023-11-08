@@ -1,4 +1,6 @@
 use crate::address::Role;
+use candid::types::{Compound, Serializer, Type, TypeInner};
+use candid::{CandidType, Principal};
 use ic_cdk::api;
 use indexmap::IndexMap;
 use serde::de::{SeqAccess, Visitor};
@@ -9,8 +11,6 @@ use std::collections::VecDeque;
 use std::fmt::{self, Formatter};
 use std::ops::Range;
 use std::rc::Rc;
-use candid::{CandidType, Principal};
-use candid::types::{Compound, Serializer, Type, TypeInner};
 
 #[derive(CandidType, Clone, Default, Deserialize)]
 pub struct EventBuffer {
