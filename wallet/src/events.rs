@@ -1,8 +1,7 @@
 use crate::address::Role;
+use candid::types::{Compound, Serializer, Type, TypeInner};
+use candid::{CandidType, Principal};
 use ic_cdk::api;
-use ic_cdk::export::candid::types::{Compound, Serializer, Type};
-use ic_cdk::export::candid::CandidType;
-use ic_cdk::export::Principal;
 use indexmap::IndexMap;
 use serde::de::{SeqAccess, Visitor};
 use serde::{Deserialize, Deserializer};
@@ -11,6 +10,7 @@ use std::cmp::min;
 use std::collections::VecDeque;
 use std::fmt::{self, Formatter};
 use std::ops::Range;
+use std::rc::Rc;
 
 #[derive(CandidType, Clone, Default, Deserialize)]
 pub struct EventBuffer {
@@ -287,7 +287,7 @@ pub fn set_short_name(canister: &Principal, name: Option<String>) -> Option<Mana
 
 impl CandidType for ManagedList {
     fn _ty() -> Type {
-        Type::Vec(Box::new(ManagedCanister::ty()))
+        Type(Rc::new(TypeInner::Vec(ManagedCanister::ty())))
     }
     fn idl_serialize<S>(&self, serializer: S) -> Result<(), S::Error>
     where

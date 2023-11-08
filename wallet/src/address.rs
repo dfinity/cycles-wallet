@@ -1,5 +1,4 @@
-use ic_cdk::export::candid::CandidType;
-use ic_cdk::export::Principal;
+use candid::{CandidType, Principal};
 use serde::Deserialize;
 use std::cell::RefCell;
 use std::cmp::Ordering;
@@ -170,7 +169,7 @@ impl std::fmt::Debug for AddressBook {
 #[cfg(test)]
 mod tests {
     use crate::address::{AddressBook, AddressEntry, Role};
-    use ic_cdk::export::Principal;
+    use candid::Principal;
 
     #[test]
     fn can_update_existing() {

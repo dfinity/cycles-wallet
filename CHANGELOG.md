@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [UNRELEASED]
 
+### Changed
+
+Updated to candid 0.9.11 and ic-cdk 0.10
+
 ## [20230530]
 
 ### Fixed
