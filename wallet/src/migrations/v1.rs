@@ -1,8 +1,9 @@
 use std::fmt::{self, Formatter};
+use std::rc::Rc;
 
 use crate::events::*;
 use crate::*;
-use candid::types::{Compound, Serializer, Type};
+use candid::types::{Compound, Serializer, Type, TypeInner};
 use candid::{CandidType, Deserialize, Principal};
 use indexmap::IndexMap;
 use serde::de::{SeqAccess, Visitor};
@@ -89,7 +90,7 @@ pub struct V1ManagedList(pub IndexMap<Principal, V1ManagedCanister>);
 
 impl CandidType for V1ManagedList {
     fn _ty() -> Type {
-        Type::Vec(Box::new(ManagedCanister::ty()))
+        Type(Rc::new(TypeInner::Vec(ManagedCanister::ty())))
     }
     fn idl_serialize<S>(&self, serializer: S) -> Result<(), S::Error>
     where
