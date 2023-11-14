@@ -40,8 +40,6 @@ Once deployed, you can obtain the canister ID with the command:
 dfx canister id wallet
 ```
 
-- #### Step 4: To use the wallet UI, open wallet UI at `http://localhost:8000/?canisterId=<wallet_canister_id_here>&identityProvider=http://localhost:8000/?canisterId=<internet_identity_id>`
-
 ## Resources
 
 - [Cycles wallet developer documentation]
