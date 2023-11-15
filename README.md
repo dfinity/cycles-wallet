@@ -42,4 +42,4 @@ dfx canister id wallet
 
 ## Resources
 
-- [Cycles wallet developer documentation]
+- [Cycles wallet developer documentation](https://internetcomputer.org/docs/current/developer-docs/setup/cycles/cycles-wallet)
