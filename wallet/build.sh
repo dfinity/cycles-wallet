@@ -12,6 +12,7 @@ npm install
 npm run build
 gzip -f dist/*.js
 
+# -Ctarget-cpu=mvp disables modern wasm features so the wallet binary will run on dfx 0.9.2's bundled replica
 cargo rustc -p wallet --target wasm32-unknown-unknown --release -- -Ctarget-cpu=mvp
 
 cargo install ic-wasm --root target --locked
