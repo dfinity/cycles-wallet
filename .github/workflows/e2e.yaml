@@ -55,6 +55,10 @@ jobs:
       - name: Provision Linux
         if: matrix.os == 'ubuntu-latest'
         run: bash .github/workflows/provision-linux.sh
+      - name: Install dfx
+        uses: dfinity/setup-dfx@main
+        with:
+          dfx-version: ${{ matrix.dfx }}
 
       - name: Build
         run: |
