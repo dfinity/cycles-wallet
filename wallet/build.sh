@@ -14,16 +14,17 @@ gzip -f dist/*.js
 
 cargo build --target wasm32-unknown-unknown --release
 
-cargo install ic-cdk-optimizer --root target
+cargo install ic-wasm --root target --locked
 STATUS=$?
 
 if [ "$STATUS" -eq "0" ]; then
-  target/bin/ic-cdk-optimizer \
+  target/bin/ic-wasm \
       target/wasm32-unknown-unknown/release/wallet.wasm \
-      -o target/wasm32-unknown-unknown/release/wallet-opt.wasm
+      -o target/wasm32-unknown-unknown/release/wallet-opt.wasm \
+      shrink
 
   true
 else
-  echo Could not install ic-cdk-optimizer.
+  echo Could not install ic-wasm.
   false
 fi

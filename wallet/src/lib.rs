@@ -1,3 +1,4 @@
+use base64::Engine;
 use candid::{CandidType, Func, Principal, Reserved};
 use ic_cdk::api::{data_certificate, set_certified_data, trap};
 use ic_cdk::*;
@@ -243,8 +244,8 @@ fn make_asset_certificate_header(asset_hashes: &AssetHashes, asset_name: &str) -
         "IC-Certificate".to_string(),
         format!(
             "certificate=:{}:, tree=:{}:",
-            base64::encode(certificate),
-            base64::encode(serializer.into_inner())
+            base64::engine::general_purpose::STANDARD.encode(certificate),
+            base64::engine::general_purpose::STANDARD.encode(serializer.into_inner())
         ),
     )
 }
@@ -269,7 +270,7 @@ lazy_static! {
         for cap in re.captures_iter(&INDEX_HTML_STR) {
             let s = &cap[1];
             let hash = &sha2::Sha256::digest(s.as_bytes());
-            let hash = base64::encode(hash);
+            let hash = base64::engine::general_purpose::STANDARD.encode(hash);
             res.push_str(&format!("'sha256-{hash}' "));
         }
         res
@@ -473,8 +474,7 @@ fn deauthorize(custodian: Principal) -> Result<(), String> {
 
 mod wallet {
     use crate::{events, is_custodian_or_controller, WALLET_WASM_BYTES};
-    use ic_cdk::export::candid::{CandidType, Nat};
-    use ic_cdk::export::Principal;
+    use candid::{CandidType, Nat, Principal};
     use ic_cdk::*;
     use serde::Deserialize;
     use std::convert::TryInto;

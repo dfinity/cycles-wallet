@@ -21,7 +21,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        rust: ['1.66.1']
+        rust: ['1.70.0']
         os: [ubuntu-latest]
         node-version: ['12.x']
 

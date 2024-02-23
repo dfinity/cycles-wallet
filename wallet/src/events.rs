@@ -1,8 +1,8 @@
 use crate::address::Role;
+use candid::types::{Compound, Serializer, Type, TypeInner};
+use candid::CandidType;
+use candid::Principal;
 use ic_cdk::api;
-use ic_cdk::export::candid::types::{Compound, Serializer, Type};
-use ic_cdk::export::candid::CandidType;
-use ic_cdk::export::Principal;
 use indexmap::IndexMap;
 use serde::de::{SeqAccess, Visitor};
 use serde::{Deserialize, Deserializer};
@@ -287,7 +287,7 @@ pub fn set_short_name(canister: &Principal, name: Option<String>) -> Option<Mana
 
 impl CandidType for ManagedList {
     fn _ty() -> Type {
-        Type::Vec(Box::new(ManagedCanister::ty()))
+        Type(<_>::from(TypeInner::Vec(ManagedCanister::ty())))
     }
     fn idl_serialize<S>(&self, serializer: S) -> Result<(), S::Error>
     where
