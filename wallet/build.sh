@@ -12,7 +12,7 @@ npm install
 npm run build
 gzip -f dist/*.js
 
-cargo build --target wasm32-unknown-unknown --release
+cargo rustc --target wasm32-unknown-unknown --release -- -Ctarget-cpu=mvp
 
 cargo install ic-wasm --root target --locked
 STATUS=$?
