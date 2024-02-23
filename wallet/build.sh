@@ -12,18 +12,20 @@ npm install
 npm run build
 gzip -f dist/*.js
 
-cargo build --target wasm32-unknown-unknown --release
+# Disable modern wasm features so the wallet binary will run on dfx 0.9.2's bundled replica
+cargo rustc -p wallet --target wasm32-unknown-unknown --release -- -Ctarget-cpu=mvp -Ctarget-feature=-sign-ext
 
-cargo install ic-cdk-optimizer --root target
+cargo install ic-wasm --root target --locked
 STATUS=$?
 
 if [ "$STATUS" -eq "0" ]; then
-  target/bin/ic-cdk-optimizer \
+  target/bin/ic-wasm \
       target/wasm32-unknown-unknown/release/wallet.wasm \
-      -o target/wasm32-unknown-unknown/release/wallet-opt.wasm
+      -o target/wasm32-unknown-unknown/release/wallet-opt.wasm \
+      shrink
 
   true
 else
-  echo Could not install ic-cdk-optimizer.
+  echo Could not install ic-wasm.
   false
 fi
