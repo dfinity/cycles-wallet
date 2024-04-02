@@ -258,6 +258,11 @@ service : {
     args: blob;
     cycles: nat;
   }) -> (WalletResultCall);
+  wallet_call_with_max_cycles: (record{
+    canister: principal;
+    method_name: text;
+    args: blob;
+  }) -> (WalletResultCall);
 
   // Address book
   add_address: (address: AddressEntry) -> ();

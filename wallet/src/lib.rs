@@ -935,6 +935,28 @@ mod wallet {
             )),
         }
     }
+
+    #[derive(CandidType, Deserialize)]
+    struct CallWithMaxCyclesArgs {
+        canister: Principal,
+        method_name: String,
+        args: Vec<u8>,
+    }
+
+    #[update(
+        guard = "is_custodian_or_controller",
+        name = "wallet_call_with_max_cycles"
+    )]
+    async fn call_with_max_cycles(args: CallWithMaxCyclesArgs) -> Result<CallResult, String> {
+        let available_cycles = ic_cdk::api::canister_balance128();
+        call128(CallCanisterArgs {
+            canister: args.canister,
+            method_name: args.method_name,
+            args: args.args,
+            cycles: available_cycles,
+        })
+        .await
+    }
 }
 
 /***************************************************************************************************
