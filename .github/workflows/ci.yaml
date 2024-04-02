@@ -23,7 +23,7 @@ jobs:
     strategy:
       matrix:
         node-version: [12.x]
-        rust: ['1.70.0']
+        rust: ['1.74.1']
 
     steps:
       - name: Checkout
