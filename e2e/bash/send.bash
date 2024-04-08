@@ -22,8 +22,8 @@ teardown() {
 }
 
 @test "wallet_call_with_max_cycles" {
-    dfx identity new alice --storage-mode plaintext
-    dfx identity new bob --storage-mode plaintext
+    dfx identity new --storage-mode plaintext alice
+    dfx identity new --storage-mode plaintext bob
     WALLET_ALICE=$(dfx --identity alice identity get-wallet)
     WALLET_BOB=$(dfx --identity bob identity get-wallet)
 
