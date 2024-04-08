@@ -69,7 +69,7 @@ jobs:
 
       - name: Run e2e tests vs dfx ${{ matrix.dfx }}
         run: |
-          export DFX_WALLET_WASM=$GITHUB_WORKSPACE/target/wasm32-unknown-unknown/release/wallet-opt.wasm
+          export DFX_WALLET_WASM=$GITHUB_WORKSPACE/target/wasm32-unknown-unknown/release/wallet-opt.wasm.gz
           export assets=$GITHUB_WORKSPACE/e2e/assets
           bats e2e/bash/*.bash
 
