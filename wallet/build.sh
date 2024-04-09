@@ -23,6 +23,7 @@ if [ "$STATUS" -eq "0" ]; then
       target/wasm32-unknown-unknown/release/wallet.wasm \
       -o target/wasm32-unknown-unknown/release/wallet-opt.wasm \
       shrink
+
   true
 else
   echo Could not install ic-wasm.
