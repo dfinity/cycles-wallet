@@ -892,6 +892,13 @@ mod wallet {
         r#return: Vec<u8>,
     }
 
+    #[derive(CandidType, Deserialize)]
+    struct CallResultWithMaxCycles {
+        #[serde(with = "serde_bytes")]
+        r#return: Vec<u8>,
+        attached_cycles: u128,
+    }
+
     /// Forward a call to another canister.
     #[update(guard = "is_custodian_or_controller", name = "wallet_call")]
     async fn call(
@@ -947,19 +954,26 @@ mod wallet {
         guard = "is_custodian_or_controller",
         name = "wallet_call_with_max_cycles"
     )]
-    async fn call_with_max_cycles(args: CallWithMaxCyclesArgs) -> Result<CallResult, String> {
+    async fn call_with_max_cycles(
+        args: CallWithMaxCyclesArgs,
+    ) -> Result<CallResultWithMaxCycles, String> {
         let available_cycles = ic_cdk::api::canister_balance128();
         // If no margin is used then the call either fails locally with `Couldn't send message` or processing the response traps with `Canister out of cycles`.
         // On the local network the margin needs to be ~1.7B cycles. (Experimentally determined in August 2024)
         // Extrapolating, a margin of 100B should work up to a subnet of ~60 nodes.
         const MARGIN: u128 = 100_000_000_000;
-        call128(CallCanisterArgs {
+        let cycles_to_attach = available_cycles.saturating_sub(MARGIN);
+        let result = call128(CallCanisterArgs {
             canister: args.canister,
             method_name: args.method_name,
             args: args.args,
-            cycles: available_cycles.saturating_sub(MARGIN),
+            cycles: cycles_to_attach,
         })
-        .await
+        .await?;
+        Ok(CallResultWithMaxCycles {
+            r#return: result.r#return,
+            attached_cycles: cycles_to_attach,
+        })
     }
 }
 
