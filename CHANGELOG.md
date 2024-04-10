@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [UNRELEASED]
 
+### Added
+
+- Added `wallet_call_with_max_cycles`
+
 ## [20230530]
 
 ### Fixed

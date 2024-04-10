@@ -23,17 +23,10 @@ jobs:
     strategy:
       matrix:
         node-version: [12.x]
-        rust: ['1.70.0']
 
     steps:
       - name: Checkout
         uses: actions/checkout@v2
-
-      - name: Install Rust
-        run: |
-          rustup update ${{ matrix.rust }} --no-self-update
-          rustup default ${{ matrix.rust }}
-          rustup target add wasm32-unknown-unknown
 
       - name: Install dfx
         uses: dfinity/setup-dfx@main
