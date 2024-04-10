@@ -959,7 +959,7 @@ mod wallet {
     ) -> Result<CallResultWithMaxCycles, String> {
         let available_cycles = ic_cdk::api::canister_balance128();
         // If no margin is used then the call either fails locally with `Couldn't send message` or processing the response traps with `Canister out of cycles`.
-        // On the local network the margin needs to be ~1.7B cycles. (Experimentally determined in August 2024)
+        // On the local network the margin needs to be ~1.7B cycles. (Experimentally determined in April 2024)
         // Extrapolating, a margin of 100B should work up to a subnet of ~60 nodes.
         const MARGIN: u128 = 100_000_000_000;
         let cycles_to_attach = available_cycles.saturating_sub(MARGIN);
