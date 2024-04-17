@@ -59,6 +59,7 @@ jobs:
           dfx canister create wallet
           dfx build wallet
           dfx stop
+          find .dfx/local
 
       - name: Run e2e tests vs dfx ${{ matrix.dfx }}
         run: |
