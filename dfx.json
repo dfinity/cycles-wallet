@@ -5,6 +5,7 @@
       "candid": "wallet/src/lib.did",
       "type": "custom",
       "wasm": "target/wasm32-unknown-unknown/release/wallet-opt.wasm",
+      "gzip": true,
       "declarations": {
         "output": "wallet_ui/declarations/wallet"
       }
@@ -14,14 +15,16 @@
       "dependencies": ["wallet"],
       "candid": "wallet/src/lib.did",
       "type": "custom",
-      "wasm": "target/wasm32-unknown-unknown/release/wallet-opt.wasm"
+      "wasm": "target/wasm32-unknown-unknown/release/wallet-opt.wasm",
+      "gzip": true
     },
     "bob": {
       "build": "true",
       "dependencies": ["wallet"],
       "candid": "wallet/src/lib.did",
       "type": "custom",
-      "wasm": "target/wasm32-unknown-unknown/release/wallet-opt.wasm"
+      "wasm": "target/wasm32-unknown-unknown/release/wallet-opt.wasm",
+      "gzip": true
     }
   },
   "version": 1
