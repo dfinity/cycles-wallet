@@ -15,7 +15,7 @@ gzip -f dist/*.js
 # Disable modern wasm features so the wallet binary will run on dfx 0.9.2's bundled replica
 cargo rustc -p wallet --target wasm32-unknown-unknown --release -- -Ctarget-cpu=mvp -Ctarget-feature=-sign-ext
 
-cargo install ic-wasm --root target --locked
+cargo install ic-wasm --root target --locked --version 0.8.0
 STATUS=$?
 
 if [ "$STATUS" -eq "0" ]; then
