@@ -23,7 +23,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ macos-latest, ubuntu-latest ]
+        os: [ macos-12-large, ubuntu-20.04 ]
         # only dfx >= 0.8.3 lets us query multiple controllers
         dfx: [ '0.9.2' ]
     env:
@@ -43,10 +43,10 @@ jobs:
             ./target
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}-${{ matrix.rust }}-1
       - name: Provision Darwin
-        if: matrix.os == 'macos-latest'
+        if: ${{ contains(matrix.os, 'macos') }}
         run: bash .github/workflows/provision-darwin.sh
       - name: Provision Linux
-        if: matrix.os == 'ubuntu-latest'
+        if: ${{ contains(matrix.os, 'ubuntu') }}
         run: bash .github/workflows/provision-linux.sh
       - name: Install dfx
         uses: dfinity/setup-dfx@main
