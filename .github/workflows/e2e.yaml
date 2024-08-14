@@ -11,8 +11,8 @@ jobs:
     outputs:
       filter: ${{ steps.filter.outputs.e2e == 'true' || steps.filter.outputs.workflows == 'true' }}
     steps:
-      - uses: actions/checkout@v2
-      - uses: dorny/paths-filter@v2
+      - uses: actions/checkout@v4
+      - uses: dorny/paths-filter@v3
         id: filter
         with:
           filters: .github/filters.yml
@@ -30,12 +30,12 @@ jobs:
       DFX_VERSION: ${{ matrix.dfx }}
 
     steps:
-      - uses: actions/checkout@v1
-      - uses: actions/setup-node@v3
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
         with:
           node-version: 16
       - name: Cache Cargo
-        uses: actions/cache@v2
+        uses: actions/cache@v4
         with:
           path: |
             ~/.cargo/registry
