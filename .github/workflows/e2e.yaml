@@ -23,7 +23,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ macos-12-large, ubuntu-20.04 ]
+        os: [ macos-14-large, ubuntu-20.04 ]
         # only dfx >= 0.8.3 lets us query multiple controllers
         dfx: [ '0.9.2' ]
     env:
