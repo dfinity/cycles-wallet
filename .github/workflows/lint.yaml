@@ -8,8 +8,8 @@ jobs:
     outputs:
       filter: ${{ steps.filter.outputs.backend == 'true' || steps.filter.outputs.workflows == 'true' }}
     steps:
-      - uses: actions/checkout@v2
-      - uses: dorny/paths-filter@v2
+      - uses: actions/checkout@ee0669bd1cc54295c223e0bb666b733df41de1c5 # v2.7.0
+      - uses: dorny/paths-filter@4512585405083f25c027a35db413c2b3b9006d50 # v2.11.1
         id: filter
         with:
           filters: .github/filters.yml
@@ -25,9 +25,9 @@ jobs:
         node-version: ['12.x']
 
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@ee0669bd1cc54295c223e0bb666b733df41de1c5 # v2.7.0
 
-      - uses: actions/cache@v2
+      - uses: actions/cache@8492260343ad570701412c2f464a5877dc76bace # v2
         with:
           path: |
             ~/.cargo/registry
@@ -35,11 +35,11 @@ jobs:
             ./target
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
       - name: Install dfx
-        uses: dfinity/setup-dfx@main
+        uses: dfinity/setup-dfx@e50c04f104ee4285ec010f10609483cf41e4d365 # main
         with:
           dfx-version: "0.9.2"
       - name: Install Node.js ${{ matrix.node-version }}
-        uses: actions/setup-node@v1
+        uses: actions/setup-node@f1f314fca9dfce2769ece7d933488f076716723e # v1.4.6
         with:
           node-version: ${{ matrix.node-version }}
       - name: Run Lint
