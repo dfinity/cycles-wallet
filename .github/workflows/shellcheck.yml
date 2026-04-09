@@ -11,8 +11,8 @@ jobs:
     outputs:
       filter: ${{ steps.filter.outputs.shell == 'true' || steps.filter.outputs.workflows == 'true' }}
     steps:
-      - uses: actions/checkout@v2
-      - uses: dorny/paths-filter@v2
+      - uses: actions/checkout@ee0669bd1cc54295c223e0bb666b733df41de1c5 # v2.7.0
+      - uses: dorny/paths-filter@4512585405083f25c027a35db413c2b3b9006d50 # v2.11.1
         id: filter
         with:
           filters: .github/filters.yml
@@ -23,7 +23,7 @@ jobs:
     name: Check shell scripts
     runs-on: macos-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@ee0669bd1cc54295c223e0bb666b733df41de1c5 # v2.7.0
       - name: Install shellcheck
         run: |
           mkdir $HOME/bin
